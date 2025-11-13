@@ -13,10 +13,10 @@ define Package/wifi-openmanet
   CATEGORY:=Drivers
   TITLE:=WiFi - Wireless Networking
   URL:=https://openmanet.net/
-  DEPENDS:= +iwlwifi-firmware-ax210 +iwlwifi-firmware-ax200 +kmod-iwlwifi \ # Intel WiFi 6/6E
-  +kmod-owl-loader +ath11k-firmware-wcn6855 +kmod-ath11k +kmod-ath11k-pci \ # Qualcomm WiFi 6/6E
+  DEPENDS:= +iwlwifi-firmware-ax210 +iwlwifi-firmware-ax200 +kmod-iwlwifi \
+  +kmod-owl-loader +ath11k-firmware-wcn6855 +kmod-ath11k +kmod-ath11k-pci \
   +ath10k-firmware-qca6174 +kmod-ath10k \
-  +kmod-mt7915-firmware +kmod-mt7916-firmware +kmod-mt7915e +kmod-mt7921-firmware +kmod-mt7921e \ # MediaTek WiFi 6/6E
+  +kmod-mt7915-firmware +kmod-mt7916-firmware +kmod-mt7915e +kmod-mt7921-firmware +kmod-mt7921e \
 endef
 
 define Package/wifi-openmanet/description
