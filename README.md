@@ -1,5 +1,4 @@
-OpenMANET packages feed
-Description
+# OpenMANET packages feed
 This is the OpenMANET OpenWrt "packages"-feed containing community-maintained build scripts, options and patches for applications, modules and libraries used within OpenWrt.
 
 Installation of pre-built packages is handled directly by the opkg utility within your running OpenWrt system or by using the OpenWrt SDK on a build system.
@@ -9,5 +8,5 @@ This repository is intended to be layered on-top of an OpenWrt buildroot. If you
 
 This feed is enabled by default. To install all its package definitions, run:
 
-./scripts/feeds update packages
-./scripts/feeds install -a -p packages
+./scripts/feeds update
+./scripts/feeds install -a -p openmanet
