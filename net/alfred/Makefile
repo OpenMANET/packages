@@ -31,7 +31,7 @@ define Package/alfred-openmanet/install
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) ./files/mesh-routing.config $(1)/etc/init.d/mesh-routing ; true
-  
+
 	$(INSTALL_DIR) $(1)/etc/alfred
 	$(CP) ./files/bat-hosts.lua $(1)/etc/alfred/bat-hosts.lua ; true
 endef
