@@ -22,15 +22,20 @@ GO_PKG_LDFLAGS_X:=cmd.Version=$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 include ../../../../feeds/packages/lang/golang/golang-package.mk
 
+# Explicit runtime deps (correct OpenWrt syntax)
+RDEPENDS:$(PKG_NAME) += libopusfile
+
 define Package/openmanetd
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenMANET Manager
-  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred
+  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio +kmod-sound-core +libopusfile
 endef
 
 define Package/openmanetd/description
-A network management application for openmanetd written in Go.
+A management application for openmanetd written in Go.
+Includes:
+- pttgo: A multicast push-to-talk voice application written in Go using PortAudio, Opus, and evdev.
 endef
 
 define Package/openmanetd/conffiles

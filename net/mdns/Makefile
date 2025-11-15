@@ -9,8 +9,8 @@ PKG_MAINTAINER:=OpenMANET
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mdns-openmanet
-  SECTION:=drivers
-  CATEGORY:=Drivers
+  SECTION:=net
+  CATEGORY:=Network
   TITLE:=mDNS - Multicast DNS
   URL:=https://openmanet.net/
   DEPENDS:= +avahi-dbus-daemon +avahi-daemon-service-http +avahi-daemon-service-ssh +avahi-utils
