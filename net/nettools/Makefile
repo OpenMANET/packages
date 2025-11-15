@@ -13,8 +13,7 @@ define Package/nettools-openmanet
   CATEGORY:=Network
   TITLE:=Installs nettools configuration for OpenMANET networks
   URL:=https://www.open-mesh.org/
-  DEPENDS:=+alfred +ALFRED_BATHOSTS +ALFRED_GPSD \
-  +avahi-dbus-daemon +avahi-daemon-service-http +avahi-daemon-service-ssh +avahi-utils
+  DEPENDS:=+alfred +avahi-dbus-daemon +avahi-daemon-service-http +avahi-daemon-service-ssh +avahi-utils
 
   PKG_INSTALL_FLAGS:=overwrite
 endef
@@ -33,7 +32,6 @@ define Package/nettools-openmanet/install
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) ./files/mesh-routing.config $(1)/etc/init.d/mesh-routing ; true
-    chmod +x $(1)/etc/init.d/mesh-routing
 
 	$(INSTALL_DIR) $(1)/etc/nettools
 	$(CP) ./files/bat-hosts.lua $(1)/etc/nettools/bat-hosts.lua ; true
