@@ -23,7 +23,7 @@ PKG_CPE_ID:=cpe:/a:gpsd_project:gpsd
 PKG_BUILD_DEPENDS:=scons/host
 
 include $(INCLUDE_DIR)/package.mk
-include ../../../feeds/packages/devel/scons/scons.mk
+include ../../../../feeds/packages/devel/scons/scons.mk
 
 define Package/gpsd/Default
   DEPENDS+= +libusb-1.0
