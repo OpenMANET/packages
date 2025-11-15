@@ -31,7 +31,7 @@ endef
 
 define Package/mdns-openmanet/install
 	$(INSTALL_DIR) $(1)/etc/avahi
-	$(CP) $(PKG_BUILD_DIR)/files/avahi-daemon.conf $(1)/etc/avahi/avahi-daemon.conf ; true
+	$(CP) /files/avahi-daemon.conf $(1)/etc/avahi/avahi-daemon.conf ; true
 endef
 
 $(eval $(call BuildPackage,mdns-openmanet))

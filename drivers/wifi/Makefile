@@ -25,4 +25,7 @@ define Package/wifi-openmanet/description
   This package contains all of the WiFi drivers required for OpenMANET networks.
 endef
 
+define Build/Compile
+endef
+
 $(eval $(call BuildPackage,wifi-openmanet))

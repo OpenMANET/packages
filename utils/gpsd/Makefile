@@ -12,7 +12,8 @@ define Package/gpsd-openmanet
   SECTION:=util
   TITLE:=GPSD - GPS Daemon
   URL:=https://gpsd.gitlab.io/gpsd/
-  DEPENDS:= +gpsd
+  DEPENDS:=+gpsd +gpsd-clients
+
   PKG_INSTALL_FLAGS:=overwrite
 endef
 
@@ -22,6 +23,9 @@ endef
 
 define Package/gpsd-openmanet/conffiles
 /etc/config/gpsd
+endef
+
+define Build/Compile
 endef
 
 define Package/gpsd-openmanet/install

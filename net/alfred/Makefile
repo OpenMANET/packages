@@ -29,6 +29,9 @@ define Package/alfred-openmanet/config
 	source "$(SOURCE)/Config.in"
 endef
 
+define Build/Compile
+endef
+
 define Package/alfred-openmanet/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/alfred.config $(1)/etc/config/alfred
