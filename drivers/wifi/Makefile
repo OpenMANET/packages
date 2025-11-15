@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wifi-openmanet
-PKG_VERSION:=1
+PKG_VERSION:=2025.11
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=OpenMANET
