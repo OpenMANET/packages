@@ -23,6 +23,10 @@ define Package/nettools-openmanet/description
   This is an nettools configuration specific for OpenMANET networks.
 endef
 
+define Package/nettools-openmanet/config
+	source "$(SOURCE)/Config.in"
+endef
+
 define Package/nettools-openmanet/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/nettools.config $(1)/etc/config/nettools
