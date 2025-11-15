@@ -13,7 +13,7 @@ define Package/nettools-openmanet
   CATEGORY:=Network
   TITLE:=Installs nettools configuration for OpenMANET networks
   URL:=https://www.open-mesh.org/
-  DEPENDS:= +alfred \
+  DEPENDS:=+alfred +ALFRED_BATHOSTS +ALFRED_GPSD \
   +avahi-dbus-daemon +avahi-daemon-service-http +avahi-daemon-service-ssh +avahi-utils
 
   PKG_INSTALL_FLAGS:=overwrite
