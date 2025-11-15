@@ -15,7 +15,7 @@ define Package/adsbtocot
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=ADS-B to Cursor-on-Target (ADSBCOT) for OpenWrt (dump1090 local)
-  DEPENDS:=+python3 +dump1090
+  DEPENDS:=+python3 +dump1090 +rtl-sdr
 endef
 
 define Package/adsbtocot/description

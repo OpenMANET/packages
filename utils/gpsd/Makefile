@@ -20,6 +20,10 @@ define Package/gpsd-openmanet/description
   This is an gpsd configuration specific for OpenMANET networks.
 endef
 
+define Package/gpsd-openmanet/conffiles
+/etc/config/gpsd
+endef
+
 define Package/gpsd-openmanet/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/gpsd.config $(1)/etc/config/gpsd
