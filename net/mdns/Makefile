@@ -26,9 +26,12 @@ define Package/mdns-openmanet/conffiles
 /etc/avahi/avahi-daemon.conf
 endef
 
+define Build/Compile
+endef
+
 define Package/mdns-openmanet/install
 	$(INSTALL_DIR) $(1)/etc/avahi
-	$(CP) ./files/avahi-daemon.conf $(1)/etc/avahi/avahi-daemon.conf ; true
+	$(CP) $(PKG_BUILD_DIR)/files/avahi-daemon.conf $(1)/etc/avahi/avahi-daemon.conf ; true
 endef
 
 $(eval $(call BuildPackage,mdns-openmanet))

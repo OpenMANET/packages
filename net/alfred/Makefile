@@ -34,8 +34,7 @@ define Package/alfred-openmanet/install
 	$(CP) ./files/alfred.config $(1)/etc/config/alfred
 
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(CP) ./files/mesh-routing.config $(1)/etc/init.d/mesh-routing ; true
-	chmod +x $(1)/etc/init.d/mesh-routing
+	$(INSTALL_BIN) ./files/mesh-routing.config $(1)/etc/init.d/mesh-routing ; true
 
 	$(INSTALL_DIR) $(1)/etc/alfred
 	$(CP) ./files/bat-hosts.lua $(1)/etc/alfred/bat-hosts.lua ; true
