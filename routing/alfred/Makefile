@@ -79,9 +79,6 @@ define Package/alfred/install
 	$(INSTALL_DATA) ./files/alfred.config $(1)/etc/config/alfred
 	$(INSTALL_DIR) $(1)/etc/alfred
 	[ "x$(CONFIG_PACKAGE_ALFRED_BATHOSTS)" == "xy" ] && $(INSTALL_BIN) ./files/bat-hosts.lua $(1)/etc/alfred/bat-hosts.lua ; true
-
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/mesh-routing.config $(1)/etc/init.d/mesh-routing ; true
 endef
 
 $(eval $(call BuildPackage,alfred))
