@@ -20,7 +20,7 @@ GO_PKG:=github.com/openmanet/openmanetd
 GO_PKG_LDFLAGS_X:=cmd.Version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
-include ../../lang/golang/golang-package.mk
+include ../lang/golang/golang-package.mk
 
 # Explicit runtime deps (correct OpenWrt syntax)
 RDEPENDS:$(PKG_NAME) += libopusfile
