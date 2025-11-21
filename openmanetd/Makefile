@@ -38,9 +38,10 @@ Includes:
 - pttgo: A multicast push-to-talk voice application written in Go using PortAudio, Opus, and evdev.
 endef
 
-define Build/Prepare
+define Build/Configure
 	# Compile Alfred Bindings
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
+	$(call Build/Configure/Default,)
 endef
 
 define Package/openmanetd/conffiles
