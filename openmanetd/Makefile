@@ -29,7 +29,7 @@ define Package/openmanetd
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenMANET Manager
-  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio +kmod-sound-core +libopusfile
+  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +libc @IPV6 +libnl-tiny +librt +portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio +kmod-sound-core +libopusfile
 endef
 
 define Package/openmanetd/description
