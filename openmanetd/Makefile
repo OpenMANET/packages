@@ -39,8 +39,8 @@ Includes:
 endef
 
 define Build/Prepare
-    # Compile Alfred Bindings
-    $(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
+	# Compile Alfred Bindings
+	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
 endef
 
 define Package/openmanetd/conffiles
