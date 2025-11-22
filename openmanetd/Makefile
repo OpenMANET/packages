@@ -16,7 +16,6 @@ PKG_BUILD_DEPENDS:=golang/host libc/host libnl-tiny/host libopusfile/host librt/
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
-
 GO_PKG:=github.com/openmanet/openmanetd
 GO_PKG_LDFLAGS_X:=cmd.Version=$(PKG_VERSION)
 
@@ -44,7 +43,8 @@ endef
 define Build/Configure
 	# Compile Alfred Bindings
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
-	$(call Build/Configure/Default,)
+	$(call GoPackage/Build/Configure,$(1))
+	$(call Build/Configure/Default,$(1))
 endef
 
 MAKE_FLAGS += \
