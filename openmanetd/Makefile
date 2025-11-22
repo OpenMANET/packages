@@ -12,10 +12,10 @@ PKG_HASH:=skip
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=Corey Wagehoft
 
-PKG_BUILD_DEPENDS:=golang/host
+PKG_BUILD_DEPENDS:=golang/host libc/host libnl-tiny/host libopusfile/host librt/host
 PKG_BUILD_PARALLEL:=1
-PKG_BUILD_FLAGS:=no-mips16
-PKG_INSTALL:=1
+PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
+
 
 GO_PKG:=github.com/openmanet/openmanetd
 GO_PKG_LDFLAGS_X:=cmd.Version=$(PKG_VERSION)
