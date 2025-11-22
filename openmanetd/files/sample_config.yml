@@ -1,4 +1,4 @@
-logLevel: info
+logLevel: debug
 meshNetInterface: br-ahwlan
 gatewayMode: false
 alfred:

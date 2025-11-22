@@ -3,13 +3,12 @@
 USE_PROCD=1
 START=99
 
-PROG="/usr/bin/openmanet"
-CONF="/etc/openmanet/config.yml"
+PROG="/usr/bin/openmanetd"
+CONF="/etc/openmanetd/config.yml"
 
 start_service() {
 	procd_open_instance
 	procd_set_param command "$PROG" --config "$CONF"
-	procd_set_param file "$CONF"
 
 	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
 	procd_set_param stdout 1
@@ -20,5 +19,5 @@ start_service() {
 
 service_triggers() {
 	procd_add_reload_trigger "$CONF"
-	procd_add_interface_trigger "interface.*.up" "bat0" /etc/init.d/openmanet restart
+	procd_add_interface_trigger "interface.*.up" "bat0" /etc/init.d/openmanetd restart
 }
