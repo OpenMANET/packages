@@ -15,6 +15,7 @@ PKG_MAINTAINER:=Corey Wagehoft
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
+PKG_INSTALL:=1
 
 GO_PKG:=github.com/openmanet/openmanetd
 GO_PKG_LDFLAGS_X:=cmd.Version=$(PKG_VERSION)
@@ -29,7 +30,9 @@ define Package/openmanetd
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenMANET Manager
-  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +libc @IPV6 +libnl-tiny +librt +portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio +kmod-sound-core +libopusfile
+  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +libc @IPV6 +libnl-tiny +librt \
+		+portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio \
+		+kmod-sound-core +libopusfile
 endef
 
 define Package/openmanetd/description
@@ -43,6 +46,10 @@ define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
 	$(call Build/Configure/Default,)
 endef
+
+MAKE_FLAGS += \
+	LIBNL_NAME="libnl-tiny" \
+	LIBNL_GENL_NAME="libnl-tiny" \
 
 define Package/openmanetd/conffiles
 /etc/openmanetd/
