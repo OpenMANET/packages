@@ -1,0 +1,235 @@
+body.uimode-normal {
+	/* Disable header links to luci config pages. */
+	a.cbi-title-ref {
+		pointer-events: none;
+		color: inherit;
+	}
+}
+
+#view h1 {
+	margin: 0;
+}
+
+#view > p {
+	padding: 1rem 1.25rem;
+}
+
+/* Convert 'delete' button to delete icon.
+ */
+
+td.td.cbi-section-table-cell.cbi-section-actions {
+	width: auto;
+}
+
+.cbi-section-actions .cbi-button-remove {
+	visibility: hidden;
+	padding: 0px;
+	font-size: 0px;
+	height: 20px;
+	transition: none;
+}
+
+.cbi-section-actions .cbi-button-remove:not(.spinning)::before {
+	visibility: visible;
+	content: url('data:image/svg+xml, <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16"> <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/> <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/> </svg>');
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+}
+
+.cbi-section-actions .cbi-button-remove.spinning::before {
+	visibility: visible;
+}
+
+.cbi-section-actions .cbi-button-remove:hover::before {
+	filter: invert(32%) sepia(70%) saturate(7405%) hue-rotate(273deg) brightness(81%) contrast(103%);
+}
+
+/* Convert 'More...' button to ellipsis icon.
+ */
+.cbi-section-actions .cbi-button-edit {
+	visibility: hidden;
+	padding: 0px;
+	font-size: 0px;
+	height: 20px;
+	transition: none;
+ }
+
+.cbi-section-actions .cbi-button-edit::before {
+	visibility: visible;
+	content: url('data:image/svg+xml, <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16"> <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/> </svg>');
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+}
+
+.cbi-section-actions .cbi-button-edit.spinning::before {
+	visibility: visible;
+}
+
+.cbi-section-actions .cbi-button-edit:hover::before {
+	filter: invert(32%) sepia(70%) saturate(7405%) hue-rotate(273deg) brightness(81%) contrast(103%);
+}
+
+
+/* Convert 'add' button to add icon.
+ */
+.cbi-section-create .cbi-button-add {
+	visibility: hidden;
+	padding: 0px;
+	font-size: 0px;
+	height: 20px;
+	transition: none;
+}
+
+.cbi-section-create .cbi-button-add:not(.spinning)::before {
+	visibility: visible;
+	content: url('data:image/svg+xml, <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square" viewBox="0 0 16 16"> <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/> <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/> </svg>');
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+}
+
+.cbi-section-create .cbi-button-add.spinning::before {
+	visibility: visible;
+}
+
+.cbi-section-create .cbi-button-add:hover::before {
+	filter: invert(32%) sepia(70%) saturate(7405%) hue-rotate(273deg) brightness(81%) contrast(103%);
+}
+
+/* Settings icon for advanced-config
+ */
+a.advanced-config {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	filter: invert(100%);
+	background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/></svg>')
+}
+
+a.advanced-config:hover {
+	filter: invert(0%);
+}
+
+a.advanced-config:focus {
+	filter: invert(0%);
+}
+
+a.advanced-config-mini {
+	width: 16px;
+	height: 16px;
+	background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/></svg>')
+}
+
+
+/* Put the (*) password visibility icon and the wifi scan icon in a reasonable place.
+ */
+.cbi-section-table div.control-group {
+	display: flex;
+}
+.cbi-section-table div.control-group > div:first-child {
+	flex-grow: 1;
+}
+.cbi-dropdown:not(.btn):not(.cbi-button) {
+	min-width: auto;
+	max-width: auto;
+	width: auto;
+}
+
+/* Make network names look nicer.
+ */
+.cbi-value-field .network-name {
+	font-weight: bold;
+	padding-left: 5px;
+	min-width: 80px;
+}
+
+.show-info {
+	text-decoration: underline;
+	text-decoration-style: dotted;
+	cursor: help;
+	margin: .25em;
+}
+
+.show-info::after {
+	--help-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20'><path d='M10 0A10 10 0 000 10a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0010 0zm1 17H9v-2h2v2zm2.1-7.7l-.9.9c-.8.7-1.2 1.3-1.2 2.8H9v-.5c0-1.1.4-2.1 1.2-2.8l1.2-1.3c.4-.3.6-.8.6-1.4a2 2 0 00-2-2 2 2 0 00-2 2H6a4 4 0 014-4 4 4 0 014 4c0 .9-.4 1.7-.9 2.3z'/></svg>");
+
+	content: "\a0";
+	display: inline-flex;
+	align-items: center;
+	width: 1em;
+	height: 1em;
+	margin-left: .25em;
+	margin-right: .75em;
+	background: var(--primary-color-high);
+	mask-image: var(--help-icon);
+	mask-size: cover;
+	-webkit-mask-image: var(--help-icon);
+	-webkit-mask-size: cover;
+}
+
+.show-warning {
+	text-decoration: underline;
+	text-decoration-style: dotted;
+	cursor: help;
+	margin: .25em;
+}
+
+.show-warning::after {
+	/* https://icons.getbootstrap.com/icons/exclamation-triangle-fill/ */
+	--warning-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2'/></svg>");
+
+	content: "\a0";
+	display: inline-flex;
+	align-items: center;
+	width: 1em;
+	height: 1em;
+	margin-left: .25em;
+	background: var(--primary-color-high);
+	mask-image: var(--warning-icon);
+	mask-size: cover;
+	-webkit-mask-image: var(--warning-icon);
+	-webkit-mask-size: cover;
+}
+
+.cbi-section h3 {
+	margin-top: 15px;
+}
+
+/* Let dropdowns compress.
+ */
+.cbi-value-field .cbi-dropdown,
+.cbi-value-field .cbi-input-select,
+.cbi-value input[type="text"],
+.cbi-value input[type="password"],
+.cbi-value textarea {
+  min-width: auto;
+}
+
+/* Push wifi-device/wifi-ifaces together to show grouping.
+ */
+#cbi-wireless {
+	.cbi-section {
+		margin-bottom: 0;
+		padding-bottom: 1rem;
+	}
+
+	.cbi-tblsection {
+		margin-top: 0;
+	}
+}
+
+/* Tweak column widths
+ */
+#cbi-network-interface {
+	td[data-name="_name"] {
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+
+	td[data-name="_name"], td[data-name="_forward"] {
+		width: 1px;
+		white-space: nowrap;
+	}
+}

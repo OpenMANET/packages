@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# wizard.js and configpage.js both store luci.wizard.used='1'/'0' respectively.
+# All I'm looking for in this test is that the user has configured the device at all.
+# Rather than setting a "defaults_applied" field as we would normally have done
+# We're instead looking for the existence of this new section created by the pages.
+# This won't catch configuration made by Network --> Wireless, or no configuration made
+# at all.
+uci -q get luci.wizard &>/dev/null && exit 0
+
+uci set luci.main.homepage='admin/morse/landing'
+uci set luci.wizard='wizard'
+uci commit luci

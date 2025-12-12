@@ -1,0 +1,1 @@
+{% include('wizard_view', {view: 'morse/landing'}) %}

@@ -1,0 +1,30 @@
+:root {
+    --upload: "\f101";
+    --tools: "\f102";
+    --toggle-on: "\f103";
+    --toggle-off: "\f104";
+    --sliders: "\f105";
+    --person-fill: "\f106";
+    --magic: "\f107";
+    --lock-fill: "\f108";
+    --list: "\f109";
+    --info-circle: "\f10a";
+    --house-fill: "\f10b";
+    --hdd-network: "\f10c";
+    --graph-up: "\f10d";
+    --globe: "\f10e";
+    --gear: "\f10f";
+    --eye: "\f110";
+    --diagram-3-fill: "\f111";
+    --clipboard-check: "\f112";
+    --chevron-right: "\f113";
+    --building-gear: "\f114";
+    --box-fill: "\f115";
+    --box-arrow-right: "\f116";
+    --asterisk: "\f117";
+}
+
+@font-face {
+    font-family: "icons";
+    src: url("./icons.woff2?8acc76146eb0f94c379446d11a98be94") format("woff2");
+}

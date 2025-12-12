@@ -1,0 +1,21 @@
+{
+	"luci-app-ekhwizards": {
+		"description": "Some perms the wizards require mostly copied from luci-app-morseconfig",
+		"read": {
+			"ubus": {
+				"file": [ "read" ],
+				"luci-rpc": ["getNetworkDevices"],
+				"iwinfo": ["scan", "assoclist", "info"]
+			}
+		},
+		"write": {
+			"file": {
+			},
+			"ubus": {
+				"file": [ "write", "exec" ],
+				"uci": [ "apply", "commit", "delete", "firewall", "dhcp", "network", "wireless" ],
+				"luci": [ "setPassword" ]
+			}
+		}
+	}
+}

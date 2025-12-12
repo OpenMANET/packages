@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Force a WAN interface so that the quick config page is more usable before
+# running the wizards. This happens on devices that only have one ethernet port,
+# since interface setup only happens if ports exist for the interface.
+
+# Note that the default firewall rules include a zone for wan already.
+if ! uci -q get "network.wan"; then
+	uci set "network.wan=interface"
+	uci set "network.wan.proto=dhcp"
+fi

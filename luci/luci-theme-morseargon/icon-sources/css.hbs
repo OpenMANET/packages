@@ -1,0 +1,10 @@
+:root {
+{{# each codepoints }}
+    --{{ @key }}: "\\{{ codepoint this }}";
+{{/ each }}
+}
+
+@font-face {
+    font-family: "{{ name }}";
+    src: {{{ fontSrc }}};
+}

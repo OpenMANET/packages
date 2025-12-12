@@ -1,0 +1,70 @@
+{
+    "admin/help/": {
+        "title": "Help",
+        "order": 998,
+
+        "action": {
+            "type": "firstchild"
+        }
+    },
+
+    "admin/help/regulatoryinfo": {
+        "title": "Regulatory Information",
+        "order": 2,
+        "action": {
+            "type": "view",
+            "path": "morse/morseregulatoryinfo"
+        },
+        "depends": {
+            "acl": [ "luci-app-morseconfig" ]
+        }
+    },
+
+    "admin/statistics": {
+        "title": "Statistics",
+        "order": 80,
+
+        "action": {
+            "type": "firstchild"
+        }
+    },
+
+    "admin/statistics/morse/logs": {
+        "title": "Logs",
+        "order": 1,
+        "action": {
+            "type": "view",
+            "path": "morse/morsestats"
+        }
+    },
+  
+    "admin/config": {
+        "title": "Quick Config",
+        "order": 5,
+        "action": {
+            "type": "view",
+            "path": "morse/config"
+        }
+    },
+
+    "admin/statistics/morse": {
+        "title": "Morse",
+        "order": 2,
+        "action": {
+            "type": "alias",
+            "path": "admin/statistics/morse/logs"
+        },
+        "depends": {
+          "acl": [ "luci-app-morseconfig" ]
+        }
+    },
+
+    "admin/help/support": {
+        "title": "Support",
+        "order": 101,
+        "action": {
+            "type": "view",
+            "path": "morse/support"
+        }
+    }
+}

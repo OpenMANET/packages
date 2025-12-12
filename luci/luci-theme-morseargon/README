@@ -1,0 +1,10 @@
+This is based on:
+
+https://github.com/jerrykuku/luci-theme-argon/tree/ed263b0add5ff4320f4dd1c55933794c11ef6294
+
+That theme seems to have been a meld of luci-theme-material
+with some of https://github.com/creativetimofficial/argon-dashboard/tree/v1.1.1
+
+But simplified (no Less, config magic, jquery, polyfills) and morse branded.
+The intention is this will be our own theme, and is now completely
+detached from the original Argon theme.

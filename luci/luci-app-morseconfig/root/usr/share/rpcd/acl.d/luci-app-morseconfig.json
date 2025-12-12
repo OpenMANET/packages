@@ -1,0 +1,39 @@
+{
+	"luci-app-morseconfig": {
+		"description": "Grant access to Morse Single File configuration and supporting tools",
+		"read": {
+			"file": {
+				"/morse/configs/morse.conf": [ "read" ],
+				"/usr/lib/opkg/info/prplmesh.control": [ "read" ],
+				"/usr/sbin/wpa_cli_s1g wps_pbc multi_ap=1": [ "exec" ],
+				"/usr/sbin/wpa_cli_s1g wps_cancel": [ "exec" ],
+				"/usr/sbin/wpa_cli_s1g wps_get_status": [ "exec" ],
+				"/usr/sbin/hostapd_cli_s1g wps_pbc": [ "exec" ],
+				"/usr/sbin/hostapd_cli_s1g wps_cancel": [ "exec" ],
+				"/usr/sbin/hostapd_cli_s1g wps_get_status": [ "exec" ],
+				"/sys/class/net": ["read"],
+				"/tmp/sys_dump.tar.gz": ["read"],
+				"/bin/uname": [ "exec" ],
+				"/sbin/morse_cli": [ "exec" ],
+				"/etc/init.d/morse": [ "exec"],
+				"/bin/tar": ["exec"],
+				"/usr/bin/find":["exec"],
+				"/morse/scripts/mm_dumps.sh":["exec"]
+			},
+			"ubus": {
+				"file": [ "read" ],
+				"luci": [ "getConntrackHelpers" ],
+				"luci-rpc": ["getNetworkDevices"],
+				"iwinfo": ["scan", "assoclist", "info"]
+			}
+		},
+		"write": {
+			"file": {
+			},
+			"ubus": {
+				"file": [ "write", "exec" ],
+				"uci": [ "apply", "commit", "delete", "firewall", "dhcp", "network", "wireless" ]
+			}
+		}
+	}
+}

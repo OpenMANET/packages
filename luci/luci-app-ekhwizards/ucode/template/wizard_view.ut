@@ -1,0 +1,16 @@
+{%
+import { readfile } from 'fs';
+let css = readfile(`/www/${resource}/view/morse/css/wizard.css`);
+include('header', {wizard: true, css});
+-%}
+
+<div id="view" class="wizardview">
+	<div class="spinning">{{ _('Loading view...') }}</div>
+	<script type="text/javascript">
+		L.require('ui').then(function(ui) {
+			ui.instantiateView('{{ view }}');
+		});
+	</script>
+</div>
+
+{% include('footer'), {wizard: true} %}

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+if [ "$PKG_UPGRADE" != 1 ]; then
+	uci get luci.themes.MorseArgon >/dev/null 2>&1 || \
+	uci batch <<-EOF
+		set luci.themes.MorseArgon=/luci-static/morseargon
+		set luci.main.mediaurlbase=/luci-static/morseargon
+		commit luci
+	EOF
+fi
+
+board=$(board_name)
+case "$board" in
+	morse,artini)
+		if ! uci -q get luci.main.advancedmodetoggle; then
+			uci set luci.main.advancedmodetoggle='1'
+		fi
+	;;
+esac
+
+exit 0

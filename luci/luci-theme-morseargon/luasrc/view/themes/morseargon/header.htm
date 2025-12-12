@@ -1,0 +1,249 @@
+<%
+	local sys  = require "luci.sys"
+	local util = require "luci.util"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+	local posix = require "nixio.fs"
+
+	local boardinfo = util.ubus("system", "board")
+	local morse_mode_short_display = "Unknown"
+	local modeinfo = util.ubus("morse-mode", "query")
+	if modeinfo then
+		morse_mode_short_display = modeinfo.morse_mode_short_display
+	end
+
+	local node = disp.context.dispatched
+
+	-- send as HTML5
+	http.prepare_content("text/html")
+
+	local uci_cursor = luci.model.uci.cursor()
+
+	local morse_dev
+	uci_cursor:foreach("wireless", "wifi-device",
+		function (section)
+			if section.type == "morse" then
+				morse_dev = section[".name"]
+			end
+		end
+	)
+
+	local morse_region = uci_cursor:get("wireless", morse_dev, "country")
+	local morse_bcf = uci_cursor:get("wireless", morse_dev, "bcf")
+	local missing_password = luci.sys.process.info("uid") == 0 and luci.sys.user.getuser("root") and not luci.sys.user.getpasswd("root")
+
+	function is_morse_dev(dev)
+		if dev == "." or dev == ".." then
+			return false
+		end
+
+		local driver_path = "/sys/class/ieee80211/" .. dev .. "/device/driver/"
+		if posix.stat(driver_path, "type") ~= "dir" then
+			return false
+		end
+
+		local driver = posix.realpath(driver_path)
+		local driver_name = driver:match("/([^/]+)$")
+		return driver_name and driver_name:sub(1, 6) == "morse_"
+
+	end
+
+	local morse_no_otp = false
+	for dev in posix.dir("/sys/class/ieee80211/") do
+		if is_morse_dev(dev) then
+			local board_type_file = io.open("/sys/class/ieee80211/" .. dev .. "/device/board_type", "r")
+			if board_type_file then
+				local board_type = tonumber(board_type_file:read("*all"))
+				if board_type == 0 or board_type == 65535 then
+					morse_no_otp = true
+				end
+				board_type_file:close()
+			end
+		end
+	end
+
+	local languages = {en="English"}
+	local found_other_language = false
+	local uci_languages = uci_cursor:get_all("luci", "languages")
+
+	if uci_languages ~= nil then
+		for k, v in pairs(uci_languages) do
+			if string.find(k, "^%.") == nil then
+				found_other_language = true
+				languages[k] = v
+			end
+		end
+	end
+
+	local advanced_mode_toggle = uci_cursor:get("luci", "main", "advancedmodetoggle") == "1";
+
+	local user_configured = uci_cursor:get("luci", "wizard", "used") ~= nil;
+	local virtual_wire = luci.sys.process.exec(
+		{"/sbin/persistent_vars_storage.sh", "READ", "mm_virtual_wire"},
+		true
+	).stdout == "1\n";
+-%>
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+
+<head>
+	<meta charset="utf-8">
+	<title>
+		<%=striptags( (boardinfo.hostname or "?") .. ( (node and node.title) and ' - ' .. translate(node.title) or '')) %>
+		- LuCI</title>
+	<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+	<meta name="application-name" content="<%=striptags( (boardinfo.hostname or "?") ) %> - MM HaLow Device">
+	<link rel="apple-touch-icon" href="<%=media%>/icon/favicon-180x180.png">
+	<link rel="icon" type="image/png" sizes="192x192" href="<%=media%>/icon/logo-small.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="<%=media%>/icon/favicon-32x32.png">
+	<meta name="theme-color" content="#5e72e4">
+	<link rel="stylesheet" href="<%=media%>/css/normalize.8.0.1.min.css">
+	<link rel="stylesheet" href="<%=media%>/icon/icons.css">
+	<link rel="stylesheet" href="<%=media%>/css/cascade.css">
+	<!-- Disabled unless we check this <link rel="stylesheet" href="<%=media%>/css/dark.css"> -->
+	<% if node and node.css then %>
+	<link rel="stylesheet" href="<%=resource%>/<%=node.css%>">
+	<% end -%>
+	<% if css then %>
+		<style title="text/css"><%= css %></style>
+	<% end -%>
+	<script src="<%=url('admin/translations', luci.i18n.context.lang)%><%# ?v=PKG_VERSION %>"></script>
+	<script src="<%=resource%>/luci.js"></script>
+	<script src="<%=resource%>/cbi.js"></script>
+	<script>
+		window.advancedModeToggle = <% if advanced_mode_toggle then %>true<% else %>false<% end %>;
+	</script>
+</head>
+
+<body
+	class="lang_<%=luci.i18n.context.lang%> <% if node then %><%= striptags( node.title ) %><% end %> <% if luci.dispatcher.context.authsession then %>logged-in<% end %>"
+	data-page="<%= table.concat(disp.context.requestpath, "-") %>">
+	<% if not blank_page then %>
+	<div class="main">
+		<% if not wizard then %>
+		<div class="main-left" id="mainmenu">
+			<div class="sidenav-header d-flex align-items-center">
+				<a class="brand" href="/cgi-bin/luci/">
+					<img class="logo" src="<%=media%>/icon/logo-small.png" alt="Morse Micro">
+				</a>
+				<div class="ml-auto">
+					<!-- Sidenav toggler -->
+					<div class="sidenav-toggler d-none d-xl-block active" data-action="sidenav-unpin"
+						data-target="#sidenav-main">
+						<div class="sidenav-toggler-inner">
+							<i class="sidenav-toggler-line"></i>
+							<i class="sidenav-toggler-line"></i>
+							<i class="sidenav-toggler-line"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<% end -%>
+		<div class="main-right">
+			<%- if wizard then -%>
+			<header class="bg-primary wizard">
+				<div class="fill">
+						<div class="container wizard">
+							<img class="brand" src="<%=media%>/img/mm-logo-white-tagline.webp" alt="Morse Micro">
+							<div id="header-space" style="flex-grow: 1"></div>
+							<% if found_other_language then %>
+							<div class="languages">
+								<% local first = true %>
+								<% for k, v in pairs(languages) do %>
+										<a class="language-change" data-lang="<%=k%>"><%=v:match("^(%S*)")%></a>
+										<% if first then %>
+											|
+											<% first = false %>
+										<% end %>
+								<% end %>
+							</div>
+							<% end %>
+							<button class="close"></button>
+						</div>
+				</div>
+			</header>
+			<%- else -%>
+			<header class="bg-primary">
+				<div class="fill">
+						<div class="container">
+							<div class="flex1">
+								<a class="showSide"></a>
+								<a class="brand" href="#"></a>
+							</div>
+							<div class="status" id="indicators"></div>
+							<% if morse_dev then %>
+							<div class="mode-status">
+								<span data-style="active">
+									<a href="/cgi-bin/luci/admin/selectwizard">
+										<%=morse_mode_short_display%>
+									</a>
+								</span>
+							</div>
+							<% end %>
+							<% if found_other_language then %>
+							<div class="languages">
+								<% local first = true %>
+								<% for k, v in pairs(languages) do %>
+										<a class="language-change" data-lang="<%=k%>"><%=v:match("^(%S*)")%></a>
+										<% if first then %>
+											|
+											<% first = false %>
+										<% end %>
+								<% end %>
+							</div>
+							<% end %>
+						</div>
+				</div>
+			</header>
+			<%- end -%>
+			<div class="darkMask"></div>
+			<div id="maincontent">
+				<div class="container">
+					<%- if not wizard then %>
+						<%- if morse_dev and not morse_region then -%>
+							<div class="alert-message warning">
+								<h4><%: Region not set! %></h4>
+								<p><%: There is no region set for your morse interface. Please set your region first. %></p>
+							</div>
+						<%- end -%>
+						<%- if missing_password then -%>
+							<div id="password-warning" class="alert-message warning">
+								<h4><%:No password set!%></h4>
+								<p><%:There is no password set on this router. Please configure a root password to protect the web interface.%></p>
+								<div class="right"><a class="btn" href="<%=url("admin/system/admin")%>"><%:Go to password configuration...%></a></div>
+							</div>
+						<%- end -%>
+					<%- elseif missing_password then -%>
+						<%# This is a hack so that the landing page knows that there is a password missing, even though the warning won't be displayed. %>
+						<%# We don't solve this properly because we're maintaining some compatibility with morse-theme (for now). %>
+						<span id="password-warning"></span>
+					<%- end -%>
+					<%- if morse_dev and morse_no_otp and not morse_bcf then -%>
+						<div id="bcf-warning" class="alert-message warning">
+							<h4><%:BCF may not be appropriate!%></h4>
+							<p><%:The BCF file on this device must be specified via UCI as the board type isn't set in the OTP bits. Currently, your HaLow device is using the non-functional failsafe BCF.%></p>
+						</div>
+					<%- end -%>
+					<%- if virtual_wire and not user_configured then -%>
+						<div class="alert-message warning warning-virtualwire">
+							<h4>
+								<%:Virtual Wire Device%>
+							</h4>
+							<p>
+								<%:This device is a virtual wire kit.
+								Saving any configuration will disable virtual wire mode.
+								A factory reset will restore virtual wire mode.%>
+							</p>
+						</div>
+					<%- end -%>
+
+					<noscript>
+						<div class="alert-message error">
+							<h4><%:JavaScript required!%></h4>
+							<p><%:You must enable JavaScript in your browser or LuCI will not work properly.%></p>
+						</div>
+					</noscript>
+
+					<div id="tabmenu" style="display:none"></div>
+		<% end %>

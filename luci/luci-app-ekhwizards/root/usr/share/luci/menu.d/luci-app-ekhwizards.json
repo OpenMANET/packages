@@ -1,0 +1,75 @@
+{
+    "admin/morse/landing": {
+        "order": 2,
+        "action": {
+            "type": "template",
+            "path": "morse/landing"
+        }
+    },
+
+    "admin/ekhwizards": {
+        "title": "Wizards",
+        "order": 3,
+        "action": {
+            "type": "template",
+            "path": "morse/selectwizard",
+        },
+        "depends": {
+            "uci": { "wireless": { "@wifi-device": true } }
+        }
+    },
+
+    "admin/selectwizard": {
+        "action": {
+            "type": "alias",
+            "path": "admin/ekhwizards"
+        },
+        "depends": {
+            "uci": { "wireless": { "@wifi-device": true } }
+        }
+    },
+
+    "admin/morse/wizard": {
+        "order": 90,
+        "action": {
+            "type": "template",
+            "path": "morse/wizard",
+        },
+        "depends": {
+            "uci": { "wireless": { "@wifi-device": true } }
+        }
+    },
+
+    "admin/morse/meshwizard": {
+        "order": 91,
+        "action": {
+            "type": "template",
+            "path": "morse/meshwizard",
+        },
+        "depends": {
+            "uci": { "wireless": { "@wifi-device": true } }
+        }
+    },
+
+    "admin/morse/easymeshwizard": {
+        "order": 92,
+        "action": {
+            "type": "template",
+            "path": "morse/easymeshwizard",
+        },
+        "depends": {
+            "uci": { "wireless": { "@wifi-device": true } }
+        }
+    },
+
+    "admin/morse/matterwizard": {
+        "order": 92,
+        "action": {
+            "type": "template",
+            "path": "morse/matterwizard",
+        },
+        "depends": {
+            "uci": { "wireless": { "@wifi-device": true } }
+        }
+    }
+}

@@ -1,0 +1,211 @@
+:root {
+	--bottom-nav-height: 90px;
+	--max-content-width: 950px;
+	--box-shadow: #e0e2e4;
+	--box-shadow-highlight: #a0a2a4;
+}
+
+@media screen and (max-width: 450px) {
+	/* hide logo if screen not wide enough to display */
+	header .brand {
+		display: none;
+	}
+}
+
+header .close {
+	padding: 20px !important;
+	height: 30px;
+	cursor: pointer;
+}
+
+header .close::before,
+header .close::after {
+	content: "";
+	display: block;
+	margin-top: -4px;
+	width: 24px;
+	height: 4px;
+	background: white;
+	border-radius: 1px;
+}
+
+header .close::before {
+	transform:rotate(-45deg);
+}
+
+header .close::after {
+	transform:rotate(45deg);
+}
+
+header .close:hover {
+	color: var(--background-color-high);
+}
+
+/* Set up bottom nav bar for page actions.
+ */
+.cbi-page-actions {
+	padding: 0;
+	position: fixed;
+	right: 0; bottom: 0; left: 0;
+	z-index: 100;
+	margin-bottom: 0px;
+	height: var(--bottom-nav-height);
+	background-color: white;
+	box-shadow: 0 -2px 4px rgb(180, 180, 180, 0.5);
+}
+
+.cbi-page-actions .container {
+	/* There's some annoying code in the original CSS which selects
+	 * things that aren't like particular buttons.
+	 */
+	margin: auto !important;
+	float: none !important;
+	padding: 10px;
+	max-width: var(--max-content-width);
+}
+
+.cbi-page-actions-flex {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 10px;
+}
+
+.wizard-contents {
+	margin: auto;
+	margin-bottom: var(--bottom-nav-height);
+	max-width: var(--max-content-width);
+}
+
+.wizard-contents h1 {
+	font-size: 30px;
+}
+
+
+.header-section {
+	background-color: var(--background-color-high);
+	border-radius: 0.25rem;
+
+	p {
+		padding: 0 1rem;
+	}
+}
+
+/**
+ * Clean up close button.
+ */
+button.close {
+	padding: 5px;
+}
+
+button.close.hidden {
+	visibility: hidden;
+}
+
+button.close, button.close:focus, button.close:active, button.close:hover {
+	border: none;
+	outline: none;
+	box-shadow: none;
+	background-color: inherit;
+}
+
+/* Utility class which allows us to hide sections based on
+ * whether we're currently showing the section.
+ * We avoid 'hidden', because this is meaningful for LuCI's dependency calculations.
+ */
+.hidden-nav {
+	display: none !important;
+}
+
+/* Remove borders in mobile view, since we separate out with visibility.
+ */
+@media screen and (max-width: 600px) {
+	.cbi-section .cbi-value {
+		border-bottom: 0px;
+	}
+ }
+
+/* Taken from cbi-value-description styling */
+#maincontent .alert-message.notice:not(:empty)::before {
+	--help-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20'><path d='M10 0A10 10 0 000 10a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0010 0zm1 17H9v-2h2v2zm2.1-7.7l-.9.9c-.8.7-1.2 1.3-1.2 2.8H9v-.5c0-1.1.4-2.1 1.2-2.8l1.2-1.3c.4-.3.6-.8.6-1.4a2 2 0 00-2-2 2 2 0 00-2 2H6a4 4 0 014-4 4 4 0 014 4c0 .9-.4 1.7-.9 2.3z'/></svg>");
+
+	content: "\a0";
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	margin-right: .25em;
+	background: var(--primary-color-high);
+	mask-image: var(--help-icon);
+	mask-size: cover;
+	-webkit-mask-image: var(--help-icon);
+	-webkit-mask-size: cover;
+}
+
+.alert-message {
+	margin-top: 20px;
+	padding: 10px;
+}
+
+.alert-message p {
+	font-size: inherit;
+}
+
+.completion {
+	padding-top: 100px;
+	margin: auto;
+	text-align: center;
+
+	h1 {
+		font-size: 3rem;
+		box-shadow: none;
+		background: none;
+		color: black;
+	}
+
+	p {
+		font-size: 1.2rem;
+	}
+}
+
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(320px), 1fr));
+	grid-gap: 30px;
+	max-width: var(--max-content-width);
+	margin: auto;
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	height: 300px;
+	text-decoration: none;
+	color: inherit;
+	background-color: var(--background-color-high);
+	padding:  14px;
+	border-radius: 0.25rem;
+	box-shadow: 0 0 1rem 0 var(--box-shadow);
+	transition: box-shadow  0.3s ease-in-out;
+
+	h2, h3 {
+		padding: 0;
+	}
+}
+
+.card img {
+	display: block;
+	margin: auto;
+	flex-grow: 1;
+	max-height: 200px;
+	max-width: 400px;
+	padding: 20px;
+	width: 100%;
+}
+
+.card:hover, .card:visited, .card:active {
+	text-decoration: none;
+	box-shadow: 0 0 1rem 0 var(--box-shadow-highlight);
+}
+
+.card:hover {
+	transition: box-shadow  0.3s ease-in-out;
+}
