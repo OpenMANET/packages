@@ -29,6 +29,9 @@ define Build/Compile
 endef
 
 define Package/bsp-bcm271x/install
+	$(INSTALL_DIR) $(1)/etc/init.d/
+	$(INSTALL_BIN) $(CURDIR)/files/etc/init.d/* $(1)/etc/init.d/
+
 	$(INSTALL_DIR) $(1)/etc/board.d/
 	$(CP) ./files/board.d/* $(1)/etc/board.d/
 

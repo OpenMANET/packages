@@ -1,0 +1,125 @@
+#!/bin/sh /etc/rc.common
+START=21
+
+USE_PROCD=1
+NAME=init-gps-device
+
+# WM1302 Pi HAT + Quectel L76K(B)
+GPIO_RST=25       # GPS_RST (active high pulse)
+GPIO_WAKE=12      # GPS_WAKE_UP (high = standby, low = active)
+
+boot() {
+    device=$(get_gpsd_device)
+    if [ $? -ne 0 ] || [ -z "$device" ]; then
+        log "WARNING: GPS device not configured in /etc/config/gpsd"
+        device=""
+    else
+        log "GPS device: $device"
+    fi
+
+    # Check for Seeed Studio Morse WiFi device
+    check_morse_device
+    # Initialize the GPS GPIOs and reset the module
+    init_gps_gpio
+
+    # Configure serial port parameters
+    if [ -n "$device" ]; then
+        if [ ! -e "$device" ]; then
+            log "WARNING: $device does not exist, skipping stty"
+        else
+            stty -F "$device" 9600 cs8 -cstopb -parenb -ixon 2>/dev/null || log "stty failed on $device"
+        fi
+    fi
+
+    exit 0
+}
+
+export_gpio() {
+    local gpio="$1"
+    [ -d "/sys/class/gpio/gpio${gpio}" ] && return 0
+    echo "$gpio" > /sys/class/gpio/export 2>/dev/null || true
+}
+
+set_gpio_out() {
+    local gpio="$1"
+    export_gpio "$gpio"
+    echo "out" > "/sys/class/gpio/gpio${gpio}/direction" 2>/dev/null || true
+}
+
+set_gpio_val() {
+    local gpio="$1"
+    local val="$2"
+    echo "$val" > "/sys/class/gpio/gpio${gpio}/value" 2>/dev/null || true
+}
+
+get_gpsd_device() {
+    local device
+    device=$(uci -q get gpsd.core.device)
+    if [ -n "$device" ]; then
+        echo "$device"
+        return 0
+    else
+        return 1
+    fi
+}
+
+check_morse_device() {
+    local expected_path="platform/soc/fe204000.spi/spi_master/spi0/spi0.0"
+    local found=0
+
+    # Iterate through all wifi-device sections
+    config_load wireless
+    config_foreach check_morse_section wifi-device "$expected_path"
+
+    return 0
+}
+
+check_morse_section() {
+    local section="$1"
+    local expected_path="$2"
+    local device_type device_path
+
+    device_type=$(uci -q get wireless.${section}.type)
+    device_path=$(uci -q get wireless.${section}.path)
+
+    if [ "$device_type" = "morse" ]; then
+        if [ -z "$device_path" ]; then
+            log "morse wifi-device found but path does not exist"
+            exit 0
+        elif [ "$device_path" != "$expected_path" ]; then
+            log "morse wifi-device path does not match: got '$device_path', expected '$expected_path'"
+            exit 0
+        fi
+    fi
+}
+
+init_gps_gpio() {
+    log "configuring GPS GPIOs (RST=${GPIO_RST}, WAKE=${GPIO_WAKE})"
+
+    # Make sure both pins are outputs
+    set_gpio_out "$GPIO_RST"
+    set_gpio_out "$GPIO_WAKE"
+
+    # Ensure reset is low initially
+    set_gpio_val "$GPIO_RST" 0
+
+    # Wake GPS (WAKE low = active, high = standby)
+    set_gpio_val "$GPIO_WAKE" 0
+
+    # Short reset pulse: high for ~20ms, then low
+    log "pulsing GPS reset on GPIO${GPIO_RST}"
+    set_gpio_val "$GPIO_RST" 1
+    sleep 0.02
+    set_gpio_val "$GPIO_RST" 0
+
+    # Small Delay for Initialization
+    sleep 0.5
+
+    log "GPIO states:"
+    if [ -r "/sys/class/gpio/gpio${GPIO_RST}/value" ]; then
+        log "  GPIO${GPIO_RST} (RST)     = $(cat /sys/class/gpio/gpio${GPIO_RST}/value)"
+    fi
+    if [ -r "/sys/class/gpio/gpio${GPIO_WAKE}/value" ]; then
+        log "  GPIO${GPIO_WAKE} (WAKEUP) = $(cat /sys/class/gpio/gpio${GPIO_WAKE}/value)"
+    fi
+}
