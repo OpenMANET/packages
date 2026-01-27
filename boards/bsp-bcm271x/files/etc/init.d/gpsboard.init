@@ -11,10 +11,10 @@ GPIO_WAKE=12      # GPS_WAKE_UP (high = standby, low = active)
 boot() {
     device=$(get_gpsd_device)
     if [ $? -ne 0 ] || [ -z "$device" ]; then
-        log "WARNING: GPS device not configured in /etc/config/gpsd"
+        logger -t "$NAME" "WARNING: GPS device not configured in /etc/config/gpsd"
         device=""
     else
-        log "GPS device: $device"
+        logger -t "$NAME" "GPS device: $device"
     fi
 
     # Check for Seeed Studio Morse WiFi device
@@ -25,9 +25,9 @@ boot() {
     # Configure serial port parameters
     if [ -n "$device" ]; then
         if [ ! -e "$device" ]; then
-            log "WARNING: $device does not exist, skipping stty"
+            logger -t "$NAME" "WARNING: $device does not exist, skipping stty"
         else
-            stty -F "$device" 9600 cs8 -cstopb -parenb -ixon 2>/dev/null || log "stty failed on $device"
+            stty -F "$device" 9600 cs8 -cstopb -parenb -ixon 2>/dev/null || logger -t "$NAME" "stty failed on $device"
         fi
     fi
 
@@ -80,17 +80,17 @@ check_morse_section() {
 
     if [ "$device_type" = "morse" ]; then
         if [ -z "$device_path" ]; then
-            log "morse wifi-device found but path does not exist"
+            logger -t "$NAME" "morse wifi-device found but path does not exist"
             exit 0
         elif [ "$device_path" != "$expected_path" ]; then
-            log "morse wifi-device path does not match: got '$device_path', expected '$expected_path'"
+            logger -t "$NAME" "morse wifi-device path does not match: got '$device_path', expected '$expected_path'"
             exit 0
         fi
     fi
 }
 
 init_gps_gpio() {
-    log "configuring GPS GPIOs (RST=${GPIO_RST}, WAKE=${GPIO_WAKE})"
+    logger -t "$NAME" "configuring GPS GPIOs (RST=${GPIO_RST}, WAKE=${GPIO_WAKE})"
 
     # Kill any existing gpioset processes for these pins
     pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
@@ -99,22 +99,21 @@ init_gps_gpio() {
     # Set WAKE low (active) - persistent
     set_gpio_persistent "$GPIO_WAKE" 0
 
-    # Reset pulse sequence: set low, pulse high for 20ms, then back to low
+    # Reset pulse sequence: set low, pulse high, then back to low
     set_gpio_persistent "$GPIO_RST" 0
-    sleep 0.05
+    sleep 1
 
-    log "pulsing GPS reset on GPIO${GPIO_RST}"
+    logger -t "$NAME" "pulsing GPS reset on GPIO${GPIO_RST}"
     # Kill the persistent low, set high, then set low persistent again
     pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
     set_gpio_persistent "$GPIO_RST" 1
-    sleep 0.02
+    sleep 1
     pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
     set_gpio_persistent "$GPIO_RST" 0
 
     # Small Delay for Initialization
-    sleep 0.5
+    sleep 1
 
-    log "GPIO states:"
-    log "  GPIO${GPIO_RST} (RST)     = $(get_gpio_val ${GPIO_RST})"
-    log "  GPIO${GPIO_WAKE} (WAKEUP) = $(get_gpio_val ${GPIO_WAKE})"
-}
+    logger -t "$NAME" "GPIO states:"
+    logger -t "$NAME" "  GPIO${GPIO_RST} (RST)     = $(get_gpio_val ${GPIO_RST})"
+    logger -t "$NAME" "  GPIO${GPIO_WAKE} (WAKEUP) = $(get_gpio_val ${GPIO_WAKE})"
