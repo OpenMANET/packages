@@ -515,8 +515,6 @@ function setupBatmanInterfaceOnDevice(deviceName = 'bat0') {
 			}
 
 			uci.set('network', device['.name'], 'ports', ports);
-			// Enable IGMP snooping on the bridge.  This helps with multicast performance over batman-adv
-			uci.set('network', device['.name'], 'igmp_snooping', '1');
 			break;
 		}
 	}
