@@ -30,8 +30,9 @@ set_gpio_persistent() {
     local value="$2"
     # Use gpioset with daemonize to persist GPIO state
     # -c gpiochip0: specify the chip (GPIOs 0-57 are on gpiochip0)
+    # -C: set consumer name for identification in gpioinfo
     # -z: daemonize to keep GPIO state after exit (no & needed)
-    gpioset -c gpiochip0 -z "${gpio}=${value}" 2>/dev/null
+    gpioset -c gpiochip0 -C "gps-wm1302" -z "${gpio}=${value}" 2>/dev/null
 }
 
 get_gpio_val() {
