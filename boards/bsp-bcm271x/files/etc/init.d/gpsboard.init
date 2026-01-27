@@ -109,3 +109,4 @@ init_gps_gpio() {
     logger -t "$NAME" "GPIO states:"
     logger -t "$NAME" "  GPIO${GPIO_RST} (RST)     = $(get_gpio_val ${GPIO_RST})"
     logger -t "$NAME" "  GPIO${GPIO_WAKE} (WAKEUP) = $(get_gpio_val ${GPIO_WAKE})"
+}
