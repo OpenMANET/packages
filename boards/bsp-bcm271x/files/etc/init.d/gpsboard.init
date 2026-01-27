@@ -22,15 +22,6 @@ boot() {
     # Initialize the GPS GPIOs and reset the module
     init_gps_gpio
 
-    # Configure serial port parameters
-    if [ -n "$device" ]; then
-        if [ ! -e "$device" ]; then
-            logger -t "$NAME" "WARNING: $device does not exist, skipping stty"
-        else
-            stty -F "$device" 9600 cs8 -cstopb -parenb -ixon 2>/dev/null || logger -t "$NAME" "stty failed on $device"
-        fi
-    fi
-
     exit 0
 }
 
