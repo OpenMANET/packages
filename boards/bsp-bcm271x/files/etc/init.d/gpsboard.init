@@ -34,22 +34,18 @@ boot() {
     exit 0
 }
 
-export_gpio() {
+set_gpio_persistent() {
     local gpio="$1"
-    [ -d "/sys/class/gpio/gpio${gpio}" ] && return 0
-    echo "$gpio" > /sys/class/gpio/export 2>/dev/null || true
+    local value="$2"
+    # Use gpioset with daemonize to persist GPIO state
+    # -c gpiochip0: specify the chip (GPIOs 0-57 are on gpiochip0)
+    # -z: daemonize to keep GPIO state after exit (no & needed)
+    gpioset -c gpiochip0 -z "${gpio}=${value}" 2>/dev/null
 }
 
-set_gpio_out() {
+get_gpio_val() {
     local gpio="$1"
-    export_gpio "$gpio"
-    echo "out" > "/sys/class/gpio/gpio${gpio}/direction" 2>/dev/null || true
-}
-
-set_gpio_val() {
-    local gpio="$1"
-    local val="$2"
-    echo "$val" > "/sys/class/gpio/gpio${gpio}/value" 2>/dev/null || true
+    gpioget -c gpiochip0 "${gpio}" 2>/dev/null || echo "?"
 }
 
 get_gpsd_device() {
@@ -96,30 +92,29 @@ check_morse_section() {
 init_gps_gpio() {
     log "configuring GPS GPIOs (RST=${GPIO_RST}, WAKE=${GPIO_WAKE})"
 
-    # Make sure both pins are outputs
-    set_gpio_out "$GPIO_RST"
-    set_gpio_out "$GPIO_WAKE"
+    # Kill any existing gpioset processes for these pins
+    pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
+    pkill -f "gpioset.*${GPIO_WAKE}=" 2>/dev/null || true
 
-    # Ensure reset is low initially
-    set_gpio_val "$GPIO_RST" 0
+    # Set WAKE low (active) - persistent
+    set_gpio_persistent "$GPIO_WAKE" 0
 
-    # Wake GPS (WAKE low = active, high = standby)
-    set_gpio_val "$GPIO_WAKE" 0
+    # Reset pulse sequence: set low, pulse high for 20ms, then back to low
+    set_gpio_persistent "$GPIO_RST" 0
+    sleep 0.05
 
-    # Short reset pulse: high for ~20ms, then low
     log "pulsing GPS reset on GPIO${GPIO_RST}"
-    set_gpio_val "$GPIO_RST" 1
+    # Kill the persistent low, set high, then set low persistent again
+    pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
+    set_gpio_persistent "$GPIO_RST" 1
     sleep 0.02
-    set_gpio_val "$GPIO_RST" 0
+    pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
+    set_gpio_persistent "$GPIO_RST" 0
 
     # Small Delay for Initialization
     sleep 0.5
 
     log "GPIO states:"
-    if [ -r "/sys/class/gpio/gpio${GPIO_RST}/value" ]; then
-        log "  GPIO${GPIO_RST} (RST)     = $(cat /sys/class/gpio/gpio${GPIO_RST}/value)"
-    fi
-    if [ -r "/sys/class/gpio/gpio${GPIO_WAKE}/value" ]; then
-        log "  GPIO${GPIO_WAKE} (WAKEUP) = $(cat /sys/class/gpio/gpio${GPIO_WAKE}/value)"
-    fi
+    log "  GPIO${GPIO_RST} (RST)     = $(get_gpio_val ${GPIO_RST})"
+    log "  GPIO${GPIO_WAKE} (WAKEUP) = $(get_gpio_val ${GPIO_WAKE})"
 }
