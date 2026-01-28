@@ -17,7 +17,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
 GO_PKG:=github.com/openmanet/openmanetd
-GO_PKG_LDFLAGS_X:=cmd.Version=$(PKG_VERSION)
+GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd/cmd.Version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../lang/golang/golang-package.mk
