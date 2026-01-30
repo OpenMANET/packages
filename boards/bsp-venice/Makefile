@@ -17,7 +17,7 @@ define Package/bsp-venice
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET Venice board support package
-	DEPENDS:=+bsp-common +gpsd +kmod-thermal +kmod-hwmon-gsc
+	DEPENDS:=+bsp-common +gpsd +kmod-thermal +kmod-hwmon-gsc +ntpd
 endef
 
 define Package/bsp-venice/description
@@ -34,6 +34,9 @@ define Package/bsp-venice/install
 
 	$(INSTALL_DIR) $(1)/etc/config/
 	$(CP) ./files/config/* $(1)/etc/config/
+
+	$(INSTALL_DIR) $(1)/etc/ntpd.d/
+	$(CP) ./files/etc/ntpd.d/* $(1)/etc/ntpd.d
 endef
 
 $(eval $(call BuildPackage,bsp-venice))
