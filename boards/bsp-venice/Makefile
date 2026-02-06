@@ -35,6 +35,9 @@ define Package/bsp-venice/install
 	$(INSTALL_DIR) $(1)/etc/config/
 	$(CP) ./files/config/* $(1)/etc/config/
 
+	$(INSTALL_DIR) $(1)/etc/uci-defaults/
+	$(CP) ./files/etc/uci-defaults/* $(1)/etc/uci-defaults/
+
 	$(INSTALL_DIR) $(1)/etc/ntpd.d/
 	$(CP) ./files/etc/ntpd.d/* $(1)/etc/ntpd.d
 endef

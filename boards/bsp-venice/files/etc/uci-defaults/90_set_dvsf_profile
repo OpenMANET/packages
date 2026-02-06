@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set_powersave_cpu_profile() {
+    echo powersave > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+}
+
+set_powersave_cpu_profile
