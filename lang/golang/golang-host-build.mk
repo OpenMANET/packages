@@ -1,7 +1,9 @@
 #
 # Copyright (C) 2020, 2022 Jeffery To
 #
-# SPDX-License-Identifier: GPL-2.0-only
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 
 ifeq ($(origin GO_INCLUDE_DIR),undefined)
   GO_INCLUDE_DIR:=$(dir $(lastword $(MAKEFILE_LIST)))
