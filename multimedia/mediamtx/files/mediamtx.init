@@ -1,0 +1,87 @@
+#!/bin/sh /etc/rc.common
+
+START=90
+STOP=10
+
+USE_PROCD=1
+
+SERVICE=mediamtx
+
+error() {
+	logger -t "$SERVICE" "$@"
+}
+
+start_instance() {
+	local s="$1"
+	local conffile="/var/run/$SERVICE-$s.json"
+
+	# get options
+	# Having a port option enables that ability.
+	config_get api_address "$s" 'api_address' ''
+	config_get rtsp_address "$s" 'rtsp_address' ''
+	config_get webrtc_address "$s" 'webrtc_address' ''
+	config_get hls_address "$s" 'hls_address' ''
+	config_get rtmp_address "$s" 'rtmp_address' ''
+	config_get log_level "$s" 'log_level' 'info'
+
+	# Generate config file from options.
+	json_init
+
+	if [ -n "$api_address" ];  then
+		json_add_boolean "api" 1
+		json_add_string "apiAddress" "$api_address"
+	else
+		json_add_boolean "api" 0
+	fi
+
+	json_add_string "logLevel" "$log_level"
+
+	if [ -n "$rtsp_address" ];  then
+		json_add_boolean "rtsp" 1
+		json_add_string "rtspAddress" "$rtsp_address"
+	else
+		json_add_boolean "rtsp" 0
+	fi
+
+	if [ -n "$webrtc_address" ];  then
+		json_add_boolean "webrtc" 1
+		json_add_string "webrtcAddress" "$webrtc_address"
+	else
+		json_add_boolean "webrtc" 0
+	fi
+
+	if [ -n "$hls_address" ];  then
+		json_add_boolean "hls" 1
+		json_add_string "hlsAddress" "$hls_address"
+	else
+		json_add_boolean "hls" 0
+	fi
+
+	if [ -n "$rtmp_address" ];  then
+		json_add_boolean "rtmp" 1
+		json_add_string "rtmpAddress" "$rtmp_address"
+	else
+		json_add_boolean "rtmp" 0
+	fi
+
+	json_dump > "$conffile"
+
+	# procd stuff
+	procd_open_instance
+	# We don't need to watch the conffile, since mediamtx does that for us
+	# (and reloads when it changes).
+	procd_set_param command mediamtx "$conffile"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param respawn
+	procd_close_instance
+}
+
+start_service() {
+	config_load "$SERVICE"
+	config_foreach start_instance "$SERVICE"
+}
+
+service_triggers() {
+	procd_add_reload_trigger "$SERVICE"
+}

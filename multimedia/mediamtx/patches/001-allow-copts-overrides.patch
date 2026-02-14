@@ -1,0 +1,28 @@
+diff --git a/internal/protocols/rpicamera/exe/Makefile b/internal/protocols/rpicamera/exe/Makefile
+index d2a1901..16fbf3b 100644
+--- a/internal/protocols/rpicamera/exe/Makefile
++++ b/internal/protocols/rpicamera/exe/Makefile
+@@ -1,4 +1,4 @@
+-CFLAGS = \
++CFLAGS += \
+ 	-Ofast \
+ 	-Werror \
+ 	-Wall \
+@@ -7,7 +7,7 @@ CFLAGS = \
+ 	-Wno-unused-result \
+ 	$$(pkg-config --cflags freetype2)
+ 
+-CXXFLAGS = \
++CXXFLAGS += \
+ 	-Ofast \
+ 	-Werror \
+ 	-Wall \
+@@ -17,7 +17,7 @@ CXXFLAGS = \
+ 	-std=c++17 \
+ 	$$(pkg-config --cflags libcamera)
+ 
+-LDFLAGS = \
++LDFLAGS += \
+ 	-s \
+ 	-pthread \
+ 	$$(pkg-config --libs freetype2) \
