@@ -1,9 +1,7 @@
 #!/bin/sh
 # shellcheck disable=SC3043
 #
-# Author: Josh Enders <josh.enders@gmail.com>
-# License: CC BY-NC 4.0
-# https://gist.github.com/joshenders/1baa9de07c1b7af489f14c30d4667e40
+# Optimizations for UDP traffic.
 
 [ "${ACTION}" = "ifup" ] || exit 0
 
@@ -25,8 +23,7 @@ apply_settings() {
         feature=$(echo "${option}" | tr '_' '-')
         if [ -n "${value}" ]; then
             {
-                ethtool -K "${ifname}" "${feature}" "${value}" \
-                && log_info "${feature} set to ${value} on ${ifname}";
+                ethtool -K "${ifname}" "${feature}" "${value}"
             } || log_crit "Failed to set ${feature} to ${value} on ${ifname}"
         else
             log_crit "Failed to set ${feature} to ${value} on ${ifname}"
