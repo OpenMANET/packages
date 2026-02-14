@@ -1,0 +1,37 @@
+#!/bin/sh
+# shellcheck disable=SC3043
+#
+# Author: Josh Enders <josh.enders@gmail.com>
+# License: CC BY-NC 4.0
+# https://gist.github.com/joshenders/1baa9de07c1b7af489f14c30d4667e40
+
+[ "${ACTION}" = "ifup" ] || exit 0
+
+# shellcheck source=/dev/null
+. /lib/functions.sh
+
+config_load ethtool
+
+log_crit() { logger -t "$0" -p crit "$1"; }
+log_info() { logger -t "$0" -p info "$1"; }
+
+apply_settings() {
+    local config feature ifname option value
+    ifname="$1"
+    config=$(uci show ethtool."${ifname}" | sed -n "s/^ethtool.${ifname}\.\([^=]*\)=.*/\1/p")
+
+    for option in ${config}; do
+        config_get value "${ifname}" "${option}"
+        feature=$(echo "${option}" | tr '_' '-')
+        if [ -n "${value}" ]; then
+            {
+                ethtool -K "${ifname}" "${feature}" "${value}" \
+                && log_info "${feature} set to ${value} on ${ifname}";
+            } || log_crit "Failed to set ${feature} to ${value} on ${ifname}"
+        else
+            log_crit "Failed to set ${feature} to ${value} on ${ifname}"
+        fi
+    done
+}
+
+config_foreach apply_settings device

@@ -17,7 +17,7 @@ define Package/bsp-bcm271x
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET BCM271x board support package
-	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget
+	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +ethtool
 endef
 
 define Package/bsp-bcm271x/description
@@ -34,6 +34,12 @@ define Package/bsp-bcm271x/install
 
 	$(INSTALL_DIR) $(1)/etc/board.d/
 	$(CP) ./files/board.d/* $(1)/etc/board.d/
+
+	$(INSTALL_DIR) $(1)/etc/config/
+	$(CP) ./files/etc/config/* $(1)/etc/config/
+
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
+	$(CP) ./files/etc/hotplug.d/iface/* $(1)/etc/hotplug.d/iface/
 
 	$(INSTALL_DIR) $(1)/lib/firmware/morse/
 	$(CP) ./files/lib/firmware/morse/* $(1)/lib/firmware/morse/

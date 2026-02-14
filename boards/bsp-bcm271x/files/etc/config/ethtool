@@ -1,0 +1,3 @@
+config device 'eth0'
+        option rx_gro_list 'off'
+        option rx_udp_gro_forwarding 'on'
