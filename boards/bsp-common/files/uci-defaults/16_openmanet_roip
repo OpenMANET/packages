@@ -1,0 +1,18 @@
+#!/bin/sh
+# /etc/uci-defaults/16_openmanet_roip
+# Determine if we should enable or disable tailscale based on if the node is a mesh gate.
+
+# Get mesh_gate_announcements value from mesh11sd.mesh_params
+MESH_GATE=$(uci get mesh11sd.mesh_params.mesh_gate_announcements 2>/dev/null)
+
+if [ "$MESH_GATE" = "1" ]; then
+	# Enable and start tailscale
+	/etc/init.d/tailscale enable
+	/etc/init.d/tailscale start
+else
+	# Disable and stop tailscale
+	/etc/init.d/tailscale stop
+	/etc/init.d/tailscale disable
+fi
+
+exit 0
