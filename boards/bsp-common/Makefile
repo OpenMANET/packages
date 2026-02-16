@@ -30,9 +30,6 @@ endef
 define Package/bsp-common/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
 	$(CP) ./files/uci-defaults/* $(1)/etc/uci-defaults/
-
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
-	$(CP) ./files/hotplug.d/iface/* $(1)/etc/hotplug.d/iface/
 endef
 
 $(eval $(call BuildPackage,bsp-common))
