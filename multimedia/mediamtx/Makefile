@@ -10,8 +10,9 @@ PKG_NAME:=mediamtx
 PKG_VERSION:=1.16.1
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/bluenviron/mediamtx/tar.gz/v$(PKG_VERSION)?
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/bluenviron/mediamtx.git
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
 PKG_HASH:=skip
 
 PKG_BUILD_DEPENDS:=golang/host
@@ -19,7 +20,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/bluenviron/mediamtx
-GO_PKG_LDFLAGS_X:=$(GO_PKG)/internal/core.version=$(PKG_VERSION)
+GO_PKG_LDFLAGS_X:=github.com/bluenviron/mediamtx/internal/core.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
@@ -46,17 +47,19 @@ endef
 # GO_PKG_TAGS:=rpicamera
 # MAKE_PATH=internal/protocols/rpicamera/exe
 
-define Build/Compile
-	$(call Build/Compile/Default)
-	$(call GoPackage/Build/Compile)
+define Build/Configure
+	$(call GoPackage/Build/Configure,$(1))
+	$(call Build/Configure/Default,$(1))
 endef
 
 define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
+
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) files/mediamtx.init $(1)/etc/init.d/mediamtx
+	$(INSTALL_BIN) $(CURDIR)/files/mediamtx.init $(1)/etc/init.d/mediamtx
+
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) files/mediamtx.config $(1)/etc/config/mediamtx
+	$(INSTALL_CONF) $(CURDIR)/files/mediamtx.config $(1)/etc/config/mediamtx
 endef
 
 define Package/mediamtx/description
