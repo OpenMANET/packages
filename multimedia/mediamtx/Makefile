@@ -6,7 +6,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=mediamtx_openmanet
+PKG_NAME:=mediamtx
 PKG_VERSION:=1.16.1
 PKG_RELEASE:=1
 
@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/nls.mk
 # Original Makefile had this, but the Golang in our version doesn't seem to support it.
 # GO_MOD_ARGS:=-buildvcs=false
 
-define Package/mediamtx_openmanet
+define Package/mediamtx
   SECTION:=multimedia
   CATEGORY:=Multimedia
   TITLE:=MediaMTX
@@ -51,7 +51,7 @@ define Build/Compile
 	$(call GoPackage/Build/Compile)
 endef
 
-define Package/mediamtx_openmanet/install
+define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) files/mediamtx.init $(1)/etc/init.d/mediamtx
@@ -59,7 +59,7 @@ define Package/mediamtx_openmanet/install
 	$(INSTALL_CONF) files/mediamtx.config $(1)/etc/config/mediamtx
 endef
 
-define Package/mediamtx_openmanet/description
+define Package/mediamtx/description
   Ready-to-use server and proxy that allows users to publish, read and proxy live video and audio streams through various protocols.
 
   If libcamera is enabled, it will try to build its rpicamera support.
