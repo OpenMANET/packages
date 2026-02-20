@@ -33,7 +33,7 @@ define Package/mediamtx
   CATEGORY:=Multimedia
   TITLE:=MediaMTX
   URL:=https://github.com/bluenviron/mediamtx
-  DEPENDS=$(GO_ARCH_DEPENDS) +PACKAGE_libcamera:libcamera +PACKAGE_libcamera:libfreetype $(INTL_DEPENDS)
+  DEPENDS=$(GO_ARCH_DEPENDS) $(INTL_DEPENDS)
   MENU:=1
 endef
 
