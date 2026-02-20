@@ -6,7 +6,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=mediamtx
+PKG_NAME:=mediamtx_openmanet
 PKG_VERSION:=1.16.1
 PKG_RELEASE:=1
 
