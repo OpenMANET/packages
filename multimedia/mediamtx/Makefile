@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mediamtx
-PKG_VERSION:=1.16.1
+PKG_VERSION:=1.8.5
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
