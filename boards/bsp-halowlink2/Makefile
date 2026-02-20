@@ -23,11 +23,9 @@ endef
 define Package/bsp-halowlink2/description
 This package provides board support for the MorseMicro HaLow Link 2
 (morse,artini / MT7621). Includes:
-- HaLow Link 2 BCF (bcf_mm_hl2_ext.bin) with correct mm8108-mf15457
-  calibration data and US/AU/CA/EU/GB/JP regulatory domains
-- Updated MM8108 chip firmware (mm8108b2-rl.bin) from MorseMicro 2.11.8
-- Default channel 28 (916 MHz, 8 MHz BW)
+- Default channel 28 (916 MHz, 8 MHz BW) and BCF selection
 - SAE mesh fix: ieee80211w=0 and sae_pwe=0 in morse_overrides.sh
+Note: BCF and chip firmware are provided by morse-fw-8108 from morse-feed.
 endef
 
 define Build/Compile
@@ -40,10 +38,6 @@ define Package/bsp-halowlink2/install
 
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/etc/init.d/* $(1)/etc/init.d/
-
-	$(INSTALL_DIR) $(1)/lib/firmware/morse/
-	$(INSTALL_DATA) ./files/lib/firmware/morse/bcf_mm_hl2_ext.bin $(1)/lib/firmware/morse/
-	$(INSTALL_DATA) ./files/lib/firmware/morse/mm8108b2-rl.bin $(1)/lib/firmware/morse/
 endef
 
 $(eval $(call BuildPackage,bsp-halowlink2))
