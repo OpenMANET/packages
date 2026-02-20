@@ -29,7 +29,13 @@ PKG_BUILD_FLAGS:=no-mips16
 GO_PKG:=tailscale.com/cmd/tailscaled
 GO_PKG_LDFLAGS:=-X 'tailscale.com/version.longStamp=$(PKG_VERSION)-$(PKG_RELEASE) (OpenWrt)'
 GO_PKG_LDFLAGS_X:=tailscale.com/version.shortStamp=$(PKG_VERSION)
-GO_PKG_TAGS:=ts_include_cli,ts_omit_aws,ts_omit_bird,ts_omit_completion,ts_omit_kube,ts_omit_systray,ts_omit_taildrop,ts_omit_tap,ts_omit_tpm
+
+# If arch is mipsel, we need to set custom tags
+ifeq ($(GOARCH),mipsel)
+  GO_PKG_TAGS+=ts_include_cli,ts_omit_aws,ts_omit_bird,ts_omit_completion,ts_omit_kube,ts_omit_systray,ts_omit_taildrop,ts_omit_tap,ts_omit_tpm,ts_omit_captiveportal,ts_omit_capture,ts_omit_appconnectors,ts_omit_clientmetrics,ts_omit_clientupdate,ts_omit_desktop_sessions,ts_omit_drive,ts_omit_logtail,ts_omit_outboundproxy,ts_omit_netlog,ts_omit_qrcodes,ts_omit_synology,ts_omit_syspolicy,ts_omit_usermetrics,ts_omit_wakeonlan,ts_omit_webbrowser,ts_omit_webclient,ts_omit_serve,ts_omit_webclient,ts_omit_desktop_sessions
+else
+  GO_PKG_TAGS:=ts_include_cli,ts_omit_aws,ts_omit_bird,ts_omit_completion,ts_omit_kube,ts_omit_systray,ts_omit_taildrop,ts_omit_tap,ts_omit_tpm
+endif
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
