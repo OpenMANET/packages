@@ -50,7 +50,6 @@ define Build/Compile
 	$(call Build/Compile/Default)
 	$(call GoPackage/Build/Compile)
 endef
-endif
 
 define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
