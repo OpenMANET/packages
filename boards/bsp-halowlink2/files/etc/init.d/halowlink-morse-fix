@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+
+# HaLow Link 2 SAE mesh fix:
+# Morse driver reports PMF:0 for mesh mode (kernel 6.6 mac80211 doesn't
+# expose MFP_CAPABLE). ieee80211w>0 causes "Mesh RSN: frame verification
+# failed!" and SAE auth failure. Patch morse_overrides.sh at boot.
+
+START=19
+
+start() {
+	local overrides="/lib/netifd/morse/morse_overrides.sh"
+	[ -f "$overrides" ] || return 0
+
+	# Fix sae_pwe default: use 0 (hunting-and-pecking) instead of 1 (H2E only)
+	sed -i 's/set_default sae_pwe 1/set_default sae_pwe 0/' "$overrides"
+
+	# Fix ieee80211w for mesh: disable PMF (0) for mesh mode only
+	# Replace the simple "set_default ieee80211w 2" for sae with mesh-aware version
+	if ! grep -q '_w_mode.*mesh.*ieee80211w' "$overrides"; then
+		sed -i '/sae|owe|eap2|eap192)/{
+			n
+			/set_default ieee80211w 2/{
+				c\			# HaLow Link 2: disable PMF for mesh (driver reports PMF:0)\
+			if [ "$_w_mode" = "mesh" ]; then\
+				set_default ieee80211w 0\
+			else\
+				set_default ieee80211w 2\
+			fi
+			}
+		}' "$overrides"
+	fi
+}
