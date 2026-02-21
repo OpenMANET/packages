@@ -1,0 +1,16 @@
+OpenWrt replaces xxd with a simple perl implementation that doesn't
+understand longopts.
+
+diff --git a/internal/protocols/rpicamera/exe/Makefile b/internal/protocols/rpicamera/exe/Makefile
+index d2a1901..987d87f 100644
+--- a/internal/protocols/rpicamera/exe/Makefile
++++ b/internal/protocols/rpicamera/exe/Makefile
+@@ -37,7 +37,7 @@ OBJS = \
+ all: exe
+ 
+ text_font.h: text_font.ttf
+-	xxd --include $< > text_font.h
++	xxd -i $< > text_font.h
+ 
+ %.o: %.c text_font.h
+ 	$(CC) $(CFLAGS) -c $< -o $@

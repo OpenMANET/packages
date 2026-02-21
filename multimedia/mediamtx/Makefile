@@ -34,7 +34,7 @@ define Package/mediamtx
   CATEGORY:=Multimedia
   TITLE:=MediaMTX
   URL:=https://github.com/bluenviron/mediamtx
-  DEPENDS=$(GO_ARCH_DEPENDS) $(INTL_DEPENDS)
+  DEPENDS=$(GO_ARCH_DEPENDS) +PACKAGE_libcamera:libcamera +PACKAGE_libcamera:libfreetype $(INTL_DEPENDS)
   MENU:=1
 endef
 
@@ -43,9 +43,9 @@ endef
 # Ideally, we'd have a separate config option, but if you define that option
 # inside this package we seem to end up with some kind of recursive dependency
 # issue as our dependencies are enabled by this as well.
-# ifeq ($(CONFIG_PACKAGE_libcamera),y)
-# GO_PKG_TAGS:=rpicamera
-# MAKE_PATH=internal/protocols/rpicamera/exe
+ifeq ($(CONFIG_PACKAGE_libcamera),y)
+GO_PKG_TAGS:=rpicamera
+MAKE_PATH=internal/protocols/rpicamera/exe
 
 define Build/Configure
 	$(call GoPackage/Build/Configure,$(1))
