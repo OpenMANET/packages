@@ -35,7 +35,7 @@ configure_custom_feeds() {
     local target_feed_url="https://openmanet.github.io/packages-repo/${DISTRIB_RELEASE}/targets/${DISTRIB_TARGET}"
 
     # List of feed names to configure
-    local feeds="luci openmanet packages routing telephony"
+    local feeds="openmanet"
 
     # Create or clear the custom feeds file
     > "$feeds_conf"
