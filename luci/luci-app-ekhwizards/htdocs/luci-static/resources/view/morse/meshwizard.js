@@ -439,7 +439,6 @@ return wizard.AbstractWizardView.extend({
 
 		option = page.option(widgets.WifiFrequencyValue, '_freq', '<br />' + _('Operating Frequency'));
 		option.ucisection = morseDeviceName;
-		option.disableACS = true;
 		option.rmempty = false;
 		option.retain = true;
 
