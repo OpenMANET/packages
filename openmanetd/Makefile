@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=1.2.2
+PKG_VERSION:=1.2.3
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -31,7 +31,7 @@ define Package/openmanetd
   TITLE:=OpenMANET Manager
   DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +libc @IPV6 +libnl-tiny +librt \
 		+portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio \
-		+kmod-sound-core +libopusfile +gpsd
+		+kmod-sound-core +libopusfile +gpsd +hidapi
 endef
 
 define Package/openmanetd/description
