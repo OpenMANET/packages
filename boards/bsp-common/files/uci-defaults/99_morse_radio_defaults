@@ -26,8 +26,9 @@ fix_bcf_default() {
 		morse,ekh04v6)
 			bcf=bcf_ekh04_v6.bin
 		;;
-		morse,artini)
-			bcf=bcf_mm_hl1.bin
+		morse,halowlink2)
+			bcf=bcf_mm_hl2_ext.bin
+			channel=28
 		;;
 		morse,ekh01-01)
 			bcf=bcf_mf15457.bin
@@ -58,6 +59,7 @@ fix_bcf_default() {
 	[ -z "$bcf" ] && return 0
 
 	uci -q set wireless."${config}".bcf="${bcf}"
+	[ -n "$channel" ] && uci -q set wireless."${config}".channel="${channel}"
 
 }
 
