@@ -17,10 +17,8 @@ alfred:
     addressReservation: true
 ptt:
   enable: false
-  mcastAddr: 224.0.0.1
   mcastPort: 5007
-  pttKey: any
   debug: true
-  loopback: true
-  pttDevice: /dev/hidraw0/*
-  pttDeviceName: Generic AB13X USB Audio
+  loopback: false
+  protocol: rtp
+  controlSource: cm108
