@@ -15,10 +15,17 @@ alfred:
     node: true
     position: true
     addressReservation: true
-ptt:
+comms:
   enable: false
-  mcastPort: 5007
-  debug: true
-  loopback: false
   protocol: rtp
+  debug: false
   controlSource: cm108
+  nanoPTT:
+    enable: false
+    devicePath: /dev/hidraw0/*
+    deviceName: Generic AB13X USB Audio
+  bluetoothPtt:
+    enable: false
+    BluetoothAudioDeviceHint: ""
+    BluetoothInputDevice: ""
+    BluetoothOutputDevice: ""
