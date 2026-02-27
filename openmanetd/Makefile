@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=1.2.12
+PKG_VERSION:=1.2.13
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -18,11 +18,6 @@ PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
 GO_PKG:=github.com/openmanet/openmanetd
 GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd.version=$(PKG_VERSION)
-
-# Omit comms support on mipsel, the hardware won't support it.
-ifeq ($(GOARCH),mipsel)
-GO_PKG_TAGS:=omd_omit_comms
-endif
 
 include $(INCLUDE_DIR)/package.mk
 include ../lang/golang/golang-package.mk
