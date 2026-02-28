@@ -46,6 +46,7 @@ endef
 ifeq ($(CONFIG_PACKAGE_libcamera),y)
 GO_PKG_TAGS:=rpicamera
 MAKE_PATH=internal/protocols/rpicamera/exe
+endif
 
 define Build/Configure
 	$(call GoPackage/Build/Configure,$(1))
