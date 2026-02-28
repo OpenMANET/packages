@@ -1,19 +1,12 @@
-#
-# Copyright 2023 Morse Micro
-#
-# This is free software, licensed under the Apache License, Version 2.0.
-#
-
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mediamtx
-PKG_VERSION:=1.8.5
-PKG_RELEASE:=1
+PKG_VERSION:=1.4.0
+PKG_RELEASE:=2
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/bluenviron/mediamtx
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_HASH:=skip
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/bluenviron/mediamtx/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=8360d5e0337df599efb7a4200956caf59870965019140f976aba53673e81dc50
 
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
@@ -47,14 +40,15 @@ ifeq ($(CONFIG_PACKAGE_libcamera),y)
 GO_PKG_TAGS:=rpicamera
 MAKE_PATH=internal/protocols/rpicamera/exe
 
-define Build/Configure
-	$(call GoPackage/Build/Configure,$(1))
-	$(call Build/Configure/Default,$(1))
+define Build/Compile
+	$(call Build/Compile/Default)
+	$(call GoPackage/Build/Compile)
 endef
+
+endif
 
 define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
-
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(CURDIR)/files/mediamtx.init $(1)/etc/init.d/mediamtx
 
