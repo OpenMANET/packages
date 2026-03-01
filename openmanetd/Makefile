@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=1.2.15
+PKG_VERSION:=1.2.16
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -17,6 +17,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
 GO_PKG:=github.com/openmanet/openmanetd
+GO_PKG_LDFLAGS:=-s -w
 GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -56,6 +57,12 @@ define Package/openmanetd/conffiles
 endef
 
 define Package/openmanetd/install
+	# Strip and upx the binary if we're building for mipsel
+	# This will compress the binary on mipsel hardware
+	ifeq ($(GOARCH),mipsle)
+    	upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/$(PKG_NAME) || true
+  	endif
+
 	$(call GoPackage/Package/Install/Bin,$(1))
 
 	$(INSTALL_DIR) $(1)/etc/openmanetd/
