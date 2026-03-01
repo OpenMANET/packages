@@ -56,9 +56,9 @@ endef
 
 define Package/tailscale/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
-  ifeq ($(GOARCH),mipsle)
-    upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/tailscaled || true
-  endif
+	if [ "$(GOARCH)" = "mipsle" ]; then \
+		upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/$(PKG_NAME) || true; \
+	fi
 	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/tailscaled $(1)/usr/sbin
 	$(LN) tailscaled $(1)/usr/sbin/tailscale
 	$(INSTALL_BIN) ./files//tailscale.init $(1)/etc/init.d/tailscale

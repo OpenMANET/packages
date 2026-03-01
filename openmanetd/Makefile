@@ -59,9 +59,9 @@ endef
 define Package/openmanetd/install
 	# Strip and upx the binary if we're building for mipsel
 	# This will compress the binary on mipsel hardware
-	ifeq ($(GOARCH),mipsle)
-		upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/$(PKG_NAME) || true
-	endif
+	if [ "$(GOARCH)" = "mipsle" ]; then \
+		upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/$(PKG_NAME) || true; \
+	fi
 
 	$(call GoPackage/Package/Install/Bin,$(1))
 
