@@ -302,7 +302,7 @@ function setDefaultWanFirewallRules(zone) {
 	sid = uci.add('firewall', 'rule');
 	uci.set('firewall', sid, 'name', 'Allow Incoming Comms');
 	uci.set('firewall', sid, 'src', '*');
-	uci.set('firewall', sid, 'dest_ip', '225.41.1.1');
+	uci.set('firewall', sid, 'dest_ip', '239.192.41.1');
 	uci.set('firewall', sid, 'dest', '*');
 	uci.set('firewall', sid, 'dest_port', '33801-38864');
 	uci.set('firewall', sid, 'proto', 'udp');
