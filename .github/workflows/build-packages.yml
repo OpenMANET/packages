@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: OpenMANET/firmware
-          ref: 24.10
+          ref: "24.10"
           path: firmware
           sparse-checkout: feeds.conf.default
           sparse-checkout-cone-mode: false
