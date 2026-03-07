@@ -1,25 +1,19 @@
-#
-# Copyright 2023 Morse Micro
-#
-# This is free software, licensed under the Apache License, Version 2.0.
-#
-
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mediamtx
-PKG_VERSION:=1.16.1
-PKG_RELEASE:=1
+PKG_VERSION:=1.4.0
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/bluenviron/mediamtx/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=skip
+PKG_HASH:=8360d5e0337df599efb7a4200956caf59870965019140f976aba53673e81dc50
 
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/bluenviron/mediamtx
-GO_PKG_LDFLAGS_X:=$(GO_PKG)/internal/core.version=$(PKG_VERSION)
+GO_PKG_LDFLAGS_X:=github.com/bluenviron/mediamtx/internal/core.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
@@ -42,22 +36,24 @@ endef
 # Ideally, we'd have a separate config option, but if you define that option
 # inside this package we seem to end up with some kind of recursive dependency
 # issue as our dependencies are enabled by this as well.
-# ifeq ($(CONFIG_PACKAGE_libcamera),y)
-# GO_PKG_TAGS:=rpicamera
-# MAKE_PATH=internal/protocols/rpicamera/exe
+ifeq ($(CONFIG_PACKAGE_libcamera),y)
+GO_PKG_TAGS:=rpicamera
+MAKE_PATH=internal/protocols/rpicamera/exe
 
 define Build/Compile
 	$(call Build/Compile/Default)
 	$(call GoPackage/Build/Compile)
 endef
+
 endif
 
 define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) files/mediamtx.init $(1)/etc/init.d/mediamtx
+	$(INSTALL_BIN) $(CURDIR)/files/mediamtx.init $(1)/etc/init.d/mediamtx
+
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) files/mediamtx.config $(1)/etc/config/mediamtx
+	$(INSTALL_CONF) $(CURDIR)/files/mediamtx.config $(1)/etc/config/mediamtx
 endef
 
 define Package/mediamtx/description

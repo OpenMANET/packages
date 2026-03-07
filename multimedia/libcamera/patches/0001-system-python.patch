@@ -1,0 +1,25 @@
+The meson check for the modules that we install fails due to using host/bin/python3
+instead of hostpkg/bin/python3. However, when the build actually calls python,
+it uses hostpkg. I tried to solve this by pointing find_installation at the hostpkg
+version explicitly (i.e. find_installation(get_option('python')...)) after
+adding the appropriate option, and it reported that it was using this Python
+then still use the other Python for the library detection.
+
+In short, for now, let's just remove the check. If this is incorrect,
+the build will fail.
+
+diff --git a/meson.build b/meson.build
+index 031e1eda..fffa702f 100644
+--- a/meson.build
++++ b/meson.build
+@@ -253,10 +253,6 @@ run_command('ln', '-fsT', meson.project_source_root(), meson.project_build_root(
+ 
+ configure_file(output : 'config.h', configuration : config_h)
+ 
+-# Check for python installation and modules.
+-py_mod = import('python')
+-py_mod.find_installation('python3', modules : py_modules)
+-
+ ## Summarise Configurations
+ summary({
+             'Enabled pipelines': pipelines,
