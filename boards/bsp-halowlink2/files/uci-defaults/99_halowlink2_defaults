@@ -1,0 +1,51 @@
+#!/bin/sh
+# HaLow Link 2 board defaults: channel 28 (916 MHz, 8 MHz BW), BCF, and LEDs
+
+. /lib/functions.sh
+
+set_halowlink2_defaults() {
+	local config="$1"
+	local type
+
+	config_get type "$config" type
+	[ "morse" = "$type" ] || return 0
+
+	uci -q set wireless."${config}".channel='28'
+	uci -q set wireless."${config}".bcf='bcf_mm_hl2_ext.bin'
+}
+
+board=$(board_name)
+[ "$board" = "morse,halowlink2" ] || exit 0
+
+config_load wireless
+config_foreach set_halowlink2_defaults wifi-device
+uci commit wireless
+
+# Configure RGB LED colors to match stock MorseMicro firmware
+# led0 = WiFi (green), led1 = Status (green heartbeat), led2 = HaLow (light purple)
+uci batch <<'EOF'
+set system.led_wifi=led
+set system.led_wifi.sysfs='rgb:led0'
+set system.led_wifi.trigger='netdev'
+set system.led_wifi.dev='phy1-ap0'
+set system.led_wifi.mode='tx rx'
+set system.led_wifi.color_red='0'
+set system.led_wifi.color_green='255'
+set system.led_wifi.color_blue='0'
+set system.led_status=led
+set system.led_status.sysfs='rgb:led1'
+set system.led_status.trigger='default-on'
+set system.led_status.default='1'
+set system.led_status.color_red='0'
+set system.led_status.color_green='255'
+set system.led_status.color_blue='0'
+set system.led_halow=led
+set system.led_halow.sysfs='rgb:led2'
+set system.led_halow.trigger='netdev'
+set system.led_halow.dev='wlan0'
+set system.led_halow.mode='link'
+set system.led_halow.color_red='255'
+set system.led_halow.color_green='0'
+set system.led_halow.color_blue='127'
+EOF
+uci commit system
