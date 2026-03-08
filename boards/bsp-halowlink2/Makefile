@@ -37,6 +37,9 @@ define Package/bsp-halowlink2/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
 	$(CP) ./files/uci-defaults/* $(1)/etc/uci-defaults/
 
+	$(INSTALL_DIR) $(1)/etc/board.d/
+	$(INSTALL_BIN) ./files/board.d/* $(1)/etc/board.d/
+
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/etc/init.d/* $(1)/etc/init.d/
 
