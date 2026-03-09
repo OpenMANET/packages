@@ -1,0 +1,17 @@
+#!/bin/sh
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case "$board" in
+morse,halowlink2)
+	ucidef_set_interfaces_lan_wan "usblan lan" "wan"
+	;;
+esac
+
+board_config_flush
+
+exit 0

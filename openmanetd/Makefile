@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=comms
+PKG_VERSION:=firmware-1.7.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
