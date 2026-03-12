@@ -33,6 +33,7 @@ start() {
 
 	[ -f /lib/netifd/morse/morse_overrides.sh ] || return 0
 
-	sed -i 's/"set_default sae_pwe 1"/"set_default sae_pwe 0"/g' /lib/netifd/morse/morse_overrides.sh
-	sed -i 's/set_default ieee80211w 2/[ "$mode" = mesh ] \&\& set_default ieee80211w 0 || set_default ieee80211w 2/g' /lib/netifd/morse/morse_overrides.sh
+	sed -i 's/set_default sae_pwe 1/set_default sae_pwe 0/g' /lib/netifd/morse/morse_overrides.sh
+	sed -i 's/set_default ieee80211w 2/set_default ieee80211w 0/g' /lib/netifd/morse/morse_overrides.sh
+	sed -i 's/set_default ieee80211w 1/set_default ieee80211w 0/g' /lib/netifd/morse/morse_overrides.sh
 }
