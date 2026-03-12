@@ -26,14 +26,3 @@ boot() {
 	fi
 }
 
-start() {
-	# Fix for kernel 6.6 mac80211 limitation: Morse driver doesn't expose MFP capabilities
-	# for mesh networks, which causes SAE auth to fail. Set ieee80211w=0 for mesh mode
-	# and ieee80211w=2 for other modes (AP). Also set sae_pwe=0 for compatibility.
-
-	[ -f /lib/netifd/morse/morse_overrides.sh ] || return 0
-
-	sed -i 's/set_default sae_pwe 1/set_default sae_pwe 0/g' /lib/netifd/morse/morse_overrides.sh
-	sed -i 's/set_default ieee80211w 2/set_default ieee80211w 0/g' /lib/netifd/morse/morse_overrides.sh
-	sed -i 's/set_default ieee80211w 1/set_default ieee80211w 0/g' /lib/netifd/morse/morse_overrides.sh
-}
