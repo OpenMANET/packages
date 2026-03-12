@@ -11,7 +11,7 @@ set_ht_hd01_defaults() {
 	[ "morse" = "$type" ] || return 0
 
 	uci -q set wireless."${config}".channel='28'
-	uci -q set wireless."${config}".bcf='bcf_mf08551.bin'
+	uci -q set wireless."${config}".bcf='bcf_HD01_v2.bin'
 }
 
 board=$(board_name)
