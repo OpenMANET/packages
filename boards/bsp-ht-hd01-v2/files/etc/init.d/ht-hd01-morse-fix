@@ -26,28 +26,3 @@ boot() {
 	fi
 }
 
-start() {
-	# Patch morse_overrides.sh for mesh SAE compatibility
-	# Must match gate device settings (ieee80211w=0, sae_pwe=0)
-	local overrides="/lib/netifd/morse/morse_overrides.sh"
-	[ -f "$overrides" ] || return 0
-
-	# Fix sae_pwe default: use 0 (hunting-and-pecking) instead of 1 (H2E only)
-	sed -i 's/set_default sae_pwe 1/set_default sae_pwe 0/' "$overrides"
-
-	# Fix ieee80211w for mesh: disable PMF (0) for mesh mode only
-	if ! grep -q '_w_mode.*mesh.*ieee80211w' "$overrides"; then
-		sed -i '/sae|owe|eap2|eap192)/{
-			n
-			/set_default ieee80211w 2/{
-				c\			# HT-HD01 V2: disable PMF for mesh (driver reports PMF:0)\
-			if [ "$_w_mode" = "mesh" ]; then\
-				set_default ieee80211w 0\
-			else\
-				set_default ieee80211w 2\
-			fi
-			}
-		}' "$overrides"
-	fi
-}
-
