@@ -1,0 +1,18 @@
+#!/bin/sh
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case "$board" in
+heltec,ht-hd01-v1)
+	# Single ethernet port, no WAN
+	ucidef_set_interfaces_lan_wan "eth0" ""
+	;;
+esac
+
+board_config_flush
+
+exit 0
