@@ -1,5 +1,5 @@
 #!/bin/sh
-# HaLow Link 2 board defaults: channel 28 (916 MHz, 8 MHz BW), BCF, and LEDs
+# HaLow Link 2 board defaults: BCF and LEDs
 
 . /lib/functions.sh
 
@@ -10,7 +10,6 @@ set_halowlink2_defaults() {
 	config_get type "$config" type
 	[ "morse" = "$type" ] || return 0
 
-	uci -q set wireless."${config}".channel='28'
 	uci -q set wireless."${config}".bcf='bcf_mm_hl2_ext.bin'
 }
 
