@@ -425,7 +425,7 @@ return wizard.AbstractWizardView.extend({
 		option.onchange = function () {
 			thisWizardView.onchangeOptionUpdateDiagram(this);
 		};
-		option.load = sectionId => uci.get('wireless', sectionId, 'mesh_id') || morseuci.getDefaultSSID();
+		option.load = sectionId => uci.get('wireless', sectionId, 'mesh_id') || 'openmanet';
 		option.forcewrite = true; // Required since our load doesn't reflect uci.
 
 		option = page.option(form.Value, 'key', _('Mesh Passphrase'));
@@ -434,7 +434,7 @@ return wizard.AbstractWizardView.extend({
 		option.rmempty = false;
 		option.retain = true;
 		option.load = sectionId =>
-			(initialMorseMode === 'mesh' && uci.get('wireless', sectionId, 'key')) || morseuci.getDefaultWifiKey();
+			(initialMorseMode === 'mesh' && uci.get('wireless', sectionId, 'key')) || 'changeme123';
 		option.forcewrite = true; // Required since our load doesn't reflect uci.
 
 		option = page.option(widgets.WifiFrequencyValue, '_freq', '<br />' + _('Operating Frequency'));

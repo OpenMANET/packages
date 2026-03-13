@@ -50,6 +50,7 @@ fix_bcf_default() {
 		;;
 	esac
 
+	uci -q set wireless."${config}".channel='42'
 	uci -q set wireless."${config}".enable_mcast_whitelist=0
 	uci -q set wireless."${config}".enable_mcast_rate_control=1
 	uci -q set wireless."${config}".country='US'
