@@ -1,5 +1,5 @@
 #!/bin/sh
-# HaLow Link 2 board defaults: channel 28 (916 MHz, 8 MHz BW), BCF, and LEDs
+# HaLow Link 2 board defaults: BCF and LEDs
 
 . /lib/functions.sh
 
@@ -10,7 +10,6 @@ set_halowlink2_defaults() {
 	config_get type "$config" type
 	[ "morse" = "$type" ] || return 0
 
-	uci -q set wireless."${config}".channel='28'
 	uci -q set wireless."${config}".bcf='bcf_mm_hl2_ext.bin'
 }
 
@@ -19,6 +18,15 @@ board=$(board_name)
 
 config_load wireless
 config_foreach set_halowlink2_defaults wifi-device
+
+# Set WiFi SSID and password for all radios
+for radio in radio0 radio1; do
+	uci -q get wireless."$radio" || continue
+	uci -q set wireless."$radio".disabled='0'
+	uci -q set wireless.default_"$radio".ssid='openmanet'
+	uci -q set wireless.default_"$radio".key='openmanet'
+done
+
 uci commit wireless
 
 # Configure RGB LED colors to match stock MorseMicro firmware

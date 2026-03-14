@@ -1,0 +1,41 @@
+#!/bin/sh
+# Heltec HT-HD01 V2 board defaults: BCF and LED
+
+. /lib/functions.sh
+
+set_ht_hd01_defaults() {
+	local config="$1"
+	local type
+
+	config_get type "$config" type
+	[ "morse" = "$type" ] || return 0
+
+	uci -q set wireless."${config}".bcf='bcf_HD01_v2.bin'
+}
+
+board=$(board_name)
+[ "$board" = "heltec,ht-hd01-v2" ] || exit 0
+
+config_load wireless
+config_foreach set_ht_hd01_defaults wifi-device
+
+# Set 2.4 GHz WiFi SSID and password
+for radio in radio0 radio1; do
+	type="$(uci -q get wireless."$radio".type)"
+	[ "$type" = "mac80211" ] || continue
+	uci -q set wireless."$radio".disabled='0'
+	uci -q set wireless.default_"$radio".ssid='openmanet'
+	uci -q set wireless.default_"$radio".encryption='psk2'
+	uci -q set wireless.default_"$radio".key='openmanet'
+done
+
+uci commit wireless
+
+# Configure status LED
+uci batch <<'EOF'
+set system.led_status=led
+set system.led_status.sysfs='fuchsia:status'
+set system.led_status.trigger='default-on'
+set system.led_status.default='1'
+EOF
+uci commit system

@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+
+START=08
+
+boot() {
+	# Patch chipreset.sh for libgpiod v2 compatibility (gpiofind removed in v2)
+	# Must run before morsechipreset (START=09)
+	if [ -f /morse/scripts/chipreset.sh ] && ! command -v gpiofind >/dev/null 2>&1; then
+		sed -i 's/gpiofind MM_RESET/echo MM_RESET/' /morse/scripts/chipreset.sh
+		sed -i 's/gpioset -m time -u 50000/gpioset -t 50ms,0/' /morse/scripts/chipreset.sh
+		sed -i 's/sleep 0\.05/sleep 1/' /morse/scripts/chipreset.sh
+	fi
+
+	# Replicate stock V2 firmware boot order:
+	# Stock loads mtk-sd from modules.d (AFTER morsechipreset at START=09),
+	# but our kmod-sdhci-mt7620 puts it in modules-boot.d (BEFORE init).
+	# Fix: remove boot symlink so mtk-sd loads from modules.d at START=10,
+	# after morsechipreset has already reset the chip.
+	rm -f /etc/modules-boot.d/sdhci-mt7620 2>/dev/null
+
+	# If mtk-sd already loaded (first boot, symlink was still present),
+	# unload it so morsechipreset (START=09) can reset the chip cleanly,
+	# then kmodloader at START=10 will reload and do a fresh SDIO probe.
+	if grep -q mtk_sd /proc/modules 2>/dev/null; then
+		rmmod mtk_sd 2>/dev/null
+	fi
+}
+
