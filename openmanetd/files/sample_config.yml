@@ -1,29 +1,30 @@
 logLevel: info
-meshNetInterface: br-ahwlan
-dbFile: /etc/openmanetd/openmanetd.db
 gnss:
   enable: true
   sendAsExternalGNSSSource:
     sendAsNMEA: true
     sendAsCoT: true
-alfred:
-  mode: primary
-  batInterface: bat0
-  socketPath: /var/run/alfred.sock
-  dataTypes:
-    gateway: true
-    node: true
-    position: true
-    addressReservation: true
+# Beyond Line of Sight (BLOS) communication settings
+# This is only available for use on Mesh Gateways and
+# hardware that supports it.
+blos:
+  enable: false
+# Voice Comms
+# This is only available on hardware that supports it.
 comms:
   enable: false
-  protocol: rtp
   debug: false
+  # The control source for the Push-to-Talk (PTT) functionality. Options include:
+  # - cm108: Use a CM108-based USB audio device for PTT control.
+  # - nanoPTT: Use a NanoPTT device for PTT control.
+  # - web: Use a web-based interface for PTT control.
   controlSource: cm108
+  # Only applicable if controlSource is set to nanoPTT.
   nanoPTT:
     enable: false
     devicePath: /dev/hidraw0/*
     deviceName: Generic AB13X USB Audio
+  # Only applicable if controlSource is set to bluetoothPtt.
   bluetoothPtt:
     enable: false
     BluetoothAudioDeviceHint: ""
