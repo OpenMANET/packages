@@ -17,7 +17,7 @@ define Package/bsp-bcm271x
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET BCM271x board support package
-	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget
+	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd
 endef
 
 define Package/bsp-bcm271x/description
