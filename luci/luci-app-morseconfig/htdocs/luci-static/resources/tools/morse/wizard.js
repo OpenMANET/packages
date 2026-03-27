@@ -354,6 +354,7 @@ function setupNetworkIface(sectionId, { local, primaryLocal } = {}) {
 		uci.set('firewall', zoneSection['.name'], 'input', 'ACCEPT');
 		uci.set('firewall', zoneSection['.name'], 'output', 'ACCEPT');
 		uci.set('firewall', zoneSection['.name'], 'forward', 'ACCEPT');
+		uci.set('firewall', zoneSection['.name'], 'mtu_fix', '1');
 
 		if (!umdnsNetworkList.includes(sectionId)) {
 			umdnsNetworkList.push(sectionId);
