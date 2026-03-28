@@ -15,10 +15,10 @@ comms:
   enable: false
   debug: false
   # The control source for the Push-to-Talk (PTT) functionality. Options include:
-  # - cm108: Use a CM108-based USB audio device for PTT control.
+  # - openvlm: Use a Open Voice Link Module USB audio device for PTT control.
   # - nanoPTT: Use a NanoPTT device for PTT control.
   # - web: Use a web-based interface for PTT control.
-  controlSource: cm108
+  controlSource: openvlm
   # Only applicable if controlSource is set to nanoPTT.
   nanoPTT:
     enable: false
