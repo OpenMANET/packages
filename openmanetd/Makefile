@@ -44,6 +44,8 @@ endef
 define Build/Configure
 	# Compile Alfred Bindings
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
+	$(MAKE) -C $(PKG_BUILD_DIR) frontend
+
 	$(call GoPackage/Build/Configure,$(1))
 	$(call Build/Configure/Default,$(1))
 endef
