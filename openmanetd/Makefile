@@ -32,7 +32,7 @@ define Package/openmanetd
   TITLE:=OpenMANET Manager
   DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +libc @IPV6 +libnl-tiny +librt \
 		+portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio \
-		+kmod-sound-core +libopusfile +hidapi +node
+		+kmod-sound-core +libopusfile +hidapi
 endef
 
 define Package/openmanetd/description
@@ -44,9 +44,6 @@ endef
 define Build/Configure
 	# Compile Alfred Bindings
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
-
-	# Build React frontend static assets
-	$(MAKE) -C $(PKG_BUILD_DIR) frontend
 
 	# Embed whisper WASM + model for non-mipsle targets
 	if [ "$(GOARCH)" != "mipsle" ]; then \
