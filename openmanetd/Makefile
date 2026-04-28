@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=hazel-wizard
+PKG_VERSION:=hazel-fix-topology
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
