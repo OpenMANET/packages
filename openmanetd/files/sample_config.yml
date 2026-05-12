@@ -19,14 +19,4 @@ comms:
   # - nanoPTT: Use a NanoPTT device for PTT control.
   # - web: Use a web-based interface for PTT control.
   controlSource: openvlm
-  # Only applicable if controlSource is set to nanoPTT.
-  nanoPTT:
-    enable: false
-    devicePath: /dev/hidraw0/*
-    deviceName: Generic AB13X USB Audio
-  # Only applicable if controlSource is set to bluetoothPtt.
-  bluetoothPtt:
-    enable: false
-    BluetoothAudioDeviceHint: ""
-    BluetoothInputDevice: ""
-    BluetoothOutputDevice: ""
+
