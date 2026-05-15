@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=1.2.28
+PKG_VERSION:=1.3.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -17,6 +17,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
 GO_PKG:=github.com/openmanet/openmanetd
+GO_PKG_LDFLAGS:=-s -w
 GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -31,7 +32,7 @@ define Package/openmanetd
   TITLE:=OpenMANET Manager
   DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-batman-adv +alfred +libc @IPV6 +libnl-tiny +librt \
 		+portaudio +libopus +libevdev +alsa-lib +kmod-usb-core +kmod-usb-audio \
-		+kmod-sound-core +libopusfile +gpsd
+		+kmod-sound-core +libopusfile +hidapi +libpam
 endef
 
 define Package/openmanetd/description
@@ -43,6 +44,7 @@ endef
 define Build/Configure
 	# Compile Alfred Bindings
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
+
 	$(call GoPackage/Build/Configure,$(1))
 	$(call Build/Configure/Default,$(1))
 endef
@@ -56,6 +58,12 @@ define Package/openmanetd/conffiles
 endef
 
 define Package/openmanetd/install
+	# Strip and upx the binary if we're building for mipsel
+	# This will compress the binary on mipsel hardware
+	if [ "$(GOARCH)" = "mipsle" ]; then \
+		upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/$(PKG_NAME) || true; \
+	fi
+
 	$(call GoPackage/Package/Install/Bin,$(1))
 
 	$(INSTALL_DIR) $(1)/etc/openmanetd/

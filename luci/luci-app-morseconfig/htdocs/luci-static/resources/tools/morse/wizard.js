@@ -299,6 +299,30 @@ function setDefaultWanFirewallRules(zone) {
 	uci.set('firewall', sid, 'dest_port', '4242');
 	uci.set('firewall', sid, 'proto', 'tcp');
 	uci.set('firewall', sid, 'target', 'ACCEPT');
+	sid = uci.add('firewall', 'rule');
+	uci.set('firewall', sid, 'name', 'Allow Incoming Comms');
+	uci.set('firewall', sid, 'src', '*');
+	uci.set('firewall', sid, 'dest_ip', '239.192.41.1');
+	uci.set('firewall', sid, 'dest', '*');
+	uci.set('firewall', sid, 'dest_port', '38801-38864');
+	uci.set('firewall', sid, 'proto', 'udp');
+	uci.set('firewall', sid, 'target', 'ACCEPT');
+	sid = uci.add('firewall', 'rule');
+	uci.set('firewall', sid, 'name', 'Block-DHCP-Request-Out-ahwlan');
+	uci.set('firewall', sid, 'src', 'ahwlan');
+	uci.set('firewall', sid, 'dest', '*');
+	uci.set('firewall', sid, 'proto', 'udp');
+	uci.set('firewall', sid, 'dest_port', '67');
+	uci.set('firewall', sid, 'target', 'DROP');
+	uci.set('firewall', sid, 'family', 'ipv4');
+	sid = uci.add('firewall', 'rule');
+	uci.set('firewall', sid, 'name', 'Block-DHCP-Response-In-ahwlan');
+	uci.set('firewall', sid, 'src', '*');
+	uci.set('firewall', sid, 'dest', 'ahwlan');
+	uci.set('firewall', sid, 'proto', 'udp');
+	uci.set('firewall', sid, 'dest_port', '68');
+	uci.set('firewall', sid, 'target', 'DROP');
+	uci.set('firewall', sid, 'family', 'ipv4');
 }
 
 /* Modify/add a network iface with the appropriate firewall zones/rules.
@@ -330,6 +354,7 @@ function setupNetworkIface(sectionId, { local, primaryLocal } = {}) {
 		uci.set('firewall', zoneSection['.name'], 'input', 'ACCEPT');
 		uci.set('firewall', zoneSection['.name'], 'output', 'ACCEPT');
 		uci.set('firewall', zoneSection['.name'], 'forward', 'ACCEPT');
+		uci.set('firewall', zoneSection['.name'], 'mtu_fix', '1');
 
 		if (!umdnsNetworkList.includes(sectionId)) {
 			umdnsNetworkList.push(sectionId);
