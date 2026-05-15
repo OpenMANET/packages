@@ -45,11 +45,6 @@ define Build/Configure
 	# Compile Alfred Bindings
 	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
 
-	# Embed whisper WASM + model for non-mipsle targets
-	# if [ "$(GOARCH)" != "mipsle" ]; then \
-	# 	$(MAKE) -C $(PKG_BUILD_DIR) whisper-embed; \
-	# fi
-
 	$(call GoPackage/Build/Configure,$(1))
 	$(call Build/Configure/Default,$(1))
 endef

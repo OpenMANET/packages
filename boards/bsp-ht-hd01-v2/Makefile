@@ -17,7 +17,7 @@ define Package/bsp-ht-hd01-v2
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET Heltec HT-HD01 V2 board support package
-	DEPENDS:=+bsp-common
+	DEPENDS:=+bsp-common +ht-service
 endef
 
 define Package/bsp-ht-hd01-v2/description
