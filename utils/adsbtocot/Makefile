@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=adsbtocot
 PKG_VERSION:=1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_MAINTAINER:=info@openmanet.net
 PKG_LICENSE:=MIT
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
@@ -44,6 +44,15 @@ define Build/Compile
 	PIP_NO_BINARY=:all: \
 	$(STAGING_DIR_HOSTPKG)/bin/pip3 install 'adsbcot' \
 		--prefix=/usr --root='$(PKG_INSTALL_DIR)' --no-cache-dir --no-compile
+
+	# PyTAK imports crypto helpers too early. Patch the vendored install so the
+	# default UDP/non-TLS ADSBCOT path works without python3-cryptography.
+	perl -0pi -e 's/\nimport pytak\\.crypto_classes  # pylint: disable=cyclic-import\n/\n/' \
+		'$(PKG_INSTALL_DIR)'/usr/lib/python3*/site-packages/pytak/functions.py
+	perl -0pi -e 's/enrollment = pytak\\.crypto_classes\\.CertificateEnrollment\(\)/from pytak.crypto_classes import CertificateEnrollment\n    enrollment = CertificateEnrollment()/g' \
+		'$(PKG_INSTALL_DIR)'/usr/lib/python3*/site-packages/pytak/functions.py
+	perl -0pi -e 's/"""\n\nimport asyncio/"""\n\nfrom __future__ import annotations\n\nimport asyncio/' \
+		'$(PKG_INSTALL_DIR)'/usr/lib/python3*/site-packages/pytak/crypto_classes.py
 
 	# Safety: ensure no native .so crept in
 	find '$(PKG_INSTALL_DIR)/usr' -type f \( -name '*.so' -o -name '*.so.*' \) -print -delete || true

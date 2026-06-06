@@ -36,7 +36,7 @@ endef
 # Ideally, we'd have a separate config option, but if you define that option
 # inside this package we seem to end up with some kind of recursive dependency
 # issue as our dependencies are enabled by this as well.
-ifeq ($(CONFIG_PACKAGE_libcamera),y)
+ifneq ($(CONFIG_PACKAGE_libcamera),)
 GO_PKG_TAGS:=rpicamera
 MAKE_PATH=internal/protocols/rpicamera/exe
 
