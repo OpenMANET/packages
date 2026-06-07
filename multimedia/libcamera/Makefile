@@ -80,7 +80,7 @@ define Package/libcamera-utils
   CATEGORY:=Utilities
   TITLE:=Utilities for libcamera
   URL:=https://libcamera.org
-  DEPENDS:=+libcamera +libevent2 +libevent2-pthreads
+  DEPENDS:=+libcamera +libevent2 +libevent2-pthreads +libdrm
 endef
 
 define Package/libcamera-utils/description
