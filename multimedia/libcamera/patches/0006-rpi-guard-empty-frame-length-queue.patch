@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Thu, 2 Jul 2026 22:40:00 +0000
+Subject: [PATCH] ipa: rpi: guard empty frame length queue on first AGC apply
+
+The Raspberry Pi IPA uses frameLengths_ as a small ring buffer to derive the
+camera timeout value. On the first capture path, applyAGC() can be called
+before the queue has been pre-sized, which makes the unconditional pop_front()
+abort the process.
+
+Keep the queue bounded, but only pop once it has reached its target size.
+This matches the intended ring-buffer behavior and avoids crashing the first
+stream configuration.
+---
+ src/ipa/rpi/common/ipa_base.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/ipa/rpi/common/ipa_base.cpp b/src/ipa/rpi/common/ipa_base.cpp
+index 73cb3f2..2e46c3f 100644
+--- a/src/ipa/rpi/common/ipa_base.cpp
++++ b/src/ipa/rpi/common/ipa_base.cpp
+@@ -1321,7 +1321,8 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+ 	 * elements. This will be used to advertise a camera timeout value to the
+ 	 * pipeline handler.
+ 	 */
+-	frameLengths_.pop_front();
++	if (frameLengths_.size() >= FrameLengthsQueueSize)
++		frameLengths_.pop_front();
+ 	frameLengths_.push_back(helper_->exposure(vblank + mode_.height,
+ 						  helper_->hblankToLineLength(hblank)));
+ }
+-- 
+2.43.0
