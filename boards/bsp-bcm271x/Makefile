@@ -35,6 +35,9 @@ define Package/bsp-bcm271x/install
 	$(INSTALL_DIR) $(1)/etc/board.d/
 	$(CP) ./files/board.d/* $(1)/etc/board.d/
 
+	$(INSTALL_DIR) $(1)/etc/uci-defaults/
+	$(CP) ./files/uci-defaults/* $(1)/etc/uci-defaults/
+
 	$(INSTALL_DIR) $(1)/etc/config/
 	$(CP) ./files/etc/config/* $(1)/etc/config/
 
