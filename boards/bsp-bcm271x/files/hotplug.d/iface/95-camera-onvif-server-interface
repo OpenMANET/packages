@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Preserved-config upgrades can carry forward the generic camera-onvif-server
+# interface value of "lan", which is wrong for OpenMANET Pi images once
+# ahwlan is brought up. When ahwlan becomes available, migrate that stale
+# default and restart the service so MediaMTX gets its dynamic path.
+
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifupdate" ] || exit 0
+[ "$INTERFACE" = "ahwlan" ] || exit 0
+[ -e /etc/config/camera-onvif-server ] || exit 0
+
+current="$(uci -q get camera-onvif-server.rpicamera.interface)"
+[ -n "$current" ] && [ "$current" != "lan" ] && exit 0
+
+uci set camera-onvif-server.rpicamera.interface='ahwlan'
+uci commit camera-onvif-server
+
+logger -t "camera-onvif-server" "migrated camera interface to ahwlan"
+/etc/init.d/camera-onvif-server restart >/dev/null 2>&1 || true
+
+exit 0
