@@ -2,20 +2,28 @@
 
 # Preserved-config upgrades can carry forward the generic camera-onvif-server
 # interface value of "lan", which is wrong for OpenMANET Pi images once
-# ahwlan is brought up. When ahwlan becomes available, migrate that stale
-# default and restart the service so MediaMTX gets its dynamic path.
+# ahwlan is brought up. When that interface changes, migrate that stale
+# default if needed and let the BCM271x camera manager decide whether the
+# camera services should be started or stopped.
 
-[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifupdate" ] || exit 0
-[ "$INTERFACE" = "ahwlan" ] || exit 0
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifupdate" ] || [ "$ACTION" = "ifdown" ] || exit 0
 [ -e /etc/config/camera-onvif-server ] || exit 0
 
 current="$(uci -q get camera-onvif-server.rpicamera.interface)"
-[ -n "$current" ] && [ "$current" != "lan" ] && exit 0
 
-uci set camera-onvif-server.rpicamera.interface='ahwlan'
-uci commit camera-onvif-server
+if [ "$INTERFACE" = "ahwlan" ] && [ "$ACTION" != "ifdown" ]; then
+	if [ -z "$current" ] || [ "$current" = "lan" ]; then
+		uci set camera-onvif-server.rpicamera.interface='ahwlan'
+		uci commit camera-onvif-server
+		logger -t "camera-onvif-server" "migrated camera interface to ahwlan"
+		current='ahwlan'
+	fi
+fi
 
-logger -t "camera-onvif-server" "migrated camera interface to ahwlan"
-/etc/init.d/camera-onvif-server restart >/dev/null 2>&1 || true
+managed_interface="${current:-ahwlan}"
+[ "$INTERFACE" = "$managed_interface" ] || exit 0
+[ -x /etc/init.d/rpi-camera-services ] || exit 0
+
+/etc/init.d/rpi-camera-services reload >/dev/null 2>&1 || true
 
 exit 0
