@@ -1,0 +1,55 @@
+#!/bin/sh
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case "$board" in
+bcm2711,raven)
+    setup_openmanet_wifi
+	;;
+esac
+
+board_config_flush
+
+exit 0
+
+# Set OpenMANET WiFi SSID and password if they are still at the OpenWrt defaults.
+setup_openmanet_wifi() {
+    wifi_password="openmanet" || return 1
+
+    for radio in 'radio0' 'radio1'
+    do
+        # Radio doesn't exist.
+        uci -q get wireless."$radio" || continue
+
+        # SSID is different from the OpenWrt default!
+        # This means the user has already set it to something else.
+        # In both cases, we don't want to touch anything.
+        # ssid="$(uci -q get wireless.default_${radio}.ssid)"
+        # [ "$ssid" != "OpenWrt" ] && continue
+
+        # Set fixed channel
+        band=$(uci -q get wireless."$radio".band)
+        [ "$band" = "2g" ] && channel=6
+        [ "$band" = "5g" ] && channel=36
+        [ -n "$channel" ] && uci set wireless."$radio".channel="$channel"
+
+        # Set country
+        uci set wireless."$radio".country="US"
+
+        # Enable radio
+        uci set wireless."$radio".disabled="0"
+
+        # Set SSID and password
+        ssid_name="openmanet"
+        [ "$band" = "5g" ] && ssid_name="${ssid_name}_5g"
+        uci set wireless.default_"$radio".ssid="$ssid_name"
+        uci set wireless.default_"$radio".encryption="psk2"
+        uci set wireless.default_"$radio".key="$wifi_password"
+
+        uci -q commit wireless
+    done
+}
