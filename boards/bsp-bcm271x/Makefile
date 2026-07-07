@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-bcm271x
-PKG_RELEASE=4
+PKG_RELEASE=5
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -54,19 +54,6 @@ endef
 define Package/bsp-bcm271x/postinst
 #!/bin/sh
 
-enable_service() {
-	local service="$$1"
-
-	if [ -n "$${IPKG_INSTROOT}" ]; then
-		[ -x "$${IPKG_INSTROOT}/etc/init.d/$$service" ] || return 0
-		"$${IPKG_INSTROOT}/etc/rc.common" "$${IPKG_INSTROOT}/etc/init.d/$$service" enable >/dev/null 2>&1 || true
-		return 0
-	fi
-
-	[ -x "/etc/init.d/$$service" ] || return 0
-	/etc/init.d/$$service enable >/dev/null 2>&1 || true
-}
-
 disable_camera_service() {
 	local service="$$1"
 
@@ -81,19 +68,8 @@ disable_camera_service() {
 	/etc/init.d/$$service stop >/dev/null 2>&1 || true
 }
 
-[ "$${IPKG_NO_SCRIPT}" = "1" ] && exit 0
-[ -s "$${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0
-. "$${IPKG_INSTROOT}/lib/functions.sh"
-
-default_postinst $$0 $$@
-
-enable_service rpi-camera-services
 disable_camera_service mediamtx
 disable_camera_service camera-onvif-server
-
-if [ -z "$${IPKG_INSTROOT}" ] && [ -x /etc/init.d/rpi-camera-services ]; then
-	/etc/init.d/rpi-camera-services start >/dev/null 2>&1 || true
-fi
 endef
 
 $(eval $(call BuildPackage,bsp-bcm271x))
