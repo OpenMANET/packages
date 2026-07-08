@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvlm
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.0.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openvlm
-PKG_SOURCE_VERSION:=03ce674734f00a473f9225ab1fc20c683f81c4cf
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
 # Regenerate with: make package/openvlm/check FIXUP=1
 PKG_MIRROR_HASH:=skip
 
