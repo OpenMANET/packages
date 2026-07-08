@@ -1,0 +1,50 @@
+#!/bin/sh /etc/rc.common
+START=25
+
+USE_PROCD=1
+NAME=openvlm-provision
+
+MARKER=/etc/openvlm/provisioned
+
+boot() {
+    if [ -f "$MARKER" ]; then
+        exit 0
+    fi
+
+    if ! command -v openvlm >/dev/null 2>&1; then
+        logger -t "$NAME" "WARNING: openvlm binary not found, skipping provisioning"
+        exit 0
+    fi
+
+    openvlm identify >/dev/null 2>&1
+    local rc=$?
+    case "$rc" in
+        0)
+            logger -t "$NAME" "device already provisioned (GPIO1 strap high), writing marker"
+            write_marker
+            ;;
+        3)
+            provision_device
+            ;;
+        *)
+            logger -t "$NAME" "no openvlm device found (identify exit $rc), skipping"
+            ;;
+    esac
+
+    exit 0
+}
+
+provision_device() {
+    logger -t "$NAME" "fresh device detected, provisioning with defaults"
+    if openvlm provision --force >/dev/null 2>&1; then
+        logger -t "$NAME" "provisioning succeeded"
+        write_marker
+    else
+        logger -t "$NAME" "ERROR: provisioning failed, will retry next boot"
+    fi
+}
+
+write_marker() {
+    mkdir -p /etc/openvlm
+    touch "$MARKER"
+}
