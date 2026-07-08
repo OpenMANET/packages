@@ -47,9 +47,6 @@ define Package/bsp-raven/install
 
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
 	$(CP) ./files/hotplug.d/iface/* $(1)/etc/hotplug.d/iface/
-
-	$(INSTALL_DIR) $(1)/lib/firmware/morse/
-	$(CP) ./files/lib/firmware/morse/* $(1)/lib/firmware/morse/
 endef
 
 $(eval $(call BuildPackage,bsp-raven))
