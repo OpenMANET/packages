@@ -43,10 +43,12 @@ define Package/bsp-raven/install
 	$(CP) ./files/etc/config/* $(1)/etc/config/
 
 	$(INSTALL_DIR) $(1)/etc/ntpd.d/
-	$(CP) ./files/etc/ntpd.d/* $(1)/etc/ntpd.d
+	$(CP) ./files/etc/ntpd.d/* $(1)/etc/ntpd.d/
 
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
 	$(CP) ./files/hotplug.d/iface/* $(1)/etc/hotplug.d/iface/
+
+	$(INSTALL_CONF) $(CURDIR)/files/etc/config/openmanetd/config.yml $(1)/etc/openmanetd/config.yml
 endef
 
 $(eval $(call BuildPackage,bsp-raven))
