@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=golang1.26
 GO_VERSION_MAJOR_MINOR:=1.26
-GO_VERSION_PATCH:=1
+GO_VERSION_PATCH:=4
 GO_VERSION_RC:=
 GO_BOOTSTRAP_VERSION:=bootstrap
 PKG_HASH:=4f668a32fbfc1132e6a881fb968c2f1dada631492a339211735fbb255a42602d
@@ -18,7 +18,9 @@ PKG_FILE_VERSION:=$(GO_VERSION_MAJOR_MINOR)$(if $(GO_VERSION_RC),rc$(GO_VERSION_
 PKG_RELEASE:=1
 
 GO_SOURCE_URLS:=https://go.dev/dl/ \
-                https://dl.google.com/go/
+                https://golang.google.cn/dl/ \
+                https://mirrors.nju.edu.cn/golang/ \
+                https://mirrors.ustc.edu.cn/golang/
 
 PKG_SOURCE:=go$(PKG_FILE_VERSION).src.tar.gz
 PKG_SOURCE_URL:=$(GO_SOURCE_URLS)

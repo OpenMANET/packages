@@ -177,8 +177,6 @@ define Host/Install
 	$(call GoCompiler/$(HOST_GO_PROFILE_ID)/Install/Bin)
 	$(call GoCompiler/$(HOST_GO_PROFILE_ID)/Install/Src)
 	$(call GoCompiler/$(HOST_GO_PROFILE_ID)/Install/BinLinks)
-	$(LN) "go$(HOST_GO_VERSION_ID)" "$(HOST_GO_PREFIX)/bin/go"
-	$(LN) "gofmt$(HOST_GO_VERSION_ID)" "$(HOST_GO_PREFIX)/bin/gofmt"
 
 	rm -rf "$(HOST_GO_ROOT)/pkg/$(GO_HOST_OS_ARCH)"
 
@@ -190,8 +188,6 @@ endef
 
 define Host/Uninstall
 	rm -rf "$(HOST_GO_ROOT)/openwrt"
-	rm -f "$(HOST_GO_PREFIX)/bin/go"
-	rm -f "$(HOST_GO_PREFIX)/bin/gofmt"
 
 	$(call GoCompiler/$(HOST_GO_PROFILE_ID)/Uninstall/BinLinks)
 	$(call GoCompiler/$(HOST_GO_PROFILE_ID)/Uninstall)
@@ -234,7 +230,6 @@ PKG_GO_ASMFLAGS?= \
 	$(if $(GO_PKG_ENABLE_SPECTRE),-spectre all)
 
 PKG_GO_LDFLAGS?= \
-	-buildid '$(SOURCE_DATE_EPOCH)' \
 	-linkmode external \
 	-extldflags '$(patsubst -z%,-Wl$(comma)-z$(comma)%,$(TARGET_LDFLAGS))' \
 	$(if $(CONFIG_NO_STRIP)$(CONFIG_DEBUG),,-s -w)
