@@ -18,10 +18,7 @@ PKG_FILE_VERSION:=$(GO_VERSION_MAJOR_MINOR)$(if $(GO_VERSION_RC),rc$(GO_VERSION_
 PKG_RELEASE:=1
 
 GO_SOURCE_URLS:=https://go.dev/dl/ \
-                https://dl.google.com/go/ \
-                https://golang.google.cn/dl/ \
-                https://mirrors.nju.edu.cn/golang/ \
-                https://mirrors.ustc.edu.cn/golang/
+                https://dl.google.com/go/
 
 PKG_SOURCE:=go$(PKG_FILE_VERSION).src.tar.gz
 PKG_SOURCE_URL:=$(GO_SOURCE_URLS)
