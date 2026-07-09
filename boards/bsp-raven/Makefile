@@ -48,7 +48,7 @@ define Package/bsp-raven/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface/
 	$(CP) ./files/hotplug.d/iface/* $(1)/etc/hotplug.d/iface/
 
-	$(INSTALL_CONF) $(CURDIR)/files/etc/config/openmanetd/config.yml $(1)/etc/openmanetd/config.yml
+	$(INSTALL_CONF) $(CURDIR)/files/etc/openmanetd/config.yml $(1)/etc/openmanetd/config.yml
 endef
 
 $(eval $(call BuildPackage,bsp-raven))
