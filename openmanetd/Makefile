@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
-PKG_VERSION:=1.3.2
+PKG_VERSION:=1.3.2-camera-sensor-cot
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openmanetd
-PKG_SOURCE_VERSION:=$(PKG_VERSION)
+PKG_SOURCE_VERSION:=785625bd18c285b96ad2a77391c1e8d210746c58
 PKG_HASH:=skip
 
 PKG_LICENSE:=MIT
