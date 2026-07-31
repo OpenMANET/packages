@@ -1,6 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
+
 PKG_VERSION:=1.3.3
 PKG_RELEASE:=2
 
@@ -22,6 +23,14 @@ GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../lang/golang/golang-package.mk
+
+# miniaudio (via gen2brain/malgo) hardcodes -msse2 in its CGO flags for any
+# GOARCH that isn't arm/arm64, breaking the mipsle cross-compile used by
+# halowlink2 (ramips/mt7621) and ht-hd01-v2 (ramips/mt76x8). The noasm build
+# tag falls back to scalar C. Documented in openmanetd's own CLAUDE.md.
+ifeq ($(GO_ARCH),mipsle)
+  GO_PKG_TAGS:=noasm
+endif
 
 # Explicit runtime deps (correct OpenWrt syntax)
 RDEPENDS:$(PKG_NAME) += libopusfile
