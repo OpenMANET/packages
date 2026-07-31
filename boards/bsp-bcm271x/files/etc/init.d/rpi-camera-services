@@ -1,0 +1,128 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+STOP=10
+
+NAME=rpi-camera-services
+
+[ -f /lib/functions/network.sh ] && . /lib/functions/network.sh
+
+log() {
+	logger -t "$NAME" "$@"
+}
+
+service_installed() {
+	[ -x "/etc/init.d/$1" ]
+}
+
+service_running() {
+	/etc/init.d/"$1" running >/dev/null 2>&1
+}
+
+start_managed_service() {
+	local service="$1"
+
+	service_installed "$service" || return 0
+	service_running "$service" && return 0
+
+	/etc/init.d/"$service" start >/dev/null 2>&1 || true
+}
+
+stop_managed_service() {
+	local service="$1"
+
+	service_installed "$service" || return 0
+	service_running "$service" || return 0
+
+	/etc/init.d/"$service" stop >/dev/null 2>&1 || true
+}
+
+camera_interface() {
+	local iface
+
+	iface="$(uci -q get camera-onvif-server.rpicamera.interface)"
+	echo "${iface:-ahwlan}"
+}
+
+iface_device() {
+	local iface="$1"
+	local device
+
+	if command -v ifstatus >/dev/null 2>&1 && command -v jsonfilter >/dev/null 2>&1; then
+		device="$(ifstatus "$iface" 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null)"
+		[ -n "$device" ] || device="$(ifstatus "$iface" 2>/dev/null | jsonfilter -e '@.device' 2>/dev/null)"
+	fi
+
+	echo "${device:-$iface}"
+}
+
+iface_ipaddr() {
+	local iface="$1"
+	local ip device
+
+	if command -v network_get_ipaddr >/dev/null 2>&1; then
+		network_get_ipaddr ip "$iface"
+	fi
+
+	if [ -z "$ip" ]; then
+		device="$(iface_device "$iface")"
+		ip="$(ip -4 addr show dev "$device" 2>/dev/null | awk '/inet /{print $2; exit}' | cut -d/ -f1)"
+	fi
+
+	echo "$ip"
+}
+
+iface_is_up() {
+	local iface="$1"
+	local ip
+
+	if command -v network_is_up >/dev/null 2>&1 && network_is_up "$iface"; then
+		return 0
+	fi
+
+	ip="$(iface_ipaddr "$iface")"
+	[ -n "$ip" ]
+}
+
+camera_present() {
+	command -v cam >/dev/null 2>&1 || return 1
+	cam -l 2>/dev/null | grep -qE '^[[:space:]]*[0-9]+:'
+}
+
+sync_camera_services() {
+	local iface ip
+
+	service_installed mediamtx || service_installed camera-onvif-server || return 0
+
+	if ! camera_present; then
+		stop_managed_service camera-onvif-server
+		stop_managed_service mediamtx
+		log "no libcamera-compatible camera detected; leaving camera services stopped"
+		return 0
+	fi
+
+	start_managed_service mediamtx
+
+	iface="$(camera_interface)"
+	ip="$(iface_ipaddr "$iface")"
+
+	if iface_is_up "$iface" && [ -n "$ip" ]; then
+		start_managed_service camera-onvif-server
+	else
+		stop_managed_service camera-onvif-server
+		log "camera detected; waiting for interface $iface before starting camera-onvif-server"
+	fi
+}
+
+start() {
+	sync_camera_services
+}
+
+reload() {
+	sync_camera_services
+}
+
+stop() {
+	stop_managed_service camera-onvif-server
+	stop_managed_service mediamtx
+}

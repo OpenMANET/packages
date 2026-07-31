@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# On OpenMANET Raspberry Pi builds, the camera service should advertise the
+# primary HaLow-facing network by default. Only override the generic package
+# default when it is still unset or left at "lan".
+
+[ -e /etc/config/camera-onvif-server ] || exit 0
+
+current="$(uci -q get camera-onvif-server.rpicamera.interface)"
+[ -n "$current" ] && [ "$current" != "lan" ] && exit 0
+
+uci -q get network.ahwlan >/dev/null || exit 0
+
+uci set camera-onvif-server.rpicamera.interface='ahwlan'
+uci commit camera-onvif-server
+
+exit 0

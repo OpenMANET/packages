@@ -4,9 +4,9 @@ PKG_NAME:=libcamera
 PKG_RELEASE:=$(COMMITCOUNT)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.libcamera.org/libcamera/libcamera.git
+PKG_SOURCE_URL:=https://gitlab.freedesktop.org/camera/libcamera.git
 PKG_SOURCE_VERSION:=v0.1.0
-PKG_MIRROR_HASH:=de6511b2e494d54fb4432eeb3d4d1644133b5c14305aeb1f97e8e1d67d043611
+PKG_MIRROR_HASH:=2a2e6c92ae69c85ac1f946bf7d0366acfee9d0a4c911a721ccbd19fc0e5112ab
 
 PKG_VERSION:=$(PKG_SOURCE_VERSION)
 PKG_LICENSE:=LGPL-2.1-or-later
@@ -80,7 +80,7 @@ define Package/libcamera-utils
   CATEGORY:=Utilities
   TITLE:=Utilities for libcamera
   URL:=https://libcamera.org
-  DEPENDS:=+libcamera +libevent2 +libevent2-pthreads
+  DEPENDS:=+libcamera +libevent2 +libevent2-pthreads +libdrm
 endef
 
 define Package/libcamera-utils/description
