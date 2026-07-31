@@ -1,0 +1,12 @@
+From: OpenAI <openai@example.com>
+Subject: libcamera: fix ipu3-pack argv0 signature
+
+--- a/utils/ipu3/ipu3-pack.c
++++ b/utils/ipu3/ipu3-pack.c
+@@ -17,7 +17,7 @@
+ 
+-static void usage(const char *argv0)
++static void usage(char *argv0)
+ {
+ 
+ 	printf("Usage: %s input-file output-file\n", basename(argv0));
