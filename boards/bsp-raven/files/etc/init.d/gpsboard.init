@@ -17,8 +17,6 @@ boot() {
         logger -t "$NAME" "GPS device: $device"
     fi
 
-    # Check for Seeed Studio Morse WiFi device
-    check_morse_device
     # Initialize the GPS GPIOs and reset the module
     init_gps_gpio
 
@@ -48,36 +46,6 @@ get_gpsd_device() {
         return 0
     else
         return 1
-    fi
-}
-
-check_morse_device() {
-    local expected_path="platform/soc/fe204000.spi/spi_master/spi0/spi0.0"
-    local found=0
-
-    # Iterate through all wifi-device sections
-    config_load wireless
-    config_foreach check_morse_section wifi-device "$expected_path"
-
-    return 0
-}
-
-check_morse_section() {
-    local section="$1"
-    local expected_path="$2"
-    local device_type device_path
-
-    device_type=$(uci -q get wireless.${section}.type)
-    device_path=$(uci -q get wireless.${section}.path)
-
-    if [ "$device_type" = "morse" ]; then
-        if [ -z "$device_path" ]; then
-            logger -t "$NAME" "morse wifi-device found but path does not exist"
-            exit 0
-        elif [ "$device_path" != "$expected_path" ]; then
-            logger -t "$NAME" "morse wifi-device path does not match: got '$device_path', expected '$expected_path'"
-            exit 0
-        fi
     fi
 }
 
