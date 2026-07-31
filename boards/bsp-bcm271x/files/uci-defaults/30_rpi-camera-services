@@ -1,0 +1,26 @@
+#!/bin/sh
+
+enable_service() {
+	local service="$1"
+
+	[ -x "/etc/init.d/$service" ] || return 0
+	/etc/init.d/$service enable >/dev/null 2>&1 || true
+}
+
+disable_camera_service() {
+	local service="$1"
+
+	[ -x "/etc/init.d/$service" ] || return 0
+	/etc/init.d/$service disable >/dev/null 2>&1 || true
+	/etc/init.d/$service stop >/dev/null 2>&1 || true
+}
+
+enable_service rpi-camera-services
+disable_camera_service mediamtx
+disable_camera_service camera-onvif-server
+
+if [ -x /etc/init.d/rpi-camera-services ]; then
+	/etc/init.d/rpi-camera-services start >/dev/null 2>&1 || true
+fi
+
+exit 0

@@ -1,0 +1,14 @@
+From: OpenAI <openai@example.com>
+Subject: libcamera: include libgen.h for ipu3-unpack basename()
+
+--- a/utils/ipu3/ipu3-unpack.c
++++ b/utils/ipu3/ipu3-unpack.c
+@@ -8,6 +8,7 @@
+ #define _GNU_SOURCE
+ 
+ #include <errno.h>
+ #include <fcntl.h>
++#include <libgen.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
