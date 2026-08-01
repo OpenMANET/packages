@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=openmanetd
 
 PKG_VERSION:=1.3.3-atak-camera-sensor-cot
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openmanetd
