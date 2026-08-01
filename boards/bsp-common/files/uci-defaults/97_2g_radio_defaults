@@ -1,0 +1,23 @@
+#!/bin/sh
+# Set a reliable initial channel for every 2.4 GHz radio discovered on a
+# factory image. The setup wizard preserves wifi-device.channel, so this is
+# retained when it later creates an AP. UCI defaults run only once and never
+# overwrite an operator's saved channel selection on an existing device.
+
+. /lib/functions.sh
+
+set_2g_default_channel() {
+	local config="$1"
+	local band
+
+	config_get band "$config" band
+	[ "$band" = "2g" ] || return 0
+
+	uci -q set "wireless.${config}.channel=6"
+}
+
+config_load wireless
+config_foreach set_2g_default_channel wifi-device
+uci commit wireless
+
+exit 0
