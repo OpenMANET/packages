@@ -1,12 +1,5 @@
-#
-# Copyright 2022 Morse Micro
-#
-# This is free software, licensed under the 3-Clause BSD License.
-# See /LICENSE for more information.
-#
-
 include $(TOPDIR)/rules.mk
-include ../../include/morse_version.mk
+
 PKG_NAME:=hostapd_s1g
 PKG_RELEASE=3
 

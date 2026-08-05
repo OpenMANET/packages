@@ -1,15 +1,4 @@
-#
-# Copyright 2022 Morse Micro
-#
-# This is free software, licensed under the MIT License.
-#
-# This package installs Morse Micro firmware binaries, which are
-# distributed under the Morse Micro Binary Distribution License.
-# This license is available in LICENSE.binaries.
-#
-
 include $(TOPDIR)/rules.mk
-include ../../include/morse_version.mk
 
 PKG_NAME:=mm6108-firmware
 PKG_RELEASE=1
