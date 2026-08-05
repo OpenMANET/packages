@@ -1,0 +1,26 @@
+Add more delay between SPI transactions when not in block mode.
+EKH01 in Openwrt has less delay between SPI transactions than Buildroot.
+Currently the driver has enough delay between blocks but not when the transaction isn't a block.
+Banff needs more delay than Eagle Crest, that's why this issue wasn't happening on Eagle Crest.
+
+--- a/spi.c
++++ b/spi.c
+@@ -577,7 +577,7 @@
+ 
+ 	if (!block) {
+ 		/* Scale bytes delay to block */
+-		u32 extra_bytes = (count * mspi->inter_block_delay_bytes) / MMC_SPI_BLOCKSIZE;
++		u32 extra_bytes = max(250, (count * mspi->inter_block_delay_bytes) / MMC_SPI_BLOCKSIZE);
+ 
+ 		/* Allow 4 bytes for CRC and another 10 bytes for start block token & chip delays
+ 		 * (usually comes in 2).
+@@ -709,7 +709,8 @@
+ 		if (block)
+ 			cp += mspi->inter_block_delay_bytes;
+ 		else
+-			cp += spi_post_write_status_bytes;
++			/* stet: really we should use the new modparam here */
++			cp += max(250,(count * mspi->inter_block_delay_bytes) / MMC_SPI_BLOCKSIZE);
+ 	}
+ 
+ 	if (enable_ext_xtal_init) {

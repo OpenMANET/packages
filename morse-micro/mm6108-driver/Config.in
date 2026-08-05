@@ -1,0 +1,62 @@
+config SELECT_morse_driver
+	bool "Enable Morse driver"
+	default y
+	depends on !SELECT_morse-driver-internal
+
+config MORSE_SDIO
+	bool "SDIO support "
+	default y
+	depends on PACKAGE_kmod-morse
+
+config MORSE_SPI
+	bool "SPI support "
+	default n
+	depends on PACKAGE_kmod-morse
+
+config MORSE_USER_ACCESS
+	bool "User space access support "
+	default y
+	depends on PACKAGE_kmod-morse
+
+config MORSE_VENDOR_COMMAND
+	bool "Vendor command support "
+	default y
+	depends on PACKAGE_kmod-morse
+
+config MORSE_MONITOR
+	bool "Monitor mode support "
+	default n
+	depends on PACKAGE_kmod-morse
+
+config MORSE_DEBUG
+	bool "Enable debug "
+	default n
+	depends on PACKAGE_kmod-morse
+	help
+		Compiles the driver with debug info and some additional debug features.
+
+config MORSE_DEBUG_LOGGING
+	bool "Enable debug logging"
+	default n
+	depends on PACKAGE_kmod-morse
+	select KERNEL_DYNAMIC_DEBUG_CORE
+	help
+		Enables debug level logging from the driver. Logging must be enabled at run time.
+		There may be a binary size and performance impact when this is y.
+
+config MORSE_RC
+	bool "Enable MMRC (Morse Micro Rate Control) "
+	default y
+	depends on PACKAGE_kmod-morse
+
+config MORSE_SDIO_ALIGNMENT
+	int "Required alignment for bulk SDIO reads/writes"
+	default 2
+	range 2 8
+	depends on MORSE_SDIO
+	help
+		Number of bytes to align data buffers for bulk SDIO transactions. Some hosts have
+		specific alignment requirements for DMA, use this setting to
+		adjust the alignment required.
+
+		Must be a power of 2.

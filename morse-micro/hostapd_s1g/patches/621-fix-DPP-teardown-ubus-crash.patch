@@ -1,0 +1,40 @@
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -512,7 +512,6 @@
+ 	hapd->beacon_set_done = 0;
+ 
+ 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
+-	hostapd_ubus_free_bss(hapd);
+ 	accounting_deinit(hapd);
+ 	hostapd_deinit_wpa(hapd);
+ 	vlan_deinit(hapd);
+@@ -553,6 +552,9 @@
+ 	gas_query_ap_deinit(hapd->gas);
+ 	hapd->gas = NULL;
+ #endif /* CONFIG_DPP */
++
++	hostapd_ubus_free_bss(hapd);
++
+ #ifdef CONFIG_NAN_USD
+ 	hostapd_nan_usd_deinit(hapd);
+ #endif /* CONFIG_NAN_USD */
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -8118,6 +8118,8 @@
+ 		wpa_s->conf = NULL;
+ 	}
+ 
++	wpas_ubus_free_bss(wpa_s);
++
+ 	os_free(wpa_s->ssids_from_scan_req);
+ 	os_free(wpa_s->last_scan_freqs);
+ 
+@@ -8314,8 +8316,6 @@
+ 	struct wpa_supplicant *parent = wpa_s->parent;
+ #endif /* CONFIG_MESH */
+ 
+-	wpas_ubus_free_bss(wpa_s);
+-
+ 	/* Remove interface from the global list of interfaces */
+ 	prev = global->ifaces;
+ 	if (prev == wpa_s) {

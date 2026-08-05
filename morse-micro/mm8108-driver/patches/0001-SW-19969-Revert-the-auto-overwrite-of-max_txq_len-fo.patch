@@ -1,0 +1,103 @@
+From 2fa5de8fa1e1d00d102b4bb08cbdc2d0cf9ad9bd Mon Sep 17 00:00:00 2001
+From: Ayman Grais <ayman.grais@morsemicro.com>
+Date: Fri, 24 Apr 2026 05:18:59 +0000
+Subject: [PATCH] SW-19969 Revert the auto overwrite of max_txq_len for WDS
+ (pull request #2101)
+
+As discussed recently, the setting of max_txq_len to 0 (unlimited) will
+cause a sever impact on Banff.
+
+The auto detect of WDS and setting this to 0 was a workaround to solve
+the monopolization issue reported in SW-18768. The workaround was good
+for both Eaglecrest and Banff only for this case, but resulted in other
+badness observed on Banff. Pushing unlimited traffic to the chip was not
+accounted for, hence setting it to 32 was the correct design choice.
+
+Lately, I have noticed as well Eaglecrest would suffer some badness with
+this set to 0 - only observed on kernel 6.12 (which has the airtime
+fairness / pull interface enabled by default) - see SIT-2887
+
+In this revert, I will put this back to the hard-coded value of 32, and
+on kernel 5.x we can reset to zero for WDS as needed (aka, apply the
+same workaround we took for 1.17 on OpenWRT). Once we enable airtime
+fairness for 5.x, this problem will be fully resolved.
+
+Note: the monopolization problem was mainly caused by stopping/resuming
+of the mac80211 TX queue, and not really related to the queue length.
+Setting to 0 was a way to avoid stopping/resuming. This is not used
+at all anyway for airtime fairness code path, so we should be safe once
+we enable the pull interface for k5.10 as well
+
+Approved-by: Andrew Pope
+Approved-by: James Herbert
+---
+ mac.c   | 17 -----------------
+ morse.h |  3 ---
+ skbq.c  |  2 +-
+ 3 files changed, 1 insertion(+), 21 deletions(-)
+
+diff --git a/mac.c b/mac.c
+index d03a95f5..cba1197d 100644
+--- a/mac.c
++++ b/mac.c
+@@ -4778,20 +4778,6 @@ static inline bool morse_check_sta_associated(struct ieee80211_vif *vif,
+ 		return false;
+ }
+ 
+-#if KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE
+-static void morse_mac_ops_sta_set_4addr(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-					struct ieee80211_sta *sta, bool enabled)
+-{
+-	struct morse *mors = hw->priv;
+-
+-	if (enabled && !mors->use_4addr_set) {
+-		mors->use_4addr_set = true;
+-		MORSE_INFO(mors, "%s: Setting max tx queue len to 0 for 4-addr mode\n", __func__);
+-		morse_set_max_skb_txq_len(0);
+-	}
+-}
+-#endif
+-
+ static inline bool morse_check_ibss_node_joined(struct ieee80211_vif *vif,
+ 						struct morse_vif *mors_vif)
+ {
+@@ -5956,9 +5942,6 @@ static struct ieee80211_ops mors_ops = {
+ 	.get_survey = morse_mac_ops_get_survey,
+ 	.set_key = morse_mac_ops_set_key,
+ 	.tx_last_beacon = morse_mac_ops_tx_last_beacon,
+-#if KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE
+-	.sta_set_4addr = morse_mac_ops_sta_set_4addr,
+-#endif
+ 	.join_ibss = morse_mac_join_ibss,
+ 	.leave_ibss = morse_mac_leave_ibss,
+ #if KERNEL_VERSION(6, 13, 0) > MAC80211_VERSION_CODE
+diff --git a/morse.h b/morse.h
+index 6b958466..23efc443 100644
+--- a/morse.h
++++ b/morse.h
+@@ -1338,9 +1338,6 @@ struct morse {
+ 	/* Number of AP interfaces */
+ 	u8 num_of_ap_interfaces;
+ 
+-	/* One or more station connected that uses 4-address mode */
+-	bool use_4addr_set;
+-
+ 	/** Tracking of STAs yet to join the BSS (if ap-type interfaces are active) */
+ 	struct {
+ 		/** See @ref morse_pre_assoc_peer */
+diff --git a/skbq.c b/skbq.c
+index 17a662cf..5d4c5b5f 100644
+--- a/skbq.c
++++ b/skbq.c
+@@ -170,7 +170,7 @@ morse_skb_tx_status_to_tx_control(struct morse *mors, struct sk_buff *skb,
+ void morse_set_max_skb_txq_len(int new_max_txq_len)
+ {
+ 	/* Max skb TX queue length is already higher than updated value. */
+-	if (new_max_txq_len && max_txq_len > new_max_txq_len)
++	if (max_txq_len > new_max_txq_len)
+ 		return;
+ 
+ 	max_txq_len = new_max_txq_len;
+-- 
+2.34.1
+
