@@ -14,7 +14,6 @@ bcm2712,mm6108-sdio |\
 bcm2712,mm6108-spi |\
 bcm2712,mm8108-sdio |\
 bcm2712,mm8108-spi |\
-bcm2710,mm8108-usb |\
 morse,ekh01 |\
 morse,mm6108-ekh01-spi |\
 morse,mm8108-ekh01-spi |\
