@@ -310,7 +310,7 @@ GO_PIE_SUPPORTED_OS_ARCH:= \
   windows/arm64
 
 # From https://go.dev/src/cmd/go/internal/work/init.go
-go_pie_install_suffix=$(if $(filter $(1),aix/ppc64 windows/386 windows/amd64 windows/arm windows/arm64),,shared)
+go_pie_install_suffix=$(if $(filter $(1),aix/ppc64 windows/386 windows/amd64 windows/arm64),,shared)
 
 ifneq ($(filter $(GO_HOST_OS_ARCH),$(GO_PIE_SUPPORTED_OS_ARCH)),)
   GO_HOST_PIE_SUPPORTED:=1

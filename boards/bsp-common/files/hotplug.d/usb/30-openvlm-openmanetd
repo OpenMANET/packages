@@ -1,0 +1,29 @@
+#!/bin/sh
+# Restart openmanetd when an OpenVLM USB audio device (0d8c:0012) is
+# plugged in or unplugged.
+#
+# PRODUCT is vendor/product/bcdDevice in hex with leading zeros stripped,
+# so 0d8c:0012 appears as "d8c/12/<version>".
+#
+# Match only "add"/"remove" (real hotplug events) and not "bind"/"unbind",
+# which also fire during boot coldplug and would restart openmanetd while
+# init is still bringing it up. Match only DEVTYPE=usb_device so a single
+# physical plug (which also emits one event per USB interface) triggers
+# exactly one restart.
+
+[ "$DEVTYPE" = "usb_device" ] || exit 0
+
+case "$PRODUCT" in
+	d8c/12/*) ;;
+	*) exit 0 ;;
+esac
+
+case "$ACTION" in
+	add|remove) ;;
+	*) exit 0 ;;
+esac
+
+[ -x /etc/init.d/openmanetd ] || exit 0
+
+logger -t openvlm-hotplug "OpenVLM device $ACTION (${DEVICENAME:-unknown}), restarting openmanetd"
+/etc/init.d/openmanetd restart

@@ -1,0 +1,316 @@
+#!/usr/bin/ucode
+"use strict";
+
+import * as uloop from "uloop";
+import { connect } from "ubus";
+import { open, popen, readlink, basename } from "fs";
+import {
+	ulog_open, ulog_threshold,
+	ULOG_SYSLOG,
+	LOG_DAEMON, LOG_INFO, LOG_DEBUG,
+	INFO, ERR, WARN
+} from "log";
+
+const ubus = connect();
+const MHZ_TO_KHZ = 1000;
+let wpas_listener = null;
+
+/* open syslog with ident and facility */
+const LOG_TAG = "apsta-handler";
+ulog_open(ULOG_SYSLOG, LOG_DAEMON, LOG_TAG);
+
+/* choose verbosity */
+const DEBUG = true;
+ulog_threshold(DEBUG ? LOG_DEBUG : LOG_INFO);
+
+/* --- morse_cli JSON channel fetch --- */
+function _get_morse_cli_channel_info_once(ifname) {
+	const proc = popen("morse_cli -i " + ifname + " channel -j", "r");
+	if (!proc) {
+		ERR("morse_cli: popen failed (proc is null)");
+		return null;
+	}
+
+	const txt = proc.read("all");
+	const rc  = proc.close();
+	if (txt == null || rc == null || rc < 0) {
+		ERR("morse_cli: invalid read/rc (txt=%s, rc=%s)",
+			(txt == null ? "null" : txt), rc);
+		return null;
+	}
+
+	let j;
+	try {
+		j = json(txt);
+	} catch (e) {
+		ERR("morse_cli: JSON parse failed: %s", e);
+		return null;
+	}
+
+	if (!j || type(j) != "object") {
+		ERR("morse_cli: parsed value not an object (type=%s)", type(j));
+		return null;
+	}
+
+	const out = {
+		s1g_frequency_khz:        +j.channel_frequency,
+		s1g_chanbw:               +j.channel_op_bw,
+		s1g_prim_chwidth:         +j.channel_primary_bw,
+		s1g_prim_1mhz_chan_index: +j.channel_index,
+	};
+
+	INFO("morse_cli: success (freq_khz=%s, chanbw=%s, prim_bw=%s, idx=%s)",
+		out.s1g_frequency_khz, out.s1g_chanbw, out.s1g_prim_chwidth, out.s1g_prim_1mhz_chan_index);
+
+	return out;
+}
+
+/* Query morse_cli for channel info with bounded exponential backoff. */
+function get_morse_cli_channel_info(ifname) {
+	const attempts = 35;
+	const base_ms  = 100;
+	const max_ms   = 1000;
+
+	for (let i = 0; i < attempts; i++) {
+		const res = _get_morse_cli_channel_info_once(ifname);
+		if (res) {
+			return res;
+		}
+
+		/* Back off before the next attempt (but not after the last one). */
+		if (i + 1 < attempts) {
+			/* Exponential backoff: 100, 200, 400, 800, 1000, 1000, ... */
+			let wait = base_ms * (1 << i);
+			if (wait > max_ms) wait = max_ms;
+			sleep(wait);
+		}
+	}
+	return null;
+}
+
+/* --- CSV helpers --- */
+function kv_to_dict(keys, values) {
+	if (length(keys) != length(values))
+		return null;
+
+	let dict = {};
+	for (let i = 0; i < length(keys); i++)
+		dict[keys[i]] = values[i];
+
+	return dict;
+}
+
+/* --- regdb lookup (channels.csv) --- */
+function get_chaninfo_from_rgdb(country, freq_khz, bw_mhz) {
+	let f = open("/usr/share/morse-regdb/channels.csv", "r");
+	if (!f)
+		return null;
+
+	let header = null;
+	let line;
+
+	while ((line = f.read("line")) != null) {
+		line = rtrim(line, "\n");
+
+		if (!header) {
+			header = split(line, ",");
+			continue;
+		}
+		if (line == "")
+			continue;
+
+		let vals = split(line, ",");
+		let chan_info = kv_to_dict(header, vals);
+
+		if (chan_info &&
+		    chan_info.country_code == country &&
+		    int(chan_info.bw) == int(bw_mhz) &&
+		    int(chan_info.centre_freq_mhz * MHZ_TO_KHZ) == freq_khz)
+		{
+			f.close();
+			return chan_info;
+		}
+	}
+
+	f.close();
+	return null;
+}
+
+/* --- fetch ifname + country from wireless status --- */
+function get_halow_bsta_info() {
+	const ws = ubus.call("network.wireless", "status");
+	if (!ws) {
+		ERR("Couldn't call network:wireless.status\n");
+		return null;
+	}
+
+	/* Use two vars: dev_name (key), dev (object) */
+	for (let dev_name, dev in ws) {
+		if (!dev || !dev.config)
+			continue;
+
+		if (dev.config.band !== "s1g")
+			continue;
+
+		if (!dev.interfaces || !length(dev.interfaces))
+			continue;
+
+		/* Arrays are fine to iterate with one var (value), but being explicit also works */
+		for (let _, iface in dev.interfaces) {
+			if (!iface) continue;
+
+			let cfg = iface.config || {};
+			if (cfg.mode === "sta") {
+				return {
+					ifname: iface.ifname || cfg.ifname || null,
+					country: dev.config.country || null,
+				};
+			}
+		}
+	}
+	return null;
+}
+
+
+function get_chaninfo_from_driver() {
+	const hi = get_halow_bsta_info();
+	if (!hi || !hi.ifname || !hi.country) {
+		ERR("failed to fetch halow bsta info\n");
+		ERR("get_chaninfo_from_driver: missing halow bsta info (ifname=%s, country=%s)\n",
+		      hi ? (hi.ifname ?? "(nil)") : "(nil)",
+		      hi ? (hi.country ?? "(nil)") : "(nil)");
+		return null;
+	}
+
+	const chan_info = get_morse_cli_channel_info(hi.ifname);
+	if (!chan_info) {
+		ERR("morse_cli channel info fetch failed\n");
+		ERR("get_chaninfo_from_driver: failed to get channel info from morse_cli for ifname=%s\n",
+		      hi.ifname);
+		return null;
+	}
+
+	/* add op_class from regdb if available */
+	const reg = get_chaninfo_from_rgdb(hi.country,
+	                                   chan_info.s1g_frequency_khz,
+	                                   chan_info.s1g_chanbw);
+	if (!reg) {
+		ERR("regdb lookup failed\n");
+		ERR("get_chaninfo_from_driver: no regdb entry found for country=%s freq=%d bw=%d\n",
+		      hi.country, chan_info.s1g_frequency_khz, chan_info.s1g_chanbw);
+		return null;
+	}
+	if (!reg.op_class && !reg.global_op_class) {
+		ERR("regdb missing op_class\n");
+		ERR("get_chaninfo_from_driver: regdb entry missing op_class field: %J\n", reg);
+		return null;
+	}
+
+	chan_info.op_class = reg.global_op_class ?? reg.op_class;
+	chan_info.channel  = reg.s1g_chan ?? reg.channel;
+
+	return chan_info;
+}
+
+
+
+function switch_to_supplicant_channel(phy) {
+
+	/* Required keys we must have before calling hostapd */
+	const requiredFields = [
+		"op_class",
+		"channel",
+		"s1g_chanbw",
+		"s1g_prim_chwidth",
+		"s1g_prim_1mhz_chan_index"
+	];
+
+	let chan_info = get_chaninfo_from_driver();
+	if (!chan_info) {
+		ERR("Unable to find the channel info from driver");
+		return;
+	}
+
+	/* Validate required fields */
+	for (let field in requiredFields) {
+		if (!(field in chan_info)) {
+			ERR("Missing required field '%s' in data: %J", field, chan_info);
+			return;
+		}
+	}
+
+	const msg = {
+		phy:                      phy,
+		up:                       true,
+		cs:                       true,
+		op_class:                 int(chan_info.op_class),
+		channel:                  int(chan_info.channel),
+		s1g_chanbw:               int(chan_info.s1g_chanbw),
+		s1g_prim_chwidth:         int(chan_info.s1g_prim_chwidth),
+		s1g_prim_1mhz_chan_index: int(chan_info.s1g_prim_1mhz_chan_index),
+	};
+
+	INFO("Setting hostapd channel to: %J", msg);
+
+	ubus.call("hostapd_s1g", "apsta_state", msg);
+}
+
+
+function set_hostapd_iface_state(phy, up) {
+	const msg = {
+		phy: phy,
+		up:  up
+	};
+
+	ubus.call("hostapd_s1g", "apsta_state", msg);
+}
+
+function ifname_to_phy(ifname) {
+	let link = readlink(`/sys/class/net/${ifname}/phy80211`);
+	if (!link)
+		return null;
+
+	return basename(link);
+}
+
+function handle_supplicant_events(ev, data) {
+	INFO("event: %s data=%J", ev, data);
+
+	if (!data || !data.state || !data.ifname)
+		return;
+
+	let phy = ifname_to_phy(data.ifname);
+	if (!phy) {
+		ERR("skip: no phy for ifname %s", data.ifname ?? "(nil)");
+		return;
+	}
+
+	switch (data.state) {
+	case "DISCONNECTED":
+	case "AUTHENTICATING":
+	case "SCANNING":
+		set_hostapd_iface_state(phy, false);
+		break;
+
+	case "INTERFACE_DISABLED":
+		set_hostapd_iface_state(phy, true);
+		break;
+
+	case "COMPLETED": {
+		switch_to_supplicant_channel(phy);
+		gc();
+		INFO(`Object count: ${gc("count")}`);
+		break;
+	}
+	default:
+		return;
+	}
+}
+ 
+function start_wpa_supplicant_listener() {
+	wpas_listener = ubus.listener("wpa_supplicant_s1g.state", handle_supplicant_events);
+}
+
+uloop.init();
+start_wpa_supplicant_listener();
+uloop.run();

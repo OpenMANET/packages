@@ -1,0 +1,104 @@
+From 9a90f25f260aa62e4ede5a8d893eb522d0cccdea Mon Sep 17 00:00:00 2001
+From: James Haggerty <james.haggerty@morsemicro.com>
+Date: Thu, 11 Sep 2025 14:11:04 +1000
+Subject: [PATCH] APP-5501 Load driver even if region not in BCF
+
+This helps us correctly hotplug the wireless configuration
+on OpenWrt and exposes the available countries in sysfs.
+Obviously, this is a hack and the driver should _not_ be used
+in this state; we prevent this by blocking interface
+bring-up.
+---
+ firmware.c | 32 ++++++++++++++++++++++++++++++--
+ mac.c      |  6 ++++++
+ morse.h    |  1 +
+ 3 files changed, 37 insertions(+), 2 deletions(-)
+
+--- a/firmware.c
++++ b/firmware.c
+@@ -436,6 +436,8 @@
+ static int morse_bcf_load(struct morse *mors, const struct firmware *bcf,
+ 			  unsigned int bcf_address)
+ {
++	bool first_regdom_found = false;
++	morse_elf_shdr first_regdom_hdr = {};
+ 	int i = 0;
+ 	int ret = 0;
+ 	morse_elf_ehdr ehdr;
+@@ -527,6 +529,11 @@
+ 				goto exit;
+ 		}
+ 
++		if (!first_regdom_found) {
++			first_regdom_hdr = shdr;
++			first_regdom_found = true;
++		}
++
+ 		if ((strncmp(regdom_cc, mors->country, 2) == 0) && regdom_len < 0) {
+ 			ret = copy_bcf_section(bcf, bcf_buf + config_len, shdr,
+ 					       bcf_buf_len - config_len);
+@@ -534,6 +541,7 @@
+ 			if (ret < 0)
+ 				goto exit;
+ 			regdom_len = ret;
++			mors->has_valid_regdom = true;
+ 
+ 			/* Do not break if parsing all regdoms to save to sysfs */
+ 			if (!fill_regdom_info_from_bcf)
+@@ -542,9 +550,27 @@
+ 	}
+ 
+ 	if (regdom_len < 0) {
+-		MORSE_ERR(mors, "Country code %s not found in BCF", mors->country);
+-		ret = -ENOENT;
+-		goto exit;
++		if (first_regdom_found) {
++			/* If region not supported and it's not set via OTP, force to first regdom.
++			 * This is helpful in initial bring-up, but userspace should
++			 * know to select a valid country (based on sysfs) before actually
++			 * using the device, since this may cause the driver and
++			 * firmware to have differing views about allowable frequencies.
++			 * This is a obviously a terrible hack.
++			 */
++			MORSE_ERR(mors, "Regdom %s not found in BCF; fix before using driver\n",
++				  mors->country);
++			ret = copy_bcf_section(bcf, bcf_buf + config_len, first_regdom_hdr,
++					       bcf_buf_len - config_len);
++			if (ret < 0)
++				goto exit;
++			regdom_len = ret;
++			mors->has_valid_regdom = false;
++		} else {
++			MORSE_ERR(mors, "Country code %s not found in BCF", mors->country);
++			ret = -ENOENT;
++			goto exit;
++		}
+ 	}
+ 
+ 	if ((config_len + regdom_len) > bcf_buf_len) {
+--- a/mac.c
++++ b/mac.c
+@@ -3478,6 +3478,12 @@
+ 	struct morse *mors = hw->priv;
+ 	struct morse_vif *mors_vif = (struct morse_vif *)vif->drv_priv;
+ 
++	if (!mors->has_valid_regdom) {
++		MORSE_ERR(mors, "%s: Unable to start interface as country %s not in BCF\n",
++			__func__, mors->country);
++		return -EPERM;
++	}
++
+ 	if (!morse_mac_is_iface_type_supported(vif)) {
+ 		MORSE_ERR(mors, "%s: Attempt to add type %d, not supported\n", __func__, vif->type);
+ 		return -EOPNOTSUPP;
+--- a/morse.h
++++ b/morse.h
+@@ -1292,6 +1292,8 @@
+ 		char (*list)[3];
+ 	} regdoms;
+ 
++    bool has_valid_regdom;
++
+ 	/* Stored Channel Information, sta_type, enc_mode, RAW */
+ 	struct morse_custom_configs custom_configs;
+ 

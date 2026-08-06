@@ -1,0 +1,75 @@
+#!/bin/sh /etc/rc.common
+
+START=90
+STOP=50
+USE_PROCD=1
+
+SERVICE="apsta-handler"
+
+# Pick the first enabled wifi-device of type "morse"
+find_morse_device() {
+    local dev="$1" type disabled
+    config_get type "$dev" type
+    [ "$type" = "morse" ] || return 0
+
+    config_get disabled "$dev" disabled
+    [ "$disabled" = "1" ] && return 0
+
+    # Keep only the first match; config_foreach won't stop early, so guard here
+    [ -n "$morse_device" ] && return 0
+    morse_device="$dev"
+}
+
+# For a given device, detect if both AP and STA ifaces exist
+scan_iface() {
+    local s="$1" parent="$2" dev mode disabled
+    config_get dev "$s" device
+    [ "$dev" = "$parent" ] || return 0
+
+    config_get disabled "$s" disabled
+    [ "$disabled" = "1" ] && return 0
+
+    config_get mode "$s" mode
+    case "$mode" in
+        ap)  has_ap=1 ;;
+        sta) has_sta=1 ;;
+    esac
+
+    if [ "$has_ap" = "1" ] && [ "$has_sta" = "1" ]; then
+        found=1
+        return 1   # harmless here; we still rely on 'found' outside
+    fi
+    return 0
+}
+
+# Returns 0 if the first enabled morse device has both AP and STA, else 1
+have_ap_sta_on_morse() {
+    found=0
+    has_ap=0
+    has_sta=0
+    morse_device=""
+
+    config_load wireless
+    config_foreach find_morse_device wifi-device
+    [ -z "$morse_device" ] && return 1
+
+    config_foreach scan_iface wifi-iface "$morse_device"
+
+    [ "$found" = "1" ] && return 0 || return 1
+}
+
+start_service() {
+    if have_ap_sta_on_morse; then
+        procd_open_instance "$SERVICE"
+        # Use full path if not in PATH: /usr/sbin/apsta-handler
+        procd_set_param command "$SERVICE"
+        procd_set_param stdout 1
+        procd_set_param stderr 1
+        procd_set_param respawn
+        procd_close_instance
+    fi
+}
+
+service_triggers() {
+    procd_add_reload_trigger "wireless"
+}
