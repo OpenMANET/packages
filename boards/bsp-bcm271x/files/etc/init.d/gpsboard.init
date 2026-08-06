@@ -74,10 +74,6 @@ check_morse_section() {
         if [ -z "$device_path" ]; then
             logger -t "$NAME" "morse wifi-device found but path does not exist"
             exit 0
-        elif [ "${device_path#*usb}" != "$device_path" ]; then
-            # USB-attached MM8108 devices do not have the Raspberry Pi SPI
-            # path that this diagnostic was originally written to validate.
-            return 0
         elif [ "$device_path" != "$expected_path" ]; then
             logger -t "$NAME" "morse wifi-device path does not match: got '$device_path', expected '$expected_path'"
             exit 0
