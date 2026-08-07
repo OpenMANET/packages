@@ -34,11 +34,13 @@ define KernelPackage/mm6108
   SUBMENU:=Wireless Drivers
   TITLE:=Morse Micro WIFI HaLow mm6108
   DEPENDS:= +kmod-dot11ah +kmod-mmc +kmod-mac80211 +kmod-lib-crc7 +kmod-trelay
-  FILES:=\
-    $(PKG_BUILD_DIR)/morse.ko \
-    $(PKG_BUILD_DIR)/dot11ah/dot11ah.ko
-  AUTOLOAD:=$(call AutoProbe,mm6108)
-  MODPARAMS.mm6108:=country=US enable_ext_xtal_init=1
+  # The module is renamed to mm6108_sdio.ko (patch 020) so this package can
+  # coexist with kmod-mm8108's morse.ko in one rootfs. dot11ah.ko is
+  # provided by the shared kmod-dot11ah package (from mm8108-driver), not
+  # shipped from this tree.
+  FILES:=$(PKG_BUILD_DIR)/mm6108_sdio.ko
+  AUTOLOAD:=$(call AutoProbe,mm6108_sdio)
+  MODPARAMS.mm6108_sdio:=country=US enable_ext_xtal_init=1
   PROVIDES:=kmod-morse
 endef
 

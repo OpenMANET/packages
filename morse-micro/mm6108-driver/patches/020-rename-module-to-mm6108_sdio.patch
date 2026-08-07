@@ -1,0 +1,124 @@
+Rename the morse module to mm6108_sdio to coexist with the mm8108 driver
+
+Both mm6108-driver and mm8108-driver build a module named morse.ko, so the
+two kernel packages clash on /lib/modules/<ver>/morse.ko and cannot be
+installed into the same rootfs. Rename this (mm6108) build's module to
+mm6108_sdio.ko, following Gateworks morse_driver commit 1e008f2d17a2
+("wifi: morse: rename to mm6108_sdio").
+
+The dot11ah.ko module is intentionally NOT packaged from this tree; the
+shared kmod-dot11ah package from mm8108-driver provides it (mm6108's
+modpost already links against mm8108-driver.symvers).
+
+--- a/Makefile
++++ b/Makefile
+@@ -128,58 +128,58 @@
+ 	ccflags-y += -DMORSE_TRACE_PATH=$(MORSE_TRACE_PATH)
+ endif
+ 
+-obj-$(CONFIG_WLAN_VENDOR_MORSE) += morse.o dot11ah/
++obj-$(CONFIG_WLAN_VENDOR_MORSE) += mm6108_sdio.o dot11ah/
+ 
+-morse-y = mac.o
+-morse-y += init.o
+-morse-y += skbq.o
+-morse-y += debug.o
+-morse-y += trace.o
+-morse-y += mm8108.o
+-morse-y += mm6108.o
+-morse-y += command.o
+-morse-y += hw.o
+-morse-y += beacon.o
+-morse-y += pageset.o
+-morse-y += pager_hw.o
+-morse-y += ps.o
+-morse-y += raw.o
+-morse-y += twt.o
+-morse-y += cac.o
+-morse-y += ndpprobe.o
+-morse-y += of.o
+-morse-y += firmware.o
+-morse-y += yaps.o
+-morse-y += yaps_hw.o
+-morse-y += watchdog.o
+-morse-y += event.o
+-morse-y += crc16_xmodem.o
+-morse-y += offload.o
+-morse-y += vendor_ie.o
+-morse-y += bus_test.o
+-morse-y += ocs.o
+-morse-y += mbssid.o
+-morse-y += mem_access.o
+-morse-y += mesh.o
+-morse-y += page_slicing.o
+-morse-y += pv1.o
+-morse-y += hw_scan.o
+-morse-y += coredump.o
+-morse-y += peer.o
+-morse-y += led.o
+-morse-y += bss_stats.o
+-morse-y += hw_beacon.o
+-morse-y += sysfs.o
+-morse-y += scan_result_cache.o
+-morse-$(CONFIG_PM) += wowlan.o
+-morse-$(CONFIG_MORSE_MONITOR) += monitor.o
+-morse-$(CONFIG_MORSE_SDIO) += sdio.o
+-morse-$(CONFIG_MORSE_SPI) += spi.o
+-morse-$(CONFIG_MORSE_USB) += usb.o
+-morse-$(CONFIG_MORSE_VENDOR_COMMAND) += vendor.o
+-morse-$(CONFIG_MORSE_USER_ACCESS) += uaccess.o
+-morse-$(CONFIG_MORSE_HW_TRACE) += hw_trace.o
+-morse-$(CONFIG_ANDROID) += apf.o
++mm6108_sdio-y = mac.o
++mm6108_sdio-y += init.o
++mm6108_sdio-y += skbq.o
++mm6108_sdio-y += debug.o
++mm6108_sdio-y += trace.o
++mm6108_sdio-y += mm8108.o
++mm6108_sdio-y += mm6108.o
++mm6108_sdio-y += command.o
++mm6108_sdio-y += hw.o
++mm6108_sdio-y += beacon.o
++mm6108_sdio-y += pageset.o
++mm6108_sdio-y += pager_hw.o
++mm6108_sdio-y += ps.o
++mm6108_sdio-y += raw.o
++mm6108_sdio-y += twt.o
++mm6108_sdio-y += cac.o
++mm6108_sdio-y += ndpprobe.o
++mm6108_sdio-y += of.o
++mm6108_sdio-y += firmware.o
++mm6108_sdio-y += yaps.o
++mm6108_sdio-y += yaps_hw.o
++mm6108_sdio-y += watchdog.o
++mm6108_sdio-y += event.o
++mm6108_sdio-y += crc16_xmodem.o
++mm6108_sdio-y += offload.o
++mm6108_sdio-y += vendor_ie.o
++mm6108_sdio-y += bus_test.o
++mm6108_sdio-y += ocs.o
++mm6108_sdio-y += mbssid.o
++mm6108_sdio-y += mem_access.o
++mm6108_sdio-y += mesh.o
++mm6108_sdio-y += page_slicing.o
++mm6108_sdio-y += pv1.o
++mm6108_sdio-y += hw_scan.o
++mm6108_sdio-y += coredump.o
++mm6108_sdio-y += peer.o
++mm6108_sdio-y += led.o
++mm6108_sdio-y += bss_stats.o
++mm6108_sdio-y += hw_beacon.o
++mm6108_sdio-y += sysfs.o
++mm6108_sdio-y += scan_result_cache.o
++mm6108_sdio-$(CONFIG_PM) += wowlan.o
++mm6108_sdio-$(CONFIG_MORSE_MONITOR) += monitor.o
++mm6108_sdio-$(CONFIG_MORSE_SDIO) += sdio.o
++mm6108_sdio-$(CONFIG_MORSE_SPI) += spi.o
++mm6108_sdio-$(CONFIG_MORSE_USB) += usb.o
++mm6108_sdio-$(CONFIG_MORSE_VENDOR_COMMAND) += vendor.o
++mm6108_sdio-$(CONFIG_MORSE_USER_ACCESS) += uaccess.o
++mm6108_sdio-$(CONFIG_MORSE_HW_TRACE) += hw_trace.o
++mm6108_sdio-$(CONFIG_ANDROID) += apf.o
+ 
+ ifneq ($(CONFIG_DISABLE_MORSE_FULLMAC),y)
+ 	morse-y += wiphy.o
