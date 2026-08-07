@@ -12,7 +12,7 @@ modpost already links against mm8108-driver.symvers).
 
 --- a/Makefile
 +++ b/Makefile
-@@ -128,58 +128,58 @@
+@@ -128,69 +128,69 @@
  	ccflags-y += -DMORSE_TRACE_PATH=$(MORSE_TRACE_PATH)
  endif
  
@@ -121,4 +121,30 @@ modpost already links against mm8108-driver.symvers).
 +mm6108_sdio-$(CONFIG_ANDROID) += apf.o
  
  ifneq ($(CONFIG_DISABLE_MORSE_FULLMAC),y)
- 	morse-y += wiphy.o
+-	morse-y += wiphy.o
++	mm6108_sdio-y += wiphy.o
+ endif
+ ifeq ($(CONFIG_DISABLE_MORSE_RC),y)
+-	morse-y += minstrel_rc.o
++	mm6108_sdio-y += minstrel_rc.o
+ else
+-	morse-y += mmrc/mmrc_osal.o
+-	morse-y += mmrc-submodule/src/core/mmrc.o
+-	morse-y += rc.o
+-	morse-y += mmrc_debugfs.o
++	mm6108_sdio-y += mmrc/mmrc_osal.o
++	mm6108_sdio-y += mmrc-submodule/src/core/mmrc.o
++	mm6108_sdio-y += rc.o
++	mm6108_sdio-y += mmrc_debugfs.o
+ endif
+ 
+ SRC := $(shell pwd)
+@@ -202,7 +202,7 @@
+ 	$(MAKE) MORSE_VERSION=$(MORSE_VERSION) -C $(KERNEL_SRC) M=$(SRC) modules_install
+ 
+ clean:
+-	rm -f  $(morse-y) *.o *~ core .depend .*.cmd *.ko *.mod.c
++	rm -f  $(mm6108_sdio-y) *.o *~ core .depend .*.cmd *.ko *.mod.c
+ 	rm -f Module.markers Module.symvers modules.order
+ 	rm -rf .tmp_versions Modules.symvers
+ 	make -C ./dot11ah clean
