@@ -77,16 +77,16 @@ else
   MORSE_MAKEDEFS += DEBUG=n
 endif
 
-ifneq ($(CONFIG_MORSE_RC),y)
-  MORSE_MAKEDEFS += CONFIG_DISABLE_MORSE_RC=y
-  MORSE_MAKEDEFS += CONFIG_MORSE_RC=y
-endif
-
+# Driver 2.0.x cannot build with rate control disabled: bss_stats.h and
+# morse.h reference mmrc types (struct mmrc_rate, MMRC_SUPP_NUM_*)
+# unconditionally, and those only exist under CONFIG_MORSE_RC. Never pass
+# CONFIG_DISABLE_MORSE_RC; always build with MMRC (as mm8108-driver does).
 MORSE_MAKEDEFS += \
   MORSE_VERSION="$(MORSE_VERSION)" \
   KERNEL_SRC=$(LINUX_DIR) \
   CONFIG_BACKPORT_VERSION=$(MAC80211_VERSION) \
   CONFIG_MORSE_POWERSAVE_MODE=0 \
+  CONFIG_MORSE_RC=y \
   CONFIG_MORSE_COUNTRY=US \
   CONFIG_WLAN_VENDOR_MORSE=m
 
