@@ -55,38 +55,38 @@ ifeq ($(CONFIG_MORSE_SPI),y)
   MORSE_MAKEDEFS += CONFIG_MORSE_SPI=y
 endif
 
-ifeq ($(CONFIG_MORSE_USER_ACCESS),y)
-  MORSE_MAKEDEFS += CONFIG_MORSE_USER_ACCESS=y
-endif
-
-ifeq ($(CONFIG_MORSE_VENDOR_COMMAND),y)
-  MORSE_MAKEDEFS += CONFIG_MORSE_VENDOR_COMMAND=y
-endif
-
-ifeq ($(CONFIG_MORSE_MONITOR),y)
-  MORSE_MAKEDEFS += CONFIG_MORSE_MONITOR=y
-endif
-
 ifeq ($(CONFIG_MORSE_DEBUG),y)
   # This DEBUG (used by the driver Makefile) should not be confused with
   # -DDEBUG (used by the kernel build system).
   MORSE_MAKEDEFS += DEBUG=y
-  MORSE_MAKEDEFS += CONFIG_MORSE_DEBUGFS=y
   MORSE_MAKEDEFS += CONFIG_MORSE_ENABLE_TEST_MODES=y
 else
   MORSE_MAKEDEFS += DEBUG=n
 endif
 
-# Driver 2.0.x cannot build with rate control disabled: bss_stats.h and
-# morse.h reference mmrc types (struct mmrc_rate, MMRC_SUPP_NUM_*)
-# unconditionally, and those only exist under CONFIG_MORSE_RC. Never pass
-# CONFIG_DISABLE_MORSE_RC; always build with MMRC (as mm8108-driver does).
+# Hardcode the feature set (mirroring mm8108-driver) instead of gating on
+# OpenWrt CONFIG_MORSE_* symbols, which are unreliable here (their kconfig
+# entries depend on the virtual PACKAGE_kmod-morse). Driver 2.0.x cannot
+# build without them anyway:
+#  - CONFIG_MORSE_RC: bss_stats.h/morse.h reference mmrc types
+#    (struct mmrc_rate, MMRC_SUPP_NUM_*) unconditionally.
+#  - CONFIG_MORSE_VENDOR_COMMAND: morse_vendor_* callers are unguarded and
+#    vendor.h has no fallback stubs, so morse.ko fails modpost without
+#    vendor.o.
+#  - CONFIG_MORSE_SDIO: without sdio.o the driver cannot reach the MM6108,
+#    which is an SDIO device.
 MORSE_MAKEDEFS += \
   MORSE_VERSION="$(MORSE_VERSION)" \
   KERNEL_SRC=$(LINUX_DIR) \
   CONFIG_BACKPORT_VERSION=$(MAC80211_VERSION) \
+  CONFIG_MORSE_SDIO=y \
+  CONFIG_MORSE_SDIO_ALIGNMENT=4 \
+  CONFIG_MORSE_USER_ACCESS=y \
   CONFIG_MORSE_POWERSAVE_MODE=0 \
+  CONFIG_MORSE_VENDOR_COMMAND=y \
   CONFIG_MORSE_RC=y \
+  CONFIG_MORSE_MONITOR=y \
+  CONFIG_MORSE_DEBUGFS=y \
   CONFIG_MORSE_COUNTRY=US \
   CONFIG_WLAN_VENDOR_MORSE=m
 
