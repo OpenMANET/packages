@@ -1,0 +1,13 @@
+diff --git a/src/ap/dpp_hostapd.c b/src/ap/dpp_hostapd.c
+index 4358761d7..2f36f44dc 100644
+--- a/src/ap/dpp_hostapd.c
++++ b/src/ap/dpp_hostapd.c
+@@ -4057,7 +4057,7 @@ int hostapd_dpp_push_button(struct hostapd_data *hapd, const char *cmd)
+ {
+ 	struct hapd_interfaces *ifaces = hapd->iface->interfaces;
+ 
+-	if (!ifaces || !ifaces->dpp)
++	if (!ifaces || !ifaces->dpp || hapd->iface->state != HAPD_IFACE_ENABLED)
+ 		return -1;
+ 	os_get_reltime(&ifaces->dpp_pb_time);
+ 	ifaces->dpp_pb_announce_time.sec = 0;
