@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Do not change the setting during sysupgrade (mirrors morse-bundle's
+# 00_uhttpd_http_redirect, which this deliberately sorts after and
+# overrides — uci-defaults run in lexical order on first boot).
+if [ -f /sysupgrade.tgz ]; then
+    exit 0
+fi
+
+# Serve LuCI over plain http by default; don't redirect to https.
+# https:// on port 443 remains available for users who want it.
+uci set uhttpd.main.redirect_https=0
+
+exit 0
