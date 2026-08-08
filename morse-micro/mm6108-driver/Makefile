@@ -75,14 +75,17 @@ endif
 #  - CONFIG_MORSE_VENDOR_COMMAND: morse_vendor_* callers are unguarded and
 #    vendor.h has no fallback stubs, so morse.ko fails modpost without
 #    vendor.o.
-#  - CONFIG_MORSE_SDIO: without sdio.o the driver cannot reach the MM6108,
-#    which is an SDIO device.
+#  - CONFIG_MORSE_SDIO + CONFIG_MORSE_SPI: MM6108 modules ship in both SDIO
+#    and SPI variants (the Seeed Wio-WM6108 mini-PCIe module is SPI). Both
+#    bus front-ends live in the one module and each only probes when a
+#    matching device exists, so both are always enabled.
 MORSE_MAKEDEFS += \
   MORSE_VERSION="$(MORSE_VERSION)" \
   KERNEL_SRC=$(LINUX_DIR) \
   CONFIG_BACKPORT_VERSION=$(MAC80211_VERSION) \
   CONFIG_MORSE_SDIO=y \
   CONFIG_MORSE_SDIO_ALIGNMENT=4 \
+  CONFIG_MORSE_SPI=y \
   CONFIG_MORSE_USER_ACCESS=y \
   CONFIG_MORSE_POWERSAVE_MODE=0 \
   CONFIG_MORSE_VENDOR_COMMAND=y \
