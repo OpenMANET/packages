@@ -57,7 +57,7 @@ var MorseStats = view.extend({
 		var rows = [];
 
 		if (!iface) {
-			iface = 'wlan0';
+			iface = 'wlh0';
 		}
 
 		var table = E('table', { class: 'table' }, [

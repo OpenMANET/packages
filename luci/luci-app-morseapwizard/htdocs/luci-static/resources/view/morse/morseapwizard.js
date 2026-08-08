@@ -175,7 +175,7 @@ return view.extend({
 		switch (this.data.wizard.device_mode) {
 			case 'standard':
 				morseuci.forceBridge('lan', 'br-lan');
-				uci.set('system', 'led_halow', 'dev', 'wlan0');
+				uci.set('system', 'led_halow', 'dev', 'wlh0');
 				uci.set('system', 'led_80211n_ap', 'dev', 'phy0-ap0');
 				uci.set('wireless', morseInterfaceName, 'encryption', 'sae');
 				for (const wifiDevice of wifiDevices) {
@@ -251,7 +251,7 @@ return view.extend({
 				for (const wifiDevice of wifiDevices) {
 					uci.set('wireless', wifiDevice.apSectionName, 'encryption', 'psk2');
 				}
-				uci.set('system', 'led_halow', 'dev', 'wlan0');
+				uci.set('system', 'led_halow', 'dev', 'wlh0');
 				uci.set('system', 'led_80211n_ap', 'dev', 'phy0-ap0');
 				break;
 		}

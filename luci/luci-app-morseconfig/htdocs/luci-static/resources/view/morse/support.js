@@ -50,7 +50,7 @@ return view.extend({
 		if (morseDeviceInterface) {
 			this.morseDeviceInterface = morseDeviceInterface;
 		} else {
-			this.morseDeviceInterface = 'wlan0';
+			this.morseDeviceInterface = 'wlh0';
 		}
 
 		var view = E([], [
