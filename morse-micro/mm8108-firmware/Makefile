@@ -40,7 +40,12 @@ define Package/mm8108-firmware/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/firmware/mm8108b2-rl.bin $(1)/lib/firmware/morse
 	$(INSTALL_DATA) ./files/bcf_mm8108_m20_us.bin $(1)/lib/firmware/morse
 	ln -s bcf_mm8108_m20_us.bin $(1)/lib/firmware/morse/bcf_boardtype_0808.bin
-	$(CP) $(PKG_BUILD_DIR)/bcf/morsemicro/* $(1)/lib/firmware/morse
+	# The generic BCF set (bcf/morsemicro/*) is intentionally NOT copied
+	# here: morse-board-config owns /lib/firmware/morse/bcf_* and installs
+	# the full set from the same morse-firmware.git tag (mm8108-2.0.0),
+	# so copying it here duplicates byte-identical files and clashes in
+	# opkg. This package ships only the chip firmware and its own
+	# board-specific BCF (boardtype 0808) that morse-board-config lacks.
 endef
 
 $(eval $(call BuildPackage,mm8108-firmware))
