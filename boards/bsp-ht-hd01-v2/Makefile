@@ -26,7 +26,7 @@ This package provides board support for the Heltec HT-HD01 V2
 - Default channel and BCF selection (bcf_mf08551.bin)
 - SAE mesh fix: ieee80211w=0 and sae_pwe=0 in morse_overrides.sh
 - Network interface configuration (single ethernet port)
-Note: Chip firmware (mm6108.bin) is provided by morse-fw-6108 from morse-feed.
+Note: Chip firmware (mm6108.bin) is provided by mm6108-firmware.
 endef
 
 define Build/Compile
