@@ -1,0 +1,397 @@
+#!/bin/sh
+
+# The control flow for the driver switching and config migration is split between multiple
+# scripts/hotplugs and as such is rather involved. The relevant control flow is as such:
+# 1) switch_wifi_driver:
+#   > Responsible for setting up the config migration state and removing/inserting drivers
+#   - Deletes the path option for the migrating device (this ensures that netifd will bring up
+#     another device instead of re-using the migrating section)
+#     > This deleted path option is also used as an flag for ongoing config migration
+#   - Removes the existing driver
+#   - Inserts the new driver
+#
+# 2) 10-wifi-detect
+#   - Upon the addition of a new PHY, this hotplug runs `/sbin/wifi config` which configures UCI
+#     options via mac80211.uc/morse.sh
+#
+# 3) 14-morse-migrate-configs
+#   > Responsible for enacting the config migration
+#   - If config migration is detected as ongoing, a src and dest device/iface is detected based
+#     on the missing path option (designated as src)
+#   - Copies all UCI options in the whitelist from src to dest
+#   - Runs morse-wireless-defaults
+#
+# 5) 15-morse-wifi-re-enable
+#   > Responsible for cleaning up the config migration state and bringing the interface up
+#   - If config migration is detected as ongoing, a src and dest device/iface is detected based
+#     on the missing path option (designated as src)
+#   - Deletes the src UCI device/interface section
+#   - Call `/sbin/wifi up` on dest device
+
+exec 2>/dev/null  # ensure only stdout is returned to ubus
+
+MORSE="morse"
+DOT11AH="dot11ah"
+MORSE_DRIVER_PATH="/lib/firmware/morse"
+MM81X="mm81x"
+MM81X_DRIVER_PATH="/lib/firmware/morsemicro"
+IW_DEV_FILE="/usr/share/libiwinfo/devices.txt"
+MODCONF="/etc/modules.conf"
+LOGTAG="switch_wifi_driver"
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+. /lib/netifd/morse/morse_migrate_config_functions.sh
+json_init
+
+validate_driver() {
+    [ "$1" = "$MORSE" ] || [ "$1" = "$MM81X" ]
+}
+
+get_current_module() {
+    lsmod | grep -q "^$MM81X" && echo "$MM81X" && return
+    lsmod | grep -q "^$MORSE" && echo "$MORSE" && return
+    echo ""
+}
+
+get_phy_for_driver() {
+    base="$1"
+    [ -n "$base" ] || return 1
+    for phy in /sys/class/ieee80211/*; do
+        [ -d "$phy" ] || continue
+        driver="$(basename "$(readlink "$phy/device/driver" 2>/dev/null)")"
+        case "$driver" in
+            ${base}_*)
+                basename "$phy"
+                return 0
+            ;;
+        esac
+    done
+    return 1
+}
+
+get_driver_full_from_phy() {
+    phy="$1"
+    [ -n "$phy" ] || return 1
+    [ -L "/sys/class/ieee80211/$phy/device/driver" ] || return 1
+    basename "$(readlink "/sys/class/ieee80211/$phy/device/driver")"
+}
+
+get_otp_from_phy() {
+    phy="$1"
+    [ -n "$phy" ] || return 1
+    if [ -r "/sys/class/ieee80211/$phy/device/board_type" ]; then
+        tr -d '\n' < "/sys/class/ieee80211/$phy/device/board_type"
+        return 0
+    fi
+    return 1
+}
+
+get_valid_bus_from_driver_full() {
+    case "$1" in
+        *_sdio) echo "sdio" ;;
+        *_usb)  echo "usb" ;;
+        *)      echo "" ;;
+    esac
+}
+
+modules_for_driver() {
+    case "$1" in
+        "$MORSE") echo "$DOT11AH $MORSE" ;;
+        "$MM81X") echo "$MM81X" ;;
+    esac
+}
+
+# Removing modules in dependency-appropriate order
+modules_for_driver_removal() {
+    case "$1" in
+        "$MORSE") echo "$MORSE $DOT11AH" ;;
+        "$MM81X") echo "$MM81X" ;;
+    esac
+}
+
+load_modules() {
+    local driver="$1"
+    set -- $(modules_for_driver "$driver")
+    for mod in "$@"; do
+        # APP-6452: An admittedly poorly understood hack - kmodloader apparently doesn't work for mm81x
+        if [ "$driver" = "$MM81X" ] && modprobe "$mod"; then
+            logger -t "$LOGTAG" "Loaded $mod (modprobe)"
+        elif [ "$driver" = "$MORSE" ] && /sbin/kmodloader "/etc/modules.d/$mod"; then
+            logger -t "$LOGTAG" "Loaded $mod (kmodloader)"
+        else
+            logger -t "$LOGTAG" "Failed to load $mod (driver=$driver)"
+            return 1
+        fi
+    done
+}
+
+remove_modules() {
+    set -- $(modules_for_driver_removal "$1")
+    for mod in "$@"; do
+        if rmmod "$mod"; then
+            logger -t "$LOGTAG" "Unloaded $mod"
+        else
+            logger -t "$LOGTAG" "Failed to unload $mod"
+        fi
+    done
+}
+
+# Return a space separated list of s1g wifi-device names
+get_s1g_devices() {
+    s1g_devices=" "
+    config_load wireless
+
+    _get_s1g_device() {
+        local device="$1"
+        local band
+
+        config_get band "$device" band
+        [ "$band" = "s1g" ] && s1g_devices="$s1g_devices$device "
+    }
+
+    config_foreach _get_s1g_device wifi-device
+    echo "$s1g_devices"
+}
+
+update_blacklist() {
+    [ -f "$MODCONF" ] || touch "$MODCONF"
+    logger -t "$LOGTAG" "Remove existing blacklist entries for $MORSE and $MM81X"
+    sed -i '/^[[:space:]]*blacklist[[:space:]].*\<\(morse\|mm81x\|dot11ah\)\>/d' "$MODCONF"
+    set -- $(modules_for_driver "$1")
+    for mod in "$@"; do
+        echo "blacklist $mod" >> "$MODCONF"
+        logger -t "$LOGTAG" "Blacklisted $mod"
+    done
+}
+
+patch_iwinfo_device_names() {
+    driver="$1"
+
+    [ -f "$IW_DEV_FILE" ] || return 0
+
+    if [ "$driver" = "$MM81X" ]; then
+        sed -i \
+            -e '/"USB-MM810x"/ s/"Morse Micro"/"Morse Micro Linux"/' \
+            -e '/"MM8108-[^"]*"/ s/"Morse Micro"/"Morse Micro Linux"/' \
+            "$IW_DEV_FILE" &&
+        logger -t "$LOGTAG" "Patched devices.txt for mm81x (Linux)"
+    else
+        sed -i \
+            -e '/"USB-MM810x"/ s/"Morse Micro Linux"/"Morse Micro"/' \
+            -e '/"MM8108-[^"]*"/ s/"Morse Micro Linux"/"Morse Micro"/' \
+            "$IW_DEV_FILE" &&
+        logger -t "$LOGTAG" "Reverted devices.txt for morse"
+    fi
+}
+
+# For a given s1g device, delete all its UCI iface sections UNLESS it's the specified target iface
+cleanup_s1g_iface() {
+    local iface="$1"
+    local current_device="$2"
+    local target_iface="$3"
+    local device
+
+    config_get device "$iface" device
+
+    if [ "$device" = "$current_device" ] && [ "$iface" != "$target_iface" ]; then
+        uci delete "wireless.$iface"
+        logger -t "$LOGTAG" "Deleted wifi-iface: $iface"
+    fi
+}
+
+# For each band=s1g device
+#  - run wifi down
+#  - delete all associated iface UCI sections (except the target-iface)
+#  - if the device is the target-device, delete the UCI path option otherwise delete everything
+cleanup_s1g_device() {
+    local device="$1"
+    local target_device="$2"
+    local target_iface="$3"
+    local band
+
+    config_get band "$device" band
+
+    if [ "$band" = "s1g" ]; then
+        /sbin/wifi down "$device"
+        logger -t "$LOGTAG" "Brought down Wi-Fi $device before migration"
+        config_foreach cleanup_s1g_iface wifi-iface "$device" "$target_iface"
+
+        if [ "$device" != "$target_device" ]; then
+            uci delete "wireless.$device"
+            logger -t "$LOGTAG" "Deleted wifi-device: $device"
+        else
+            uci delete "wireless.$device.path"
+        fi
+    fi
+}
+
+perform_switch() {
+    driver="$1"
+    other="$2"
+
+    config_load wireless
+    logger -t "$LOGTAG" "Starting switch: $other -> $driver"
+
+    current_module="$(get_current_module)"
+
+    bus=""
+    if [ -n "$current_module" ]; then
+        driver_base="$current_module"
+        phy="$(get_phy_for_driver "$driver_base")"
+        driver_full="$(get_driver_full_from_phy "$phy")"
+        bus="$(get_valid_bus_from_driver_full "$driver_full")"
+    fi
+
+    # Get the last s1g device - it will be the one to be migrated
+    local s1g_device s1g_iface
+    s1g_device="$(find_last_s1g_device)"
+    s1g_iface="$(find_last_iface_for_device "$s1g_device")"
+
+    config_foreach cleanup_s1g_device wifi-device "$s1g_device" "$s1g_iface"
+    uci commit wireless
+
+    update_blacklist "$other"
+    remove_modules "$other"
+
+    patch_iwinfo_device_names "$driver"
+    [ "$bus" != "usb" ] && /morse/scripts/chipreset.sh > /dev/kmsg 2>&1
+
+    if ! load_modules "$driver"; then
+        logger -t "$LOGTAG" "Driver switch aborted: module load failed"
+        return
+    fi
+}
+
+switch_driver() {
+    target_driver="$1"
+    current_driver=$(get_current_module)
+
+    if [ "$target_driver" = "$current_driver" ]; then
+        logger -t "$LOGTAG" "$target_driver already active"
+        printf '{"status":"ok","message":"Driver already loaded","now_active":"%s"}\n' "$target_driver"
+        exit 0
+    fi
+
+    config_load wireless
+    logger -t "$LOGTAG" "Starting switch: $current_driver -> $target_driver"
+
+    bus=""
+    if [ -n "$current_driver" ]; then
+        driver_base="$current_driver"
+        phy="$(get_phy_for_driver "$driver_base")"
+        driver_full="$(get_driver_full_from_phy "$phy")"
+        bus="$(get_valid_bus_from_driver_full "$driver_full")"
+    fi
+
+    # Get the last s1g device - it will be the one to be migrated
+    local s1g_device s1g_iface
+    s1g_device="$(find_last_s1g_device)"
+    s1g_iface="$(find_last_iface_for_device "$s1g_device")"
+
+    config_foreach cleanup_s1g_device wifi-device "$s1g_device" "$s1g_iface"
+    uci commit wireless
+
+    update_blacklist "$current_driver"
+    remove_modules "$current_driver"
+
+    patch_iwinfo_device_names "$target_driver"
+    [ "$bus" != "usb" ] && /morse/scripts/chipreset.sh > /dev/kmsg 2>&1
+
+    if ! load_modules "$target_driver"; then
+        logger -t "$LOGTAG" "Driver switch aborted: module load failed"
+        printf '{"status":"fail","message":"Module load failed for %s"}\n' "$target_driver"
+        exit 1
+    else
+        printf '{"status":"success","message":"Driver sucessfully switched", "now_active":"%s"}\n' "$target_driver"
+        exit 0
+    fi
+}
+
+status() {
+    # Check if both drivers exist on the system
+    [ -d "$MORSE_DRIVER_PATH" ] || { printf '{"can_switch":false,"reason":"no_morse_driver"}\n'; exit 0; }
+    [ -d "$MM81X_DRIVER_PATH" ] || { printf '{"can_switch":false,"reason":"no_mm81x_driver"}\n'; exit 0; }
+
+    # If there are no modules loaded, there is no way we can gather the rest of the info
+    current_module=$(get_current_module)
+    [ -z "$current_module" ] && { printf '{"can_switch":true,"now_active":"none"}\n'; exit 0; }
+
+    # Check the device is found and bound
+    phy="$(get_phy_for_driver "$current_module")"
+    if [ -z "$phy" ]; then
+        printf '{"can_switch":false,"reason":"no_device_found"}\n'
+        exit 0;
+    fi
+
+    driver_full="$(get_driver_full_from_phy "$phy")"
+    bus="$(get_valid_bus_from_driver_full "$driver_full")"
+
+    # If not SDIO or USB, cannot switch
+    if [ -n "$driver_full" ] && [ -z "$bus" ]; then
+        printf '{"can_switch":false,"reason":"invalid_bus"}\n'
+        exit 0;
+    fi
+
+    if [ "$current_module" = "$MORSE" ]; then
+        # Try to call morse_cli to check if EC, but don't fail if you can't
+        if hw_version="$(/sbin/morse_cli hw_version 2>/dev/null)"; then
+            case "$hw_version" in
+                *MM8108B2*) : ;;
+                *)
+                    printf '{"can_switch":false,"reason":"invalid_chip_version"}\n'
+                    exit 0
+                ;;
+            esac
+        fi
+
+        # Check for OTP
+        if otp="$(get_otp_from_phy "$phy")"; then
+            if [ "$otp" -eq 0 ] || [ "$otp" -eq 65535 ]; then
+                printf '{"can_switch":false,"reason":"otp_not_set"}\n'
+                exit 0
+            fi
+        fi
+    fi
+
+    printf '{"can_switch":true,"now_active":"%s"}\n' "$current_module"
+    exit 0
+}
+
+# UBUS entrypoint
+case "$1" in
+    list)
+        echo '{ "switch": { "driver": "str" }, "status": {} }'
+        exit 0
+    ;;
+    call)
+        case "$2" in
+            switch)
+                input=$(cat)
+                json_init
+                if ! json_load "$input"; then
+                    printf '{"status":"error","message":"Invalid JSON"}\n'
+                    exit 0
+                fi
+                json_get_var driver driver
+                if [ -z "$driver" ]; then
+                    printf '{"status":"error","message":"Missing required field: driver"}\n'
+                    exit 0
+                fi
+                if validate_driver "$driver"; then
+                    switch_driver "$driver"
+                else
+                    printf '{"status":"error","message":"Invalid driver"}\n'
+                    exit 0
+                fi
+            ;;
+            status)
+                status
+            ;;
+            *)
+                printf '{"status":"error","message":"Unknown method: %s"}\n' "$2"
+                exit 0
+            ;;
+        esac
+    ;;
+esac

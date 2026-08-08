@@ -1,0 +1,14 @@
+--- a/src/SConscript
++++ b/src/SConscript
+@@ -29,9 +29,8 @@ def find_sconscripts(start_dir):
+ # all SConscript files in subdirectories.
+ sconscript_files = find_sconscripts('modules')
+ 
+-env.Append(
+-    CFLAGS=["-fPIC", "-O2", "-Wall", "-Werror", '-DMORSE_VERSION=\\"' + get_git_desc() + '\\"']
+-)
++env.Append(CFLAGS='-DMORSE_VERSION=\\"' + get_git_desc() + '\\"')
++
+ env.Append(LINKFLAGS=["-rdynamic", "-fPIC", "-Wl,--export-dynamic"])
+ 
+ Export('env')

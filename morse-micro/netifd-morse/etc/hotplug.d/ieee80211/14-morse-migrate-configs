@@ -1,0 +1,57 @@
+#!/bin/sh
+
+if [ "$ACTION" != add ]; then
+	exit 0
+fi
+
+. /lib/netifd/morse/morse_migrate_config_functions.sh
+
+LOGTAG="14-morse-migrate-configs"
+
+DEVICE_WHITELIST="country disabled"
+IFACE_WHITELIST=""
+
+copy_uci_options() {
+	local src="$1"
+	local dest="$2"
+	local option val
+
+	[ -n "$src" ] || return 0
+	[ -n "$dest" ] || return 0
+
+	shift 2
+	for option in "$@"; do
+		if val="$(uci -q get "wireless.${src}.${option}")"; then
+			uci -q set "wireless.${dest}.${option}=${val}"
+			logger -t "$LOGTAG" "Copied $option=$val from $src to $dest"
+		else
+			logger -t "$LOGTAG" "Missing wireless.${src}.${option}; not copied"
+		fi
+	done
+}
+
+migrate_configs() {
+	if ! is_migrating; then
+		exit 0
+	fi
+
+	local src_device src_iface dest_device dest_iface
+	find_src_dest_configs
+
+	if [ -z "$src_device" ] || [ -z "$dest_device" ]; then
+		logger -t "$LOGTAG" "Failed to find source UCI config to migrate - aborting"
+		exit 0
+	fi
+
+	copy_uci_options "$src_device" "$dest_device" $DEVICE_WHITELIST
+	copy_uci_options "$src_iface"  "$dest_iface"  $IFACE_WHITELIST
+
+	/morse/scripts/morse-wireless-defaults > /dev/null 2>&1
+	uci commit wireless
+
+	logger -t "$LOGTAG" "Migrating device $src_device to device $dest_device and interface $src_iface to $dest_iface"
+}
+
+# This is part of the config migration process. For a more detailed breakdown, see the comment in
+# `switch_wifi_driver`.
+migrate_configs

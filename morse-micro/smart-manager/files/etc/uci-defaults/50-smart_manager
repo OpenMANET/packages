@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+# Migrate all wireless dcs sections to a new smart_manager config
+migrate_dcs() {
+    local config="$1"
+
+    # move wireless.radioX_dcs to smart_manager.radioX_dcs
+    uci show "wireless.$config" | sed -e 's/^wireless/set smart_manager/' | uci batch
+    uci delete "wireless.$config"
+    # move wireless.radioX.dcs to smart_manager.radioX_dcs.enabled
+    uci show "wireless.${config%_dcs}.dcs" | sed -e "s/^wireless.${config%_dcs}.dcs/set smart_manager.$config.enabled/" | uci batch
+    uci delete "wireless.${config%_dcs}.dcs"
+}
+
+touch /etc/config/smart_manager
+config_load wireless
+config_foreach migrate_dcs dcs

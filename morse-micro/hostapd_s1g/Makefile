@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd_s1g
-PKG_RELEASE=4
+PKG_RELEASE=5
 
 PKG_VERSION:=mm8108-2.0.0
 
@@ -23,7 +23,7 @@ define Package/hostapd_s1g
   CATEGORY:=Morse Micro
   SUBMENU:=Essentials
   TITLE:=Morse Micro HaLow hostapd
-  DEPENDS:= kmod-morse +!MORSE_CUSTOM_CFG80211:kmod-cfg80211 +morsecli +libnl +libopenssl +libubus +libblobmsg-json
+  DEPENDS:= +kmod-dot11ah +!MORSE_CUSTOM_CFG80211:kmod-cfg80211 +morsecli +libnl +libopenssl +libubus +libblobmsg-json
   USERID:=network=101:network=101
 endef
 

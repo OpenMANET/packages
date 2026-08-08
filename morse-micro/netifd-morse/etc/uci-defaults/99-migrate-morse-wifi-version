@@ -1,0 +1,32 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+MORSE_WIFI_VERSION=2
+
+EXISTING_MORSE_WIFI_VERSION=$(uci get system.@system[0].morse_wifi_version || echo 1)
+
+if [ "$EXISTING_MORSE_WIFI_VERSION" != "$MORSE_WIFI_VERSION" ]; then
+	uci set system.@system[0].morse_wifi_version=$MORSE_WIFI_VERSION
+fi
+
+if ! [ -f /sysupgrade.tgz ]; then
+	exit 0
+fi
+
+migrate_channelization() {
+	local config="$1"
+
+	config_get type "$config" type
+	config_get country "$config" country
+
+	if [ "$country" = AU -a "$type" = morse ]; then
+		uci set "wireless.$config.s1g_chzn"=80211_2020
+	fi
+}
+
+config_load wireless
+if [ "$EXISTING_MORSE_WIFI_VERSION" -lt 2 ]; then
+	config_foreach migrate_channelization wifi-device
+fi
+

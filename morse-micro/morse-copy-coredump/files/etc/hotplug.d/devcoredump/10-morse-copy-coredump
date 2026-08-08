@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# This mostly echos the behaviour of the morse-snapshot script morse-devcoredump-collect.sh
+# However, it does not use logrotate to clean out old coredumps since it might not be present
+# but instead just (a) datestamps them and (b) removes the oldest.
+
+FILE_PREFIX=/var/log/mmcd.core
+MAX_CORE_DUMPS=5
+
+case "$ACTION" in
+	add)
+		# Exit if not morse driver generated.
+		# This is the same approach we use in netifd-morse (lib/wifi/morse.sh) to detect morse devices.
+		readlink -f "/sys$DEVPATH/failing_device/driver" | grep -q '/morse_[^/]*$' || exit 0
+
+		# Keep only MAX_CORE_DUMPS
+		ls -t $FILE_PREFIX.* | tail -n +$MAX_CORE_DUMPS | xargs -r rm --
+
+		DATA="/sys$DEVPATH/data"
+
+		TARGET="$FILE_PREFIX.$(date +'%Y-%m-%d_%H-%M-%S')"
+		cp -p "$DATA" "$TARGET"
+
+		# This removes the coredump
+		echo 1 > "$DATA"
+
+		logger -t morse-copy-coredump "copied morse coredump from $DATA to $TARGET"
+		;;
+esac

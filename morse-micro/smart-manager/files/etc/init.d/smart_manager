@@ -1,0 +1,270 @@
+#!/bin/sh /etc/rc.common
+
+. "${IPKG_INSTROOT}/lib/netifd/netifd-wireless.sh"
+
+STOP=10
+
+USE_PROCD=1
+PROG=/sbin/smart_manager
+SERVICE=smart_manager
+
+__add_priority_spec() {
+	local prio="$2"
+	local line="$1"
+	local key val
+	key="${line%%=*}"
+	val="${line#*=}"
+
+	if [ -n "$key" ] && [ -n "$val" ]; then
+		eval "priority_${prio}_$key=$val"
+	fi
+}
+
+setup_dcs_conf() {
+	local cfg="$1"
+	local conf_path="$2"
+	local ifname="$3"
+
+	config_get_bool enable_datalog "$cfg" enable_datalog 0
+	config_get_bool enable_test "$cfg" enable_test 0
+	config_get log_level "$cfg" log_level 2
+	config_get algorithm "$cfg" algorithm ewma
+	config_get rounds "$cfg" rounds 10
+	config_get threshold "$cfg" threshold 5
+	config_get scan_int "$cfg" scan_int 2
+	config_get round_int "$cfg" round_int 10
+	config_get ewma_alpha "$cfg" ewma_alpha 30
+	config_get root_dir "$cfg" root_dir "/var/log"
+	config_get dtims_for_csa "$cfg" dtims_for_csa 10
+
+	# Adaptive RAW section
+	config_get_bool adaptive_raw_enabled "$cfg" adaptive_raw_enabled 0
+	config_get raw_eval_period_ms "$cfg" raw_eval_period_ms 1000
+	config_get raw_active_sta_weight_factor "$cfg" raw_active_sta_weight_factor 2
+	config_get non_raw_min_percentage "$cfg" non_raw_min_percentage 10
+
+	config_get chan_cap_threshold_per_sta "$cfg" chan_cap_threshold_per_sta 10
+	config_get num_traffic_stas "$cfg" num_traffic_stas 2
+	config_get total_chan_cap_threshold "$cfg" total_chan_cap_threshold 50
+	config_get retry_rate_threshold "$cfg" retry_rate_threshold 30
+	config_get low_mcs_index_threshold "$cfg" low_mcs_index_threshold 2
+
+	[ $enable_datalog -eq 0 ] && enable_datalog=false || enable_datalog=true
+	datalog=$(cat <<EOF
+datalog: {
+	root_dir = "$root_dir"
+	dcs: {
+		enabled = $enable_datalog
+	}
+}
+EOF
+)
+
+	algorithm_sec=
+	case "$algorithm" in
+		"sample_and_hold")
+			algorithm_sec=$(cat <<EOF
+	algo_type = "sample_and_hold"
+	sample_and_hold: {
+		rounds_for_eval = $rounds
+		threshold_percentage = $threshold
+		sec_per_scan = $scan_int
+		sec_per_round = $round_int
+	}
+EOF
+)
+		;;
+
+		*)
+			algorithm_sec=$(cat <<EOF
+	algo_type = "ewma"
+	ewma: {
+		ewma_alpha = $ewma_alpha
+		rounds_for_csa = $rounds
+		threshold_percentage = $threshold
+		sec_per_scan = $scan_int
+		sec_per_round = $round_int
+	}
+EOF
+)
+		;;
+	esac
+
+
+	cat > "$conf_path" <<EOF
+module_dirs: ["/usr/share/smart_manager/"]
+modules: ["dcs"]
+interface_name = "$ifname"
+logging: {
+	level = $log_level
+}
+backends: {
+	hostapd: {
+		control_path: "/var/run/hostapd_s1g"
+	}
+}
+$datalog
+dcs: {
+$algorithm_sec
+	trigger_csa = True
+	dtims_for_csa = $dtims_for_csa
+}
+EOF
+
+adaptive_raw_block=$(cat <<EOF
+adaptive_raw : {
+	adaptive_raw_enabled = $adaptive_raw_enabled
+	raw_eval_period_ms = $raw_eval_period_ms
+	raw_active_sta_weight_factor = $raw_active_sta_weight_factor
+	non_raw_min_percentage = $non_raw_min_percentage
+
+	raw_trigger_conditions: {
+		chan_cap_threshold_per_sta = $chan_cap_threshold_per_sta
+		num_traffic_stas = $num_traffic_stas
+		total_chan_cap_threshold = $total_chan_cap_threshold
+		retry_rate_threshold = $retry_rate_threshold
+		low_mcs_index_threshold = $low_mcs_index_threshold
+	}
+EOF
+)
+	# Append each priority group assuming each one is a list
+	# example UCI config:
+	# list priority_7 'bandwidth_kbps=5000'
+	# list priority_7 'latency_ms=200'
+	# list priority_0 'bandwidth_kbps=0'
+	# list priority_0 'latency_ms=0'
+	for prio in $(seq 0 7); do
+		config_list_foreach "$cfg" priority_$prio __add_priority_spec "$prio"
+	done
+
+	for prio in $(seq 0 7); do
+		eval bk="\${priority_${prio}_bandwidth_kbps}"
+		eval lt="\${priority_${prio}_latency_ms}"
+
+		if [ -n "$bk" ] || [ -n "$lt" ]; then
+			bk="${bk:-0}"
+			lt="${lt:-0}"
+			adaptive_raw_block="${adaptive_raw_block}
+			priority_${prio} : {
+				bandwidth_kbps = ${bk},
+				latency_ms = ${lt},
+			}"
+		fi
+	done
+
+	# Close the adaptive_raw block
+	printf "%s\n" "$adaptive_raw_block" >> "$conf_path"
+	printf "}\n" >> "$conf_path"
+}
+
+get_ifname() {
+	json_get_vars ifname
+}
+
+get_ap_ifname() {
+	# This relies on running after netifd morse.sh has set up the AP.
+	# However, this is not started at boot (no START=) line, but only
+	# when morse.sh is run (and has already created the ifaces).
+	# It will fail if there is more than one interface.
+	json_load "$(wifi status "$radio")"
+	json_select "$radio"
+	json_get_keys interface_keys interfaces
+	if [ "$(set -- $interface_keys; echo $#)" -gt 1 ]; then
+		return 1
+	fi
+	for_each_interface "ap" get_ifname
+}
+
+start_dcs() {
+	local cfg="$1"
+	# trim radio0_dcs to radio0
+	local radio="${cfg%_dcs}"
+
+	eval "HAS_DCS_CONFIG_$radio=1"
+
+	config_get_bool enabled "$cfg" enabled 0
+	[ $enabled -ne 1 ] && return
+
+	if [ "$(uci get "wireless.${radio}.type")" != "morse" ]; then
+		logger -t $SERVICE -p daemon.crit "wireless.${cfg} not a morse device!"
+		return 1
+	fi
+
+	radiojs=$(wifi status $radio 2>/dev/null)
+	if [ $? -ne 0 ]; then
+		logger -t $SERVICE -p daemon.crit "Selected radio $radio does not exist!"
+		return 1
+	fi
+
+	json_load "$radiojs"
+	json_select $radio
+	json_get_vars disabled
+	set_default disabled 1
+	if [ "$disabled" -ne 0 ]; then
+		logger -t $SERVICE -p daemon.crit "$radio disabled"
+		return 1
+	fi
+
+	ifname=
+	if ! get_ap_ifname "$radio"; then
+		logger -t $SERVICE -p daemon.crit "Multiple interfaces on $radio so cannot use DCS"
+		return 1
+	fi
+
+	if [ -z "$ifname" ]; then
+		logger -t $SERVICE -p daemon.crit "Couldn't get ifname for ap on $radio"
+		return 1
+	fi
+
+	dcs_conf="/var/run/smart_manager.${radio}.conf"
+
+	setup_dcs_conf $cfg $dcs_conf $ifname
+
+	procd_open_instance $cfg.$ifname
+	procd_set_param command $PROG $dcs_conf
+	procd_set_param file $dcs_conf
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param respawn
+	procd_close_instance
+}
+
+start_default_dcs() {
+	local wifi_device="$1"
+	local dcs_section="${wifi_device}_dcs"
+
+	# Abort if there's already a config section (i.e. we did it earlier).
+	# This val was saved above.
+	if [ "$(eval echo \$HAS_DCS_CONFIG_${wifi_device})" = 1 ]; then
+		return
+	fi
+
+	if [ "$(config_get "$wifi_device" type)" != morse ]; then
+		return
+	fi
+
+	case "$(config_get "$wifi_device" channel)" in
+		''|0|auto)
+			config_set "$dcs_section" enabled 1
+			start_dcs "$dcs_section"
+			;;
+	esac
+}
+
+start_service() {
+	config_load smart_manager
+	config_foreach start_dcs dcs
+
+	# Default to loading smart_manager if no config
+	# and channel is set to auto (i.e. ACS is used).
+	config_load wireless
+	config_foreach start_default_dcs wifi-device
+}
+
+stop_service() {
+	rm -f /var/run/smart_manager*
+}
+
+service_triggers() {
+	procd_add_reload_trigger smart_manager
+}
