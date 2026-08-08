@@ -19,6 +19,9 @@ define Package/openmanet-morse-stack
   # ships in an image is per-board policy in boards/*/target_diffconfig.
   # Generic third-party libraries (libnl, qrencode, rsync, ...) stay as
   # DEPENDS of the individual packages that use them.
+  # NOTE: wpa_event_listener is deliberately absent - it does not exist at
+  # the morse feed revision pinned in feeds.conf.default. Re-add it when
+  # the feed pin is bumped to a revision that provides it.
   DEPENDS:= \
 	+netifd-morse \
 	+morse-mode \
@@ -27,7 +30,6 @@ define Package/openmanet-morse-stack
 	+morsecli \
 	+hostapd_s1g \
 	+wpa_supplicant_s1g \
-	+wpa_event_listener \
 	+libwpa_client_s1g \
 	+smart_manager \
 	+morse-copy-coredump \
