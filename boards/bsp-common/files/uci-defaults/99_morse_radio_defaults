@@ -58,6 +58,13 @@ fix_bcf_default() {
 	uci -q set wireless."${config}".enable_dynamic_ps_offload=0
 	uci -q set wireless."${config}".enable_twt=0
 
+	# The mm6108 requires the external-XTAL init sequence and, unlike the
+	# mm8108, cannot auto-detect its BCF. netifd's morse handler rewrites
+	# the driver's modules.d file from UCI, so this must live in UCI or the
+	# rewrite drops it. Keyed off the kmod's modules.d file so it only
+	# applies to images shipping the mm6108 driver.
+	[ -f /etc/modules.d/mm6108 ] && uci -q set wireless."${config}".enable_ext_xtal_init=1
+
 	[ -z "$bcf" ] && return 0
 
 	uci -q set wireless."${config}".bcf="${bcf}"

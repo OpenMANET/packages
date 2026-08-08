@@ -400,14 +400,14 @@ change_module_parameters() {
 	local params="$3"
 	local extra_params=""
 
-	if [ "$module" = morse ]; then
+	if [ "$module" != dot11ah ]; then
 		# These are parameters that we use morse_cli to configure,
 		# but because we have no way to revert back to the original
 		# state any change requires us to reload the module.
 		#
-		# Therefore we store these as a comment in /etc/modules.d/morse
-		# (and changing this comment will mean that we will decide
-		# to reload the module; see use of cmp below).
+		# Therefore we store these as a comment in the morse driver's
+		# modules.d file (and changing this comment will mean that we
+		# will decide to reload the module; see use of cmp below).
 		extra_params="# Extra params: forced_listen_interval=$forced_listen_interval"
 	fi
 
@@ -478,16 +478,31 @@ drv_morse_setup() {
 
 	build_mod_params
 
-	local morse_module_config_file="/etc/modules.d/morse"
+	# The driver's kmodloader config file is named after the kmod package
+	# that ships it: the morse feed's unified driver installs
+	# /etc/modules.d/morse, while the OpenMANET per-chip packages install
+	# /etc/modules.d/mm6108 (module mm6108_sdio) and /etc/modules.d/mm8108
+	# (module morse). Discover the file, then take the module name from
+	# its first non-comment word rather than hardcoding "morse".
+	local morse_module_config_file=""
 	local morse_test_module_config_file="/etc/modules.d/morse-test-driver"
 	local dot11ah_module_config_file="/etc/modules.d/dot11ah"
+	local f
+	for f in /etc/modules.d/morse /etc/modules.d/mm6108 /etc/modules.d/mm8108; do
+		if [ -f "$f" ]; then
+			morse_module_config_file="$f"
+			break
+		fi
+	done
+	# OpenMANET's kmod-dot11ah loads via AutoLoad priority 50.
+	[ -f "$dot11ah_module_config_file" ] || dot11ah_module_config_file="/etc/modules.d/50-dot11ah"
 
-	if [ -f "$morse_module_config_file" -a -f "$morse_test_module_config_file" ]; then
-		echo "Both morse-test-driver and morse in /etc/modules.d; refusing to configure" >&2
+	if [ -n "$morse_module_config_file" -a -f "$morse_test_module_config_file" ]; then
+		echo "Both morse-test-driver and $morse_module_config_file in /etc/modules.d; refusing to configure" >&2
 		wireless_set_retry 0
 		return 1
-	elif [ ! -f "$morse_module_config_file" -a ! -f "$morse_test_module_config_file" ]; then
-		echo "Neither morse-test-driver or morse in /etc/modules.d; refusing to configure" >&2
+	elif [ -z "$morse_module_config_file" -a ! -f "$morse_test_module_config_file" ]; then
+		echo "No morse driver config (morse-test-driver, morse, mm6108 or mm8108) in /etc/modules.d; refusing to configure" >&2
 		wireless_set_retry 0
 		return 1
 	elif [ -f "$morse_test_module_config_file" ]; then
@@ -495,14 +510,21 @@ drv_morse_setup() {
 		morse_module_config_file="$morse_test_module_config_file"
 	fi
 
+	local morse_module="$(awk '$1 !~ /^#/ && NF { print $1; exit }' "$morse_module_config_file")"
+	if [ -z "$morse_module" ]; then
+		echo "Unable to determine driver module name from $morse_module_config_file; refusing to configure" >&2
+		wireless_set_retry 0
+		return 1
+	fi
+
 	local inserted_module=0
 	if change_module_parameters dot11ah "$dot11ah_module_config_file" "$DOT11AH_MOD_PARAMS"; then
-		is_module_loaded morse && rmmod morse
+		is_module_loaded "$morse_module" && rmmod "$morse_module"
 		is_module_loaded dot11ah && rmmod dot11ah
 	fi
 
-	if change_module_parameters morse "$morse_module_config_file" "$MOD_PARAMS" || ! is_module_loaded morse; then
-		is_module_loaded && rmmod morse
+	if change_module_parameters "$morse_module" "$morse_module_config_file" "$MOD_PARAMS" || ! is_module_loaded "$morse_module"; then
+		is_module_loaded "$morse_module" && rmmod "$morse_module"
 		# This needs to be separate to force kmodloader to
 		# read the dot11ah modparams.
 		/sbin/kmodloader $dot11ah_module_config_file
