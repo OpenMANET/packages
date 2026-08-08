@@ -11,7 +11,6 @@ define Package/openmanet-morse-stack
   SECTION:=net
   CATEGORY:=Network
   TITLE:=OpenMANET Morse HaLow userspace stack (metapackage)
-  PKGARCH:=all
   # Every member of the Morse userspace stack is listed explicitly, even
   # those already reachable transitively, so this package is the single
   # authoritative definition of the stack. Radio drivers (kmod-mm6108,
