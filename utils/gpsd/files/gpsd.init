@@ -25,12 +25,18 @@ gpsd_instance()
 	[ "$enabled" = "0" ] && return 1
 
 	procd_open_instance
-	procd_set_param command "$PROG" -N -n
+	# -F: control socket keeps gpsd alive (and retrying the device on each
+	# client WATCH) when the initial device open fails at boot; without it
+	# gpsd exits fatally ("can't run with neither control socket nor
+	# devices open")
+	procd_set_param command "$PROG" -N -n -F /var/run/gpsd.sock
 
 	[ "$listen_globally" -ne 0 ] && procd_append_param command -G
 	procd_append_param command -S "$port"
 	procd_append_param command "$device"
-	procd_set_param respawn
+	# retry=0: respawn forever so gpsd recovers once the GPS UART is ready,
+	# instead of procd giving up after 5 attempts
+	procd_set_param respawn 3600 5 0
 
 	procd_close_instance
 }
