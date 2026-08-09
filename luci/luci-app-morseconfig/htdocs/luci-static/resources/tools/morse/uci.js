@@ -523,6 +523,7 @@ function setupBatmanInterfaceOnDevice(deviceName = 'bat0') {
 	uci.set('wireless', morseInterfaceName, 'network', defaultBatmanIfaceName);
 	// Disable mesh11sd to use batman-adv instead
 	uci.set('mesh11sd', 'mesh_params', 'mesh_fwding', '0');
+	uci.set('mesh11sd', 'mesh_params', 'nolearn', '1');
 	// Set a DNS server on the LAN interface so that clients can resolve names across the batman mesh
 	uci.set('network', 'lan', 'dns', '1.1.1.1');
 
