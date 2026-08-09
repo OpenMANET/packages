@@ -37,8 +37,29 @@ gpsd_instance()
 	# retry=0: respawn forever so gpsd recovers once the GPS UART is ready,
 	# instead of procd giving up after 5 attempts
 	procd_set_param respawn 3600 5 0
+	# gpsd -N logs to stderr only; without this its errors (device open
+	# failures, socket bind failures) are lost to /dev/null
+	procd_set_param stderr 1
 
 	procd_close_instance
+}
+
+boot()
+{
+	# At boot lo's ::1 address may not exist yet. gpsd binds each loopback
+	# family once at startup and silently continues IPv4-only when the ::1
+	# bind fails, which breaks localhost clients that try ::1 first and
+	# don't fall back (gpsmon's non-blocking connect). Wait for ::1 before
+	# the first start.
+	if [ -f /proc/net/if_inet6 ]; then
+		local n=0
+		while [ "$n" -lt 10 ] &&
+			! grep -q "^00000000000000000000000000000001" /proc/net/if_inet6; do
+			sleep 1
+			n=$((n + 1))
+		done
+	fi
+	start "$@"
 }
 
 start_service()
