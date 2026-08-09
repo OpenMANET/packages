@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Do not change the setting during sysupgrade (mirrors morse-bundle's
+# 31_dropbear_default_disable, which this deliberately sorts after and
+# overrides — uci-defaults run in lexical order on first boot).
+if [ -f /sysupgrade.tgz ]; then
+    exit 0
+fi
+
+# Keep SSH enabled by default.
+uci set dropbear.@dropbear[0].enable=1
+
+exit 0
