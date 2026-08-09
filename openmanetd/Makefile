@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
 
-PKG_VERSION:=1.3.5
+PKG_VERSION:=1.3.6
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -47,7 +47,7 @@ endef
 define Package/openmanetd/description
 A management application for openmanetd written in Go.
 Includes:
-- pttgo: A multicast push-to-talk voice application written in Go using PortAudio, Opus, and evdev.
+- comms: A multicast push-to-talk voice application written in Go using PortAudio, Opus, and evdev.
 endef
 
 define Build/Configure
