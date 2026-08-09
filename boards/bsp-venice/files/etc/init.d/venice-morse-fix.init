@@ -1,0 +1,34 @@
+#!/bin/sh /etc/rc.common
+
+START=08
+
+# Neuter morse-bundle's morsechipreset (START=09) on Venice.
+#
+# chipreset.sh unbinds the first mmc_host it finds, resets the radio via
+# the MM_RESET GPIO line, then rebinds the mmc host. On Venice the MM8108
+# is USB-attached and no MM_RESET line exists in the gw75xx device trees,
+# so the script always exits before the rebind. The first mmc_host it
+# unbinds is usdhc2 (microSD) - killing the SD slot on every boot when
+# running from eMMC, and killing the rootfs outright when booted from SD.
+#
+# This must run before morsechipreset in the same boot sequence: procd
+# builds its boot list from /etc/rc.d up front, so removing the S09
+# symlink alone would not protect the current (first) boot. Replacing
+# the script contents does.
+
+boot() {
+	if [ -f /morse/scripts/chipreset.sh ] && ! grep -q VENICE /morse/scripts/chipreset.sh; then
+		cat <<'EOF' > /morse/scripts/chipreset.sh
+#!/bin/sh
+# Disabled on VENICE (see bsp-venice venice-morse-fix.init): the MM8108 is
+# USB-attached (no SDIO bus, no MM_RESET GPIO); the mmc_hosts here are the
+# microSD and eMMC storage controllers, which the stock script would unbind.
+exit 0
+EOF
+		chmod 755 /morse/scripts/chipreset.sh
+	fi
+
+	# The service is pointless on this board; keep later boots from
+	# starting it at all.
+	rm -f /etc/rc.d/S??morsechipreset
+}

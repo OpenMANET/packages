@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-venice
-PKG_RELEASE=1
+PKG_RELEASE=2
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -29,6 +29,9 @@ define Build/Compile
 endef
 
 define Package/bsp-venice/install
+	$(INSTALL_DIR) $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/etc/init.d/* $(1)/etc/init.d/
+
 	$(INSTALL_DIR) $(1)/etc/board.d/
 	$(INSTALL_BIN) ./files/board.d/* $(1)/etc/board.d/
 
