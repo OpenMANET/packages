@@ -1,0 +1,50 @@
+#!/bin/sh
+# Point the ALSA default PCM/CTL at the OpenVLM USB audio adapter while
+# one is attached, falling back to card 0 (onboard audio) otherwise.
+#
+# Matching is by USB VID:PID (0d8c:0012) via /proc/asound/cardN/usbid,
+# never by the EEPROM product string, so unprovisioned units match too.
+#
+# /etc/asound.conf is a symlink to /tmp/asound.conf (installed by the
+# openvlm package). alsa.conf loads it with "errors false", so removing
+# the tmpfs file cleanly reverts the default to card 0.
+
+OPENVLM_USBID="0d8c:0012"
+ASOUND_CONF="/tmp/asound.conf"
+
+# Rewrite the ALSA default to the first attached OpenVLM card, or drop
+# the override when none remain. $1 is a card index to ignore (the card
+# being torn down during a remove event, which may still be visible in
+# /proc/asound).
+openvlm_reconcile() {
+	local skip="$1" card num
+	for card in /proc/asound/card[0-9]*; do
+		num="${card##*card}"
+		[ "$num" = "$skip" ] && continue
+		[ "$(cat "$card/usbid" 2>/dev/null)" = "$OPENVLM_USBID" ] || continue
+		cat > "$ASOUND_CONF" <<-EOF
+			defaults.pcm.card $num
+			defaults.ctl.card $num
+		EOF
+		amixer -q -c "$num" sset PCM 100% unmute 2>/dev/null
+		amixer -q -c "$num" sset Mic 80% unmute cap 2>/dev/null
+		return 0
+	done
+	rm -f "$ASOUND_CONF"
+}
+
+# The controlC* node is registered last during snd_card_register(), so
+# acting on it guarantees the card is usable and fires once per card.
+case "$DEVICENAME" in
+controlC*)
+	case "$ACTION" in
+	add)
+		openvlm_reconcile ""
+		;;
+	remove)
+		carddir="${DEVPATH%/*}"
+		openvlm_reconcile "${carddir##*card}"
+		;;
+	esac
+	;;
+esac

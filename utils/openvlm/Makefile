@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvlm
 PKG_VERSION:=1.0.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openvlm
@@ -30,7 +30,7 @@ define Package/openvlm
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenVLM
-  DEPENDS:=$(GO_ARCH_DEPENDS) +libevdev +kmod-usb-audio +kmod-usb-hid +libudev-zero
+  DEPENDS:=$(GO_ARCH_DEPENDS) +libevdev +kmod-usb-audio +kmod-usb-hid +libudev-zero +alsa-utils
 endef
 
 define Package/openvlm/description
@@ -47,6 +47,13 @@ define Package/openvlm/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 
 	$(INSTALL_DIR) $(1)/etc/openvlm/
+
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/sound
+	$(INSTALL_DATA) ./files/openvlm-sound.hotplug $(1)/etc/hotplug.d/sound/60-openvlm
+
+	# ALSA default-device override lives on tmpfs; the hotplug script
+	# creates/removes the target as the adapter comes and goes.
+	$(LN) /tmp/asound.conf $(1)/etc/asound.conf
 endef
 
 $(eval $(call GoBinPackage,openvlm))
