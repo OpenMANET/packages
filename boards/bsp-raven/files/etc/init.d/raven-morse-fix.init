@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+
+START=08
+
+# Neuter morse-bundle's morsechipreset (START=09) on RAVEN.
+#
+# chipreset.sh unbinds the first mmc_host it finds, resets the radio via
+# the MM_RESET GPIO line, then rebinds the mmc host. On RAVEN the MM8108
+# is USB-attached: there is no SDIO bus and no MM_RESET line in the
+# device tree, and dtoverlay=disable-wifi disables both SDIO hosts,
+# leaving the CM4 boot eMMC as the only mmc_host. The stock script
+# therefore unbinds the rootfs controller, fails to find MM_RESET, and
+# exits before the rebind - wedging the boot.
+#
+# This must run before morsechipreset in the same boot sequence: procd
+# builds its boot list from /etc/rc.d up front, so removing the S09
+# symlink alone would not protect the current (first) boot. Replacing
+# the script contents does.
+
+boot() {
+	if [ -f /morse/scripts/chipreset.sh ] && ! grep -q RAVEN /morse/scripts/chipreset.sh; then
+		cat <<'EOF' > /morse/scripts/chipreset.sh
+#!/bin/sh
+# Disabled on RAVEN (see bsp-raven raven-morse-fix.init): the MM8108 is
+# USB-attached (no SDIO bus, no MM_RESET GPIO) and the only mmc_host is
+# the boot eMMC, which the stock script would unbind.
+exit 0
+EOF
+		chmod 755 /morse/scripts/chipreset.sh
+	fi
+
+	# The service is pointless on this board; keep later boots from
+	# starting it at all.
+	rm -f /etc/rc.d/S??morsechipreset
+}

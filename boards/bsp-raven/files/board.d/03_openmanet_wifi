@@ -2,20 +2,6 @@
 . /lib/functions.sh
 . /lib/functions/uci-defaults.sh
 
-board=$(board_name)
-
-board_config_update
-
-case "$board" in
-bcm2711,raven)
-    setup_openmanet_wifi
-	;;
-esac
-
-board_config_flush
-
-exit 0
-
 # Set OpenMANET WiFi SSID and password if they are still at the OpenWrt defaults.
 setup_openmanet_wifi() {
     wifi_password="openmanet" || return 1
@@ -53,3 +39,17 @@ setup_openmanet_wifi() {
         uci -q commit wireless
     done
 }
+
+board=$(board_name)
+
+board_config_update
+
+case "$board" in
+bcm2711,raven)
+    setup_openmanet_wifi
+	;;
+esac
+
+board_config_flush
+
+exit 0
