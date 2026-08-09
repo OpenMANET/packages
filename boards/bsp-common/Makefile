@@ -32,7 +32,7 @@ define Package/bsp-common/install
 	$(CP) ./files/uci-defaults/* $(1)/etc/uci-defaults/
 
 	$(INSTALL_DIR) $(1)/etc/config/
-	$(CP) ./files/config/* $(1)/etc/config/
+	$(CP) ./files/etc/config/* $(1)/etc/config/
 
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/usb/
 	$(INSTALL_DATA) ./files/hotplug.d/usb/* $(1)/etc/hotplug.d/usb/
