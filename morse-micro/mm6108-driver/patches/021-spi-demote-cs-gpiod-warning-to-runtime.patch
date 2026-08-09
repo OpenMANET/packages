@@ -1,0 +1,32 @@
+Demote the missing SPI_CONTROLLER_ENABLE_CS_GPIOD #warning to a runtime warning
+
+SPI_CONTROLLER_ENABLE_CS_GPIOD is not a mainline kernel flag; it is added
+by a Morse Micro patch to include/linux/spi/spi.h that only the bcm27xx
+target carries (991-0007-spi-support-control-cs-pin-on-init.patch).
+
+Since CONFIG_MORSE_SPI=y is now hardcoded so the SPI bus front-end is
+always built, spi.c also compiles on targets without that kernel patch
+(e.g. ramips/mt76x8 for ht-hd01-v2), where the driver's #warning fallback
+is fatal under the kernel's -Werror.
+
+Replace the compile-time #warning with a runtime warning in the SPI probe
+path. On kernels with the patch the flag is still set as before; on
+kernels without it the message only ever appears if a radio is actually
+probed over SPI, which is exactly the case where it is relevant.
+
+--- a/spi.c
++++ b/spi.c
+@@ -1510,7 +1510,12 @@
+ #ifdef SPI_CONTROLLER_ENABLE_CS_GPIOD
+ 	spi->controller->flags |= SPI_CONTROLLER_ENABLE_CS_GPIOD;
+ #else
+-#warning "SPI_CONTROLLER_ENABLE_CS_GPIOD macro not defined"
++	/* Flag is added by an out-of-tree spi.h patch which not all target
++	 * kernels carry. Without it CS may be forced high during spi_setup,
++	 * which only matters when a radio is actually attached over SPI.
++	 */
++	MORSE_SPI_WARN(mors,
++		       "SPI_CONTROLLER_ENABLE_CS_GPIOD not supported by this kernel; CS init sequencing may be unreliable\n");
+ #endif
+ #endif
+ 	morse_spi_xfer_init(mspi);

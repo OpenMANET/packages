@@ -10,7 +10,7 @@ PKG_NAME:=mm6108-driver
 PKG_RELEASE:=1
 
 PKG_VERSION:=mm6108-2.0.1
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_SOURCE_VERSION:=$(PKG_VERSION)
 PKG_SOURCE_URL:=https://github.com/MorseMicro/morse_driver.git
