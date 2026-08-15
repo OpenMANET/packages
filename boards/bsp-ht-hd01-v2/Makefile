@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-ht-hd01-v2
-PKG_RELEASE=1
+PKG_RELEASE=2
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -48,6 +48,9 @@ define Package/bsp-ht-hd01-v2/install
 
 	$(INSTALL_DIR) $(1)/etc/rc.d/
 	$(LN) ../init.d/ht-hd01-morse-fix $(1)/etc/rc.d/S08ht-hd01-morse-fix
+
+	$(INSTALL_DIR) $(1)/etc/sysctl.d/
+	$(INSTALL_DATA) ./files/etc/sysctl.d/* $(1)/etc/sysctl.d/
 endef
 
 $(eval $(call BuildPackage,bsp-ht-hd01-v2))

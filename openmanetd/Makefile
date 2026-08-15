@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=openmanetd
 
 PKG_VERSION:=1.3.7
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openmanetd
@@ -81,6 +81,8 @@ define Package/openmanetd/install
 	$(INSTALL_CONF) $(CURDIR)/files/openmanetd.config $(1)/etc/config/openmanetd
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) $(CURDIR)/files/openmanetd.init $(1)/etc/init.d/openmanetd
+	$(INSTALL_DIR) $(1)/etc/sysctl.d/
+	$(INSTALL_DATA) $(CURDIR)/files/20-openmanetd-net.conf $(1)/etc/sysctl.d/20-openmanetd-net.conf
 endef
 
 $(eval $(call GoBinPackage,openmanetd))

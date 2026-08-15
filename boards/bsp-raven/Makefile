@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-raven
-PKG_RELEASE=2
+PKG_RELEASE=3
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -50,6 +50,9 @@ define Package/bsp-raven/install
 
 	$(INSTALL_DIR) $(1)/etc/openmanetd/
 	$(INSTALL_CONF) $(CURDIR)/files/etc/openmanetd/config.yml $(1)/etc/openmanetd/config.yml
+
+	$(INSTALL_DIR) $(1)/etc/sysctl.d/
+	$(INSTALL_DATA) $(CURDIR)/files/etc/sysctl.d/* $(1)/etc/sysctl.d/
 endef
 
 $(eval $(call BuildPackage,bsp-raven))

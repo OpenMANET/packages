@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-bcm271x
-PKG_RELEASE=6
+PKG_RELEASE=7
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -49,6 +49,9 @@ define Package/bsp-bcm271x/install
 
 	$(INSTALL_DIR) $(1)/lib/firmware/morse/
 	$(CP) ./files/lib/firmware/morse/* $(1)/lib/firmware/morse/
+
+	$(INSTALL_DIR) $(1)/etc/sysctl.d/
+	$(INSTALL_DATA) ./files/etc/sysctl.d/* $(1)/etc/sysctl.d/
 endef
 
 define Package/bsp-bcm271x/postinst
