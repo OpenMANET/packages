@@ -45,7 +45,7 @@ This allows us to have a webcomponent like:
 (see morse-config-diagram.js)
 """
 
-import xml.dom.minidom
+import defusedxml.minidom
 
 
 def make_slots(doc):
@@ -205,7 +205,7 @@ def simplify(doc):
 
 if __name__ == '__main__':
     import sys
-    doc = xml.dom.minidom.parse(sys.argv[1])
+    doc = defusedxml.minidom.parse(sys.argv[1])
     simplify(doc)
     make_slots(doc)
     make_groups(doc)
