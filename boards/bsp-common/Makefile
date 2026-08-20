@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-common
-PKG_RELEASE=5
+PKG_RELEASE=6
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -33,6 +33,9 @@ define Package/bsp-common/install
 
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/usb/
 	$(INSTALL_DATA) ./files/hotplug.d/usb/* $(1)/etc/hotplug.d/usb/
+
+	$(INSTALL_DIR) $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/init.d/* $(1)/etc/init.d/
 endef
 
 $(eval $(call BuildPackage,bsp-common))
