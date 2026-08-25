@@ -473,26 +473,22 @@ function setupBatmanInterfaceOnDevice(deviceName = 'bat0') {
 	const morseInterfaceName = `default_${morseDeviceName}`;
 	const defaultBatmanIfaceName = 'batmesh0';
 
-	// See if there's already a default batman interface on this device
-	const batmanInterface = uci.sections('network', 'interface').find(s => s.proto === 'batadv_hardif' && s.master=== deviceName && s['.name'] === defaultBatmanIfaceName);
-	if (batmanInterface) {
-		return uci.get('network', defaultBatmanIfaceName, 'name');
+	// Create or repair the default batman interface on the batman device.
+	// Do not return when it already exists: the remaining bridge, radio and
+	// mesh11sd settings still need to converge on every wizard run.
+	if (!uci.sections('network', 'interface').some(s => s['.name'] === defaultBatmanIfaceName)) {
+		uci.add('network', 'interface', defaultBatmanIfaceName);
 	}
-
-	// Create the default batman interface on the batman device
-	uci.add('network', 'interface', defaultBatmanIfaceName);
 	uci.set('network', defaultBatmanIfaceName, 'proto', 'batadv_hardif');
 	uci.set('network', defaultBatmanIfaceName, 'master', deviceName);
 
-	// Create secondary batman interface on the batman device for 2.4ghz wifi
-	// Don't create if it already exists
+	// Create or repair the secondary batman interface for 2.4 GHz Wi-Fi.
 	const batmanSecondaryIfaceName = 'batmesh1';
-	const batmanSecondaryInterface = uci.sections('network', 'interface').find(s => s.proto === 'batadv_hardif' && s.master=== deviceName && s['.name'] === batmanSecondaryIfaceName);
-	if (!batmanSecondaryInterface) {
+	if (!uci.sections('network', 'interface').some(s => s['.name'] === batmanSecondaryIfaceName)) {
 		uci.add('network', 'interface', batmanSecondaryIfaceName);
-		uci.set('network', batmanSecondaryIfaceName, 'proto', 'batadv_hardif');
-		uci.set('network', batmanSecondaryIfaceName, 'master', deviceName);
 	}
+	uci.set('network', batmanSecondaryIfaceName, 'proto', 'batadv_hardif');
+	uci.set('network', batmanSecondaryIfaceName, 'master', deviceName);
 
 	// Loop through devices using uci.sections('network', 'device') and find the one with the name br-ahwlan
 	// Then set the bat0 device as a port on that bridge
@@ -523,14 +519,13 @@ function setupBatmanInterfaceOnDevice(deviceName = 'bat0') {
 	uci.set('wireless', morseInterfaceName, 'network', defaultBatmanIfaceName);
 	// Disable mesh11sd to use batman-adv instead
 	uci.set('mesh11sd', 'mesh_params', 'mesh_fwding', '0');
-	uci.set('mesh11sd', 'mesh_params', 'nolearn', '1');
+	uci.set('mesh11sd', 'mesh_params', 'mesh_nolearn', '1');
 	// Set a DNS server on the LAN interface so that clients can resolve names across the batman mesh
 	uci.set('network', 'lan', 'dns', '1.1.1.1');
 
-	// Allow forwarding from ahwlan to lan
-	const forwardingId = uci.add('firewall', 'forwarding');
-	uci.set('firewall', forwardingId, 'src', 'ahwlan');
-	uci.set('firewall', forwardingId, 'dest', 'lan');
+	// Firewall forwarding is topology-specific and is created by the scenario
+	// layer. Adding ahwlan -> lan here would leave a router/firewall gate with
+	// both ahwlan -> wan and ahwlan -> lan enabled after a wizard rerun.
 
 	return uci.get('network', defaultBatmanIfaceName, 'name');
 }
