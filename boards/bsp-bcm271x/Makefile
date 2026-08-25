@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-bcm271x
-PKG_RELEASE=7
+PKG_RELEASE=10
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -57,7 +57,7 @@ endef
 define Package/bsp-bcm271x/postinst
 #!/bin/sh
 
-disable_camera_service() {
+disable_service() {
 	local service="$$1"
 
 	if [ -n "$${IPKG_INSTROOT}" ]; then
@@ -71,8 +71,26 @@ disable_camera_service() {
 	/etc/init.d/$$service stop >/dev/null 2>&1 || true
 }
 
-disable_camera_service mediamtx
-disable_camera_service camera-onvif-server
+remove_service() {
+	local service="$$1"
+	local root="$${IPKG_INSTROOT}"
+	local init="$${root}/etc/init.d/$$service"
+
+	[ -e "$$init" ] || return 0
+
+	if [ -n "$$root" ]; then
+		"$$root/etc/rc.common" "$$init" disable >/dev/null 2>&1 || true
+	else
+		"$$init" disable >/dev/null 2>&1 || true
+		"$$init" stop >/dev/null 2>&1 || true
+	fi
+
+	rm -f "$$init"
+}
+
+remove_service morsechipreset
+disable_service mediamtx
+disable_service camera-onvif-server
 endef
 
 $(eval $(call BuildPackage,bsp-bcm271x))
