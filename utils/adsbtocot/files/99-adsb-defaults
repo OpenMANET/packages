@@ -1,7 +1,12 @@
 #!/bin/sh
 # /etc/uci-defaults/99-adsb-defaults
-# Apply once on first boot
-[ -f /etc/adsbcot/.defaults_applied ] && exit 0
+# Use a versioned marker so release 4 repairs existing installs exactly once.
+# Future migrations must use a new marker rather than the old unversioned
+# .defaults_applied file, which prevented package updates from converging.
+[ -f /etc/adsbcot/.defaults_v4_applied ] && exit 0
+
+DUMP1090_HTTP_LISTEN='0.0.0.0:8090 [::]:8090'
+reload_uhttpd=0
 
 # Ensure dump1090 JSON path exists
 mkdir -p /var/run/dump1090
@@ -39,10 +44,24 @@ delete dump1090.main.forward_mlat
 commit dump1090
 EOF
 
-/etc/init.d/adsbcot stop
-/etc/init.d/adsbcot disable
-/etc/init.d/dump1090 stop
-/etc/init.d/dump1090 disable
+if [ "$(uci -q get uhttpd.dump1090.listen_http)" != "$DUMP1090_HTTP_LISTEN" ]; then
+	uci -q batch <<EOF
+set uhttpd.dump1090=uhttpd
+set uhttpd.dump1090.listen_http='$DUMP1090_HTTP_LISTEN'
+commit uhttpd
+EOF
+	reload_uhttpd=1
+fi
 
-touch /etc/adsbcot/.defaults_applied
+/etc/init.d/dump1090 enable
+/etc/init.d/adsbcot enable
+
+# Restart in dependency order so upgrades apply decoder settings before
+# ADSBCOT consumes dump1090's JSON output.
+/etc/init.d/dump1090 restart
+/etc/init.d/adsbcot restart
+
+[ "$reload_uhttpd" = "1" ] && /etc/init.d/uhttpd reload
+
+touch /etc/adsbcot/.defaults_v4_applied
 exit 0
