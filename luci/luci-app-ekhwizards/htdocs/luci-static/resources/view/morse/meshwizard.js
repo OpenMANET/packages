@@ -19,7 +19,7 @@ return wizard.AbstractWizardView.extend({
 	},
 
 	getExtraConfigFiles() {
-		return ['mesh11sd'];
+		return ['mesh11sd', 'openmanetd'];
 	},
 
 	loadWizardOptions() {
@@ -116,6 +116,11 @@ return wizard.AbstractWizardView.extend({
 		// Clear out any network stuff we've created from alternative sets of options
 		// so we don't have to consider as many alternative cases.
 		wizard.resetUciNetworkTopology();
+
+		// The wizard assigns a temporary 10.41.254.x address. Ensure openmanetd
+		// reserves a final address after this configuration is applied, including
+		// when the wizard is rerun on an already configured node.
+		uci.set('openmanetd', 'config', 'dhcpconfigured', '0');
 
 		const {
 			wifiDevices,
