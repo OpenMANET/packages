@@ -19,7 +19,7 @@ return wizard.AbstractWizardView.extend({
 	},
 
 	getExtraConfigFiles() {
-		return ['mesh11sd', 'openmanetd'];
+		return ['mesh11sd'];
 	},
 
 	loadWizardOptions() {
@@ -120,7 +120,9 @@ return wizard.AbstractWizardView.extend({
 		// The wizard assigns a temporary 10.41.254.x address. Ensure openmanetd
 		// reserves a final address after this configuration is applied, including
 		// when the wizard is rerun on an already configured node.
-		uci.set('openmanetd', 'config', 'dhcpconfigured', '0');
+		if (uci.get('openmanetd', 'config')) {
+			uci.set('openmanetd', 'config', 'dhcpconfigured', '0');
+		}
 
 		const {
 			wifiDevices,
@@ -287,7 +289,11 @@ return wizard.AbstractWizardView.extend({
 		}
 	},
 
-	loadPages() {
+	async loadPages() {
+		// openmanetd is specific to OpenMANET images; keep the wizard usable on
+		// other EKH images that do not install it.
+		await uci.load('openmanetd').catch(() => null);
+
 		// resetUci disables all wifi-ifaces, but we want to remember the state of these.
 		const {
 			wifiDevices,
