@@ -19,3 +19,10 @@ comms:
   # - nanoPTT: Use a NanoPTT device for PTT control.
   # - web: Use a web-based interface for PTT control.
   controlSource: openvlm
+setup:
+    enabled: true
+    complete: false
+# Authentication settings for the OpenMANET daemon. If authentication is enabled, users will need to provide valid credentials to access the daemon's features and services.
+# Auth is disabled by default for the setup wizard to work.  Once setup is complete auth is enabled by default.
+auth:
+    enable: false
