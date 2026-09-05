@@ -24,6 +24,19 @@ gpsd_instance()
 
 	[ "$enabled" = "0" ] && return 1
 
+	# gpsd drops to nobody:dialout after its first device open. Magic Hat
+	# (pairing /dev/ttyAMA0 with /dev/pps0 for kernel PPS) checks
+	# access(R_OK|W_OK) on the pps node at device activation, which can
+	# happen after the drop when the UART open is retried through the -F
+	# control socket. devtmpfs creates ppsN as root:root 0600, so grant
+	# the group up front. No-op on boards without a pps device.
+	local pps
+	for pps in /dev/pps[0-9]*; do
+		[ -c "$pps" ] || continue
+		chgrp dialout "$pps" 2>/dev/null
+		chmod 660 "$pps" 2>/dev/null
+	done
+
 	procd_open_instance
 	# -F: control socket keeps gpsd alive (and retrying the device on each
 	# client WATCH) when the initial device open fails at boot; without it
