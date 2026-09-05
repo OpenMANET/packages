@@ -19,6 +19,12 @@ comms:
   # - nanoPTT: Use a NanoPTT device for PTT control.
   # - web: Use a web-based interface for PTT control.
   controlSource: openvlm
+  # Hardware talk group selector. Raven wires a 6-position rotary switch
+  # to GPIO17/27/22/24/10 (TALKGROUP_1..5 in the device tree overlay,
+  # pull-up, active-low; position 6 leaves all five lines high). The line
+  # assignment lives in openmanetd; this only enables the watcher.
+  gpioSelector:
+    enable: true
 setup:
     enabled: true
     complete: false
