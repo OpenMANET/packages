@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-bcm271x
-PKG_RELEASE=10
+PKG_RELEASE=11
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -17,7 +17,7 @@ define Package/bsp-bcm271x
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET BCM271x board support package
-	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd \
+	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +libfdt +libgpiod \
 		+PACKAGE_libcamera-utils:libcamera-utils \
 		+PACKAGE_mediamtx:mediamtx \
 		+PACKAGE_camera-onvif-server:camera-onvif-server
@@ -28,10 +28,20 @@ This package provides board support for the OpenMANET BCM271x board.
 endef
 
 define Build/Compile
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -Wall -Wextra -Werror \
+		-o $(PKG_BUILD_DIR)/wm6108-spi-reset $(CURDIR)/src/wm6108-spi-reset.c \
+		$(TARGET_LDFLAGS) -lfdt -lgpiod
+endef
 
+define Package/bsp-bcm271x/conffiles
+/etc/wm6108-spi-reset.conf
 endef
 
 define Package/bsp-bcm271x/install
+	$(INSTALL_DIR) $(1)/usr/libexec
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wm6108-spi-reset $(1)/usr/libexec/
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_DATA) ./files/wm6108-spi-reset.conf $(1)/etc/
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) $(CURDIR)/files/etc/init.d/* $(1)/etc/init.d/
 
