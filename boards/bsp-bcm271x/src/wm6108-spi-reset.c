@@ -196,7 +196,8 @@ static int pulse(const char *device, const char *of_device)
 	struct gpiod_line_config *in = gpiod_line_config_new();
 	struct gpiod_request_config *cfg = gpiod_request_config_new();
 	struct gpiod_line_request *request = NULL;
-	if (!chip || !s || !out || !in || !cfg) goto done;
+	if (!chip) { rc = 1; goto done; }
+	if (!s || !out || !in || !cfg) goto done;
 	// Prepare both configurations before asserting reset, so allocation failure
 	// cannot strand it low. Values are physical: active-low is explicitly false.
 	gpiod_line_settings_set_active_low(s, false);
@@ -206,9 +207,13 @@ static int pulse(const char *device, const char *of_device)
 	    gpiod_line_settings_set_direction(s, GPIOD_LINE_DIRECTION_INPUT) ||
 	    gpiod_line_config_add_line_settings(in, &offset, 1, s)) goto done;
 	gpiod_request_config_set_consumer(cfg, "wm6108-boot-reset");
-	if (interrupted || driver_present() || target_bound(of_device)) goto done;
+	if (driver_present() || target_bound(of_device)) { rc = 1; goto done; }
+	if (interrupted) goto done;
 	request = gpiod_chip_request_lines(chip, cfg, out);
-	if (!request) goto done; // EBUSY is never overridden.
+	if (!request) {
+		if (errno == EBUSY) rc = 1; // Ownership is never overridden.
+		goto done;
+	}
 	int held = delay_ms(50);
 	int released = gpiod_line_request_reconfigure_lines(request, in);
 	if (released) {
@@ -261,7 +266,9 @@ int main(int argc, char **argv)
 	sigemptyset(&sa.sa_mask);
 	if (sigaction(SIGTERM, &sa, NULL) || sigaction(SIGINT, &sa, NULL) || sigaction(SIGHUP, &sa, NULL))
 		return result("failed", "cannot install signal cleanup");
-	if (pulse(chip, device)) return result("failed", "GPIO pulse/cleanup failed or driver became active; no bus recovery attempted");
+	int pulsed = pulse(chip, device);
+	if (pulsed > 0) return result("skipped", "GPIO unavailable/busy or SPI driver became active");
+	if (pulsed < 0) return result("failed", "GPIO pulse/cleanup failed; no bus recovery attempted");
 	printf("wm6108-spi-reset: completed: %s GPIO%u (low then input)\n", device, RESET_LINE);
 	return 0;
 }

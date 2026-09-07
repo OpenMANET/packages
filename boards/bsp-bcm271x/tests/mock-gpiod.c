@@ -55,7 +55,7 @@ void gpiod_request_config_set_consumer(struct gpiod_request_config *p, const cha
 struct gpiod_line_request *gpiod_chip_request_lines(struct gpiod_chip *chip, struct gpiod_request_config *cfg, struct gpiod_line_config *out)
 {
 	(void)chip; (void)cfg;
-	if (fail("acquire")) { log_event("busy"); return NULL; }
+	if (fail("acquire")) { log_event("busy"); errno = EBUSY; return NULL; }
 	if (out->settings.direction != GPIOD_LINE_DIRECTION_OUTPUT || out->settings.value != GPIOD_LINE_VALUE_INACTIVE) abort();
 	log_event("low:17");
 	if (fail("signal")) raise(SIGTERM);

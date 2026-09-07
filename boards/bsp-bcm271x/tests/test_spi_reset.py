@@ -175,8 +175,9 @@ class ResetTests(unittest.TestCase):
             with self.subTest(failure=failure):
                 self.fresh_attempt()
                 p = self.run_helper(fail=failure)
-                self.assertEqual(p.returncode, 1, p.stdout + p.stderr)
-                self.assertIn("failed", p.stdout)
+                skipped = failure in ["open", "acquire"]
+                self.assertEqual(p.returncode, 0 if skipped else 1, p.stdout + p.stderr)
+                self.assertIn("skipped" if skipped else "failed", p.stdout)
                 if failure in ["open", "allocate", "config", "acquire"]:
                     self.assertNotIn("low:17", self.events())
                 else:
