@@ -71,7 +71,9 @@ async function test() {
 
 	writes.length = 0;
 	openmanetdPresent = false;
+	stopAfterReset = false;
 	await meshWizard.loadPages();
+	stopAfterReset = true;
 	assert.throws(() => meshWizard.parseWizardOptions(), error => error === expectedStop);
 	assert.deepEqual(writes, [],
 		'the wizard must remain usable when openmanetd is not installed');
