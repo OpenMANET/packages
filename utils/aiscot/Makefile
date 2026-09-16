@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=aiscot
 PKG_VERSION:=7.3.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_VERSION:=729f548311e660633f88e8e42ce53e51d2e7f5be
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/snstac/aiscot/tar.gz/$(PKG_SOURCE_VERSION)?

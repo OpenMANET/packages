@@ -18,7 +18,9 @@ uci commit aiscot
 The default input is UDP NMEA AIS on `127.0.0.1:10110`. It requires a separate
 AIS receiver/feed; AISCOT itself does not tune or decode RF. To receive from
 another host, change `LISTEN_HOST` and configure firewall access as appropriate.
-The example output is TAK multicast `239.2.3.1:6969`. The service is opt-in;
+The example output is send-only TAK multicast `udp+wo://239.2.3.1:6969`.
+Send-only mode leaves the shared CoT receive port available to other services;
+AIS input still uses its separate `LISTEN_HOST`/`LISTEN_PORT` socket. The service is opt-in;
 installing the package alone does not start forwarding traffic.
 
 `aiscot -c /etc/aiscot/aiscot.ini` runs it in the foreground. Logs from the
@@ -33,3 +35,7 @@ UDP/TCP and TLS with PEM certificates use the standard Python TLS support.
 Optional PyTAK certificate enrollment and PKCS#12 handling additionally require
 `python3-cryptography`; install/select it separately if those features are needed.
 Upstream PyTAK emits an optional-dependency warning when it is absent.
+
+For existing installations using `COT_URL = udp://239.2.3.1:6969`, change that
+URL to `udp+wo://239.2.3.1:6969`. The INI is a preserved configuration file, so
+upgrading the package may retain the old value.
