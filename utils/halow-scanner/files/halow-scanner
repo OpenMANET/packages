@@ -1,0 +1,129 @@
+#!/usr/bin/python3
+"""Run the RTL-SDR scanner, optionally pausing a selected OpenWrt HaLow radio."""
+import argparse
+import fcntl
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+
+SCANNER = '/usr/share/halow-scanner/halow_scanner.py'
+CHANNELS = '/usr/share/halow-scanner/halow_channels.csv'
+
+
+def wireless(action, radio):
+    result = subprocess.run(
+        ['/bin/ubus', 'call', 'network.wireless', action,
+         json.dumps({'device': radio})],
+        check=True, capture_output=True, text=True, timeout=15)
+    if action == 'status':
+        return json.loads(result.stdout)[radio]
+
+
+def wait_radio(radio, up):
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        status = wireless('status', radio)
+        if status.get('up') is up and not status.get('pending', False):
+            return
+        time.sleep(0.5)
+    raise RuntimeError(f'Timed out waiting for {radio} to go {"up" if up else "down"}')
+
+
+def validate_radio(radio):
+    if not re.fullmatch(r'[A-Za-z0-9_]+', radio):
+        raise ValueError('Use a named wireless UCI section, for example radio0')
+
+    def uci(option):
+        result = subprocess.run(['/sbin/uci', '-q', 'get', f'wireless.{radio}{option}'],
+                                capture_output=True, text=True, timeout=5)
+        return result.stdout.strip()
+
+    if uci('') != 'wifi-device':
+        raise ValueError(f'{radio} is not a wireless radio section')
+    if uci('.type') != 'morse' and uci('.band') != 's1g':
+        raise ValueError(f'{radio} is not configured as a HaLow radio')
+    status = wireless('status', radio)
+    if status.get('pending'):
+        raise RuntimeError(f'{radio} is already changing state; try again later')
+    if not isinstance(status.get('up'), bool):
+        raise RuntimeError(f'Cannot determine the state of {radio}')
+    return status['up']
+
+
+def interrupted(signum, frame):
+    raise KeyboardInterrupt
+
+
+def run_scan(arguments):
+    child = subprocess.Popen(['/usr/bin/python3', SCANNER, '--channels-csv', CHANNELS,
+                              *arguments])
+    try:
+        return child.wait()
+    finally:
+        if child.poll() is None:
+            child.terminate()
+            try:
+                child.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                child.kill()
+                child.wait()
+
+
+def scan(radio, arguments):
+    restore = False
+    try:
+        if radio:
+            restore = validate_radio(radio)
+            if restore:
+                print(f'Suspending {radio}; HaLow connectivity will pause.',
+                      file=sys.stderr, flush=True)
+                # Set restore before issuing down: even a failed/timed-out call
+                # may have reached netifd and changed the radio state.
+                wireless('down', radio)
+            wait_radio(radio, False)
+            time.sleep(1)
+        return run_scan(arguments)
+    finally:
+        if restore:
+            # Further signals must not interrupt restoration.
+            for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+                signal.signal(sig, signal.SIG_IGN)
+            print(f'Restoring {radio}.', file=sys.stderr, flush=True)
+            wireless('up', radio)
+            wait_radio(radio, True)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        add_help=False, allow_abbrev=False,
+        description='RTL-SDR HaLow scanner with optional radio suspension')
+    parser.add_argument('--radio', help='HaLow UCI radio to suspend, e.g. radio0')
+    options, arguments = parser.parse_known_args()
+    if '-h' in arguments or '--help' in arguments:
+        parser.print_help()
+        print('\nUse Ethernet/console for --radio: the HaLow link will go down.\n', flush=True)
+        return run_scan(['--help'])
+    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, interrupted)
+    try:
+        if options.radio and os.geteuid() != 0:
+            raise PermissionError('--radio requires root')
+        with open('/var/lock/halow-scanner.lock', 'w') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise RuntimeError('Another HaLow scan is running') from None
+            return scan(options.radio, arguments)
+    except KeyboardInterrupt:
+        return 130
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as exc:
+        print(f'halow-scanner: {exc}', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
