@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gpsd
 PKG_VERSION:=3.25
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SAVANNAH/$(PKG_NAME)
@@ -20,7 +20,9 @@ PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=COPYING
 PKG_CPE_ID:=cpe:/a:gpsd_project:gpsd
 
-PKG_BUILD_DEPENDS:=scons/host
+# pps-tools stages sys/timepps.h; without it scons silently builds gpsd
+# with no RFC2783 kernel PPS support and forces magic_hat=no.
+PKG_BUILD_DEPENDS:=scons/host pps-tools
 
 include $(INCLUDE_DIR)/package.mk
 include ../../../../feeds/packages/devel/scons/scons.mk
