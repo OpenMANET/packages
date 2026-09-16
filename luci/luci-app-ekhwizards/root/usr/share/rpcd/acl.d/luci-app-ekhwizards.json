@@ -6,7 +6,8 @@
 				"file": [ "read" ],
 				"luci-rpc": ["getNetworkDevices"],
 				"iwinfo": ["scan", "assoclist", "info"]
-			}
+			},
+			"uci": [ "openmanetd" ]
 		},
 		"write": {
 			"file": {
@@ -15,7 +16,8 @@
 				"file": [ "write", "exec" ],
 				"uci": [ "apply", "commit", "delete", "firewall", "dhcp", "network", "wireless" ],
 				"luci": [ "setPassword" ]
-			}
+			},
+			"uci": [ "openmanetd" ]
 		}
 	}
 }
