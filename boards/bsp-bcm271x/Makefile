@@ -17,7 +17,7 @@ define Package/bsp-bcm271x
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET BCM271x board support package
-	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +procps-ng-pkill +libfdt +libgpiod +gpiod-tools \
+	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +procps-ng +procps-ng-pkill +libfdt +libgpiod +gpiod-tools \
 		+PACKAGE_libcamera-utils:libcamera-utils \
 		+PACKAGE_mediamtx:mediamtx \
 		+PACKAGE_camera-onvif-server:camera-onvif-server
