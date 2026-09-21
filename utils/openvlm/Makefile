@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvlm
 PKG_VERSION:=1.0.4
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openvlm
@@ -30,7 +30,7 @@ define Package/openvlm
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenVLM
-  DEPENDS:=$(GO_ARCH_DEPENDS) +libevdev +kmod-usb-audio +kmod-usb-hid +libudev-zero +alsa-utils
+  DEPENDS:=$(GO_ARCH_DEPENDS) +libevdev +kmod-sound-core +kmod-usb-audio +kmod-usb-hid +libudev-zero +alsa-utils
 endef
 
 define Package/openvlm/description

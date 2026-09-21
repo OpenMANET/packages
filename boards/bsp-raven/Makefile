@@ -17,7 +17,7 @@ define Package/bsp-raven
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET Raven board support package
-	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +procps-ng-pkill +ntpd +pps-tools +kmod-pps-gpio +gpiod-tools +openvlm
+	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +procps-ng +procps-ng-pkill +ntpd +pps-tools +kmod-pps-gpio +gpiod-tools +openvlm
 endef
 
 define Package/bsp-raven/description
