@@ -19,6 +19,8 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
 GO_PKG:=github.com/openmanet/openmanetd
+# Ship only the daemon, not developer tools under scripts/.
+GO_PKG_BUILD_PKG:=$(GO_PKG)
 GO_PKG_LDFLAGS:=-s -w
 GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd.version=$(PKG_VERSION)-$(call version_abbrev,$(PKG_SOURCE_VERSION))
 
