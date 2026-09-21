@@ -3,3 +3,6 @@ config gpsd 'core'
         option device '/dev/ttyAMA0'
         option port '2947'
         option listen_globally '0'
+        # Set to 'none' on carriers without the WM1302 GPS HAT.
+        option board 'wm1302'
+        option readonly '0'

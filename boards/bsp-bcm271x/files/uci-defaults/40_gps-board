@@ -1,0 +1,9 @@
+#!/bin/sh
+# Migrate preserved GPS configs to the BSP's explicit carrier selection.
+# Never replace an operator's board selection (including 'none').
+if ! uci -q get gpsd.core.board >/dev/null; then
+    uci -q get gpsd.core >/dev/null || exit 0
+    uci set gpsd.core.board='wm1302'
+    uci commit gpsd
+fi
+exit 0

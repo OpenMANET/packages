@@ -14,27 +14,30 @@ def run(script, body):
     return result.stdout.strip()
 
 
-for bus, path, expected in [
-    ('SPI', 'platform/soc/fe204000.spi/spi_master/spi0/spi0.0', 'initialized'),
-    ('USB', 'platform/soc/fe980000.usb/usb1/1-1/1-1.2/1-1.2:1.0', ''),
-    ('no Morse device', '', 'initialized'),
+for bus, board, enabled, device, expected in [
+    ('SPI', 'wm1302', '1', '/dev/ttyAMA0', 'initialized'),
+    ('USB', 'wm1302', '1', '/dev/ttyAMA0', 'initialized'),
+    ('no Morse device', 'wm1302', '1', '/dev/ttyAMA0', 'initialized'),
+    ('USB', 'none', '1', '/dev/ttyAMA0', ''),
+    ('USB', '', '1', '/dev/ttyAMA0', ''),
+    ('USB', 'wm1302', '0', '/dev/ttyAMA0', ''),
 ]:
     output = run(BCM, '''
 logger() { :; }
-get_gpsd_device() { echo /dev/ttyAMA0; }
-config_load() { :; }
-config_foreach() { [ -z "$DEVICE_PATH" ] || "$1" radio1 "$3"; }
-uci() { case "$3" in *.type) echo morse;; *.path) echo "$DEVICE_PATH";; esac; }
+get_gpsd_device() { echo "$DEVICE"; }
+uci() { case "$3" in gpsd.core.board) echo "$BOARD";; gpsd.core.enabled) echo "$ENABLED";; *) exit 99;; esac; }
 init_gps_gpio() { echo initialized; }
-DEVICE_PATH=''' + repr(path) + '\nboot\n')
-    assert output == expected, (bus, output)
-    print(f'{bus}: {output or "exited before GPS initialization"}')
+''' + f"BOARD={board!r}\nENABLED={enabled!r}\nDEVICE={device!r}\nboot\n")
+    assert output == expected, (bus, board, output)
+    print(f'{bus}, board={board or "unset"}, enabled={enabled}: {output or "skipped"}')
 
 for script in [BCM, RAVEN]:
     output = run(script, '''
 logger() { :; }
 sleep() { :; }
-pkill() { return 127; } # command-not-found semantics on the image
+pkill() {
+    case "$2" in *25=*) reset=;; *12=*) wake=;; *) return 1;; esac
+} # model the now-required procps-ng-pkill releasing the requests
 # Emulate exclusive line requests, keeping successful requests held.
 gpioset() {
     for arg in "$@"; do
@@ -52,7 +55,12 @@ gpioget() { return 1; }
 init_gps_gpio
 echo "FINAL wake=$wake reset=$reset"
 ''')
-    assert output.count('BUSY GPIO25') == 2, output
-    assert 'SET GPIO25=1' not in output, output
+    assert 'BUSY' not in output, output
+    assert 'SET GPIO25=1' in output, output
     assert 'FINAL wake=0 reset=0' in output, output
-    print(f'{script.relative_to(ROOT)}: reset high never applied; two busy-line failures hidden')
+    print(f'{script.relative_to(ROOT)}: reset pulse applied and released')
+
+for board in ['bcm271x', 'raven']:
+    makefile = (ROOT / f'boards/bsp-{board}/Makefile').read_text()
+    assert '+procps-ng-pkill' in makefile, board
+print('Both BSPs declare procps-ng-pkill')
