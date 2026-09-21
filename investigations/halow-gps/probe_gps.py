@@ -2,6 +2,7 @@
 """Exercise the shipped init scripts with shell stubs; never access GPIO/UCI."""
 from pathlib import Path
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 BCM = ROOT / 'boards/bsp-bcm271x/files/etc/init.d/gpsboard.init'
@@ -64,3 +65,42 @@ for board in ['bcm271x', 'raven']:
     makefile = (ROOT / f'boards/bsp-{board}/Makefile').read_text()
     assert '+procps-ng-pkill' in makefile, board
 print('Both BSPs declare procps-ng-pkill')
+
+# These are synthetic fixtures, not a dump from a physical WM1302 HAT.
+with tempfile.TemporaryDirectory(prefix='wm1302-identity-') as directory:
+    hat = Path(directory)
+    for vendor, product, expected in [
+        ('Seeed Studio', 'WM1302 Pi HAT', 'initialized'),
+        ('Seeed Technology Co., Ltd.', 'wm1302', 'initialized'),
+        ('Another vendor', 'WM1302 Pi HAT', ''),
+        ('Seeed Studio', 'Unrelated HAT', ''),
+        ('Seeed Studio', 'WM13020', ''),
+        ('', '', ''),
+    ]:
+        (hat / 'vendor').write_bytes(vendor.encode() + b'\0')
+        (hat / 'product').write_bytes(product.encode() + b'\0')
+        output = run(BCM, '''
+logger() { :; }
+get_gpsd_device() { echo /dev/ttyAMA0; }
+uci() { case "$3" in gpsd.core.board) echo auto;; gpsd.core.enabled) echo 1;; *) exit 99;; esac; }
+init_gps_gpio() { echo initialized; }
+HAT_DT_PATH=''' + repr(directory) + '\nboot\n')
+        assert output == expected, (vendor, product, output)
+        print(f'auto identity {vendor!r}/{product!r}: {output or "skipped"}')
+
+migration = ROOT / 'boards/bsp-bcm271x/files/uci-defaults/40_gps-board'
+for board in ['absent', 'none', 'wm1302', 'auto']:
+    output = subprocess.run(
+        ['/bin/sh', '-c', '''
+uci() {
+    case "$*" in
+        '-q get gpsd.core.board') [ "$BOARD" != absent ];;
+        '-q get gpsd.core') return 0;;
+        *) echo "$*";;
+    esac
+}
+. "$1"
+''', 'test', str(migration)], env={'BOARD': board}, text=True,
+        capture_output=True, check=True).stdout
+    assert ('set gpsd.core.board=auto' in output) == (board == 'absent'), output
+print('Migration defaults absent board to auto and preserves explicit selections')

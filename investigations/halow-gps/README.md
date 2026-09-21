@@ -44,7 +44,7 @@ Land on top of the existing packages branch; firmware currently pins dc866bd in 
 
 ## Implementation (fix/halow-gps)
 
-The BCM271x BSP now selects GPS GPIO initialization using `gpsd.core.board=wm1302`, independent of radio bus. Set `board=none` for carriers without that HAT; disabled GPS also skips GPIO initialization. The BSP supplies the WM1302 default and migrates old preserved GPS configs only when the board option is absent. A different UART or unknown board is rejected.
+The BCM271x BSP defaults to `gpsd.core.board=auto`, checking the standard `/proc/device-tree/hat/vendor` and `product` properties for Seeed and a WM1302 model name, independent of radio bus. Set `board=none` for carriers without that HAT; disabled GPS also skips GPIO initialization. The BSP migrates old preserved GPS configs to auto only when the board option is absent. Missing or unrecognized identity leaves the GPIOs untouched; explicit `board=wm1302` remains available for a verified carrier without EEPROM identity. A different UART or unknown board is rejected.
 
 Per the user's choice, both BSPs explicitly depend on `procps-ng-pkill`; GPIO process ownership redesign is deferred. BCM271x also declares gpiod-tools, whose commands its init script uses. The safe GPIO probe now expects the reset sequence to succeed with pkill available and checks both dependencies.
 
@@ -59,3 +59,8 @@ uci commit gpsd
 Return readonly to 0 after diagnosis if normal probing is desired. This enables the controlled experiment; it does not claim to fix receiver acquisition without hardware evidence. Run `python3 utils/gpsd/test-init.py` for default/off/on command checks.
 
 The daemon package pins e639e9a7ed6c2d590059c723078217bc41fa23b6, uses a commit-specific source archive name, and includes the commit abbreviation in its version string. This makes the firmware build consume the stale-cache fix instead of a moving main branch.
+
+
+### Detection evidence and limits
+
+Raspberry Pi documents the bootloader-populated HAT identity properties: https://github.com/raspberrypi/hats/blob/master/devicetree-guide.md . Seeed documents EEPROM pins on the WM1302 HAT: https://wiki.seeedstudio.com/WM1302_module/ . Neither source establishes the actual EEPROM strings or whether every WM1302 revision has a programmed EEPROM. The matching tests use synthetic identity fixtures, not a captured WM1302 EEPROM. A real node's vendor/product output is still needed to confirm automatic detection on the reported hardware. Do not mistake absence of identity for proof that the carrier is absent.
