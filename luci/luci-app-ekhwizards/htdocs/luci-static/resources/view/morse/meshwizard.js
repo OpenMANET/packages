@@ -117,6 +117,13 @@ return wizard.AbstractWizardView.extend({
 		// so we don't have to consider as many alternative cases.
 		wizard.resetUciNetworkTopology();
 
+		// The wizard assigns a temporary 10.41.254.x address. Ensure openmanetd
+		// reserves a final address after this configuration is applied, including
+		// when the wizard is rerun on an already configured node.
+		if (uci.get('openmanetd', 'config')) {
+			uci.set('openmanetd', 'config', 'dhcpconfigured', '0');
+		}
+
 		const {
 			wifiDevices,
 			morseDeviceName,
@@ -282,7 +289,11 @@ return wizard.AbstractWizardView.extend({
 		}
 	},
 
-	loadPages() {
+	async loadPages() {
+		// openmanetd is specific to OpenMANET images; keep the wizard usable on
+		// other EKH images that do not install it.
+		await uci.load('openmanetd').catch(() => null);
+
 		// resetUci disables all wifi-ifaces, but we want to remember the state of these.
 		const {
 			wifiDevices,
@@ -588,7 +599,8 @@ return wizard.AbstractWizardView.extend({
 			option.scanAlerts = true;
 			option.rmempty = false;
 			option.retain = true;
-			option.scanEncryptions = ['psk2', 'psk', 'sae', 'owe', 'none'];
+			option.scanEncryptions = ['psk2', 'psk', 'sae', 'owe', 'none']
+				.filter(encryption => morseuci.isWifiEncryptionAllowed(wifiDevice, encryption));
 			option.onchangeWithEncryption = function (ev, sectionId, value, encryption) {
 				thisWizardView.onchangeOptionUpdateDiagram(this);
 				this.section.getUIElement(sectionId, `uplink_encryption-${wifiDevice.staInterfaceName}`).setValue(encryption);
@@ -604,7 +616,10 @@ return wizard.AbstractWizardView.extend({
 			option.ucioption = 'encryption';
 			option.depends('network.wizard.uplink', `wifi-${wifiDevice.staInterfaceName}`);
 			option.value('psk2', _('WPA2-PSK'));
-			option.value('sae', _('WPA3-SAE'));
+			if (morseuci.isWifiEncryptionAllowed(wifiDevice, 'sae')) {
+				option.value('sae', _('WPA3-SAE'));
+			}
+			option.validate = (sectionId, value) => morseuci.validateWifiEncryption(wifiDevice, value);
 			option.value('psk', _('WPA-PSK'));
 			option.value('owe', _('OWE'));
 			option.value('none', _('None'));
@@ -690,8 +705,11 @@ return wizard.AbstractWizardView.extend({
 
 			option = page.option(form.ListValue, 'encryption', _('Encryption'));
 			option.value('psk2', _('WPA2-PSK'));
-			option.value('sae-mixed', _('WPA2-PSK/WPA3-SAE Mixed Mode'));
-			option.value('sae', _('WPA3-SAE'));
+			if (morseuci.isWifiEncryptionAllowed(wifiDevice, 'sae')) {
+				option.value('sae-mixed', _('WPA2-PSK/WPA3-SAE Mixed Mode'));
+				option.value('sae', _('WPA3-SAE'));
+			}
+			option.validate = (sectionId, value) => morseuci.validateWifiEncryption(wifiDevice, value);
 			option.depends('disabled', '0');
 		}
 

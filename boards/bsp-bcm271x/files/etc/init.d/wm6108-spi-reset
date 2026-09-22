@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+# Only rcS boot, before S10boot's kmodloader. start/restart must never pulse.
+# shellcheck disable=SC2034 # Consumed by /etc/rc.common.
+START=09
+
+boot() {
+	/usr/libexec/wm6108-spi-reset --boot > /dev/kmsg 2>&1
+}
+
+start() { :; }
+stop() { :; }

@@ -252,7 +252,8 @@ const WifiEncryptionList = form.ListValue.extend({
 		}
 
 		this.clear();
-		for (const encryptionOption of encryptionOptions) {
+		for (const encryptionOption of encryptionOptions.filter(value =>
+			morseuci.isWifiEncryptionAllowed(this.radioConfig, value))) {
 			this.value(encryptionOption, ENCRYPTION_OPTIONS[encryptionOption]);
 		}
 
@@ -742,6 +743,9 @@ return view.extend({
 			}
 		}
 		option.deviceType = deviceType;
+		option.radioConfig = uci.get('wireless', deviceName);
+		option.validate = (sectionId, value) => readOnly ? true
+			: morseuci.validateWifiEncryption(uci.get('wireless', deviceName), value);
 		option.default = 'none';
 		option.onchange = function (ev, sectionId, _value, previousValue) {
 			const mode = this.section.formvalue(sectionId, 'mode');

@@ -441,6 +441,33 @@ function getNetworkInterfaces() {
 		.map(s => s['.name']);
 }
 
+// BCM2711 onboard BCM43455 reports SHORT-GI-40 on 5 GHz, but not 2.4 GHz.
+// netifd's legacy HT mask combines bands. Suppress that automatic capability
+// on 2.4 GHz without changing explicit operator overrides or other radios.
+function isRaspberryPiBuiltinWifi(device) {
+	return device?.type === 'mac80211' &&
+		/^platform\/soc\/(?:3f300000|fe300000)\.mmcnr\/mmc_host\/mmc\d+\/mmc\d+:0001\/mmc\d+:0001:1$/.test(device.path || '');
+}
+
+function isWifiEncryptionAllowed(device, encryption) {
+	return !isRaspberryPiBuiltinWifi(device) || !/^(?:sae|wpa3)(?:$|[-+])/.test(encryption || '');
+}
+
+function validateWifiEncryption(device, encryption) {
+	return isWifiEncryptionAllowed(device, encryption) ? true
+		: _('WPA3 is not supported for Raspberry Pi onboard Wi-Fi in this build. Select WPA2-PSK.');
+}
+
+function applyOnboardWifiHtDefaults() {
+	for (const device of uci.sections('wireless', 'wifi-device')) {
+		if (device.type === 'mac80211' && device.band === '2g' &&
+			/^platform\/soc\/fe300000\.mmcnr\/mmc_host\/mmc\d+\/mmc\d+:0001\/mmc\d+:0001:1$/.test(device.path || '') &&
+			device.short_gi_40 == null) {
+			uci.set('wireless', device['.name'], 'short_gi_40', '0');
+		}
+	}
+}
+
 function setupBatmanDeviceOnNetwork(gwMode = 'client', deviceName = 'bat0') {
 	// See if there's already a batman device on this network
 	if (!uci.get('network', deviceName)) {
@@ -468,69 +495,83 @@ function setupBatmanDeviceOnNetwork(gwMode = 'client', deviceName = 'bat0') {
 }
 
 function setupBatmanInterfaceOnDevice(deviceName = 'bat0') {
-	const morseDevice = uci.sections('wireless', 'wifi-device').find(s => s.type === 'morse');
-	const morseDeviceName = morseDevice?.['.name'];
-	const morseInterfaceName = `default_${morseDeviceName}`;
-	const defaultBatmanIfaceName = 'batmesh0';
-
-	// See if there's already a default batman interface on this device
-	const batmanInterface = uci.sections('network', 'interface').find(s => s.proto === 'batadv_hardif' && s.master=== deviceName && s['.name'] === defaultBatmanIfaceName);
-	if (batmanInterface) {
-		return uci.get('network', defaultBatmanIfaceName, 'name');
+	const morseDevices = uci.sections('wireless', 'wifi-device')
+		.filter(s => s.type === 'morse').map(s => s['.name']);
+	const meshIfaces = uci.sections('wireless', 'wifi-iface')
+		.filter(s => morseDevices.includes(s.device) && s.mode === 'mesh' && s.disabled !== '1');
+	if (meshIfaces.length !== 1) {
+		throw new Error(_('Expected exactly one enabled HaLow mesh interface.'));
 	}
+	if (!uci.get('network', 'ahwlan')) {
+		throw new Error(_('Missing ahwlan network.'));
+	}
+	const morseInterfaceName = meshIfaces[0]['.name'];
+	const defaultBatmanIfaceName = 'batmesh0';
+	const devices = uci.sections('network', 'device');
+	const otherNetworks = uci.sections('network', 'interface')
+		.filter(s => s['.name'] !== 'ahwlan' && s.device && s.device !== deviceName);
+	if (otherNetworks.some(s => s.device === 'br-ahwlan')) {
+		throw new Error(_('The mesh bridge is assigned to another network.'));
+	}
+	// Never move a routed LAN/WAN device (or its bridge ports) into the mesh.
+	const reservedPorts = new Set(otherNetworks.flatMap(s => {
+		const bridge = devices.find(d => d.type === 'bridge' && d.name === s.device);
+		return [s.device, ...L.toArray(bridge?.ports)];
+	}));
+	const currentDevice = uci.get('network', 'ahwlan', 'device');
+	const oldBridge = devices.find(d => d.type === 'bridge' && d.name === currentDevice);
+	let bridge = devices.find(d => d.type === 'bridge' && d.name === 'br-ahwlan');
+	if (devices.some(d => d.name === 'br-ahwlan' && d.type !== 'bridge')) {
+		throw new Error(_('The br-ahwlan device is not a bridge.'));
+	}
+	const inheritedPorts = reservedPorts.has(currentDevice) ? []
+		: oldBridge ? L.toArray(oldBridge.ports)
+			: currentDevice && !currentDevice.startsWith('br-') ? [currentDevice] : [];
+	const ports = [...new Set([...L.toArray(bridge?.ports), ...inheritedPorts, deviceName])]
+		.filter(port => !reservedPorts.has(port) && !L.toArray(meshIfaces[0].ifname).includes(port));
 
-	// Create the default batman interface on the batman device
-	uci.add('network', 'interface', defaultBatmanIfaceName);
+	// Create or repair the default batman interface on the batman device.
+	// Do not return when it already exists: the remaining bridge, radio and
+	// mesh11sd settings still need to converge on every wizard run.
+	if (!uci.sections('network', 'interface').some(s => s['.name'] === defaultBatmanIfaceName)) {
+		uci.add('network', 'interface', defaultBatmanIfaceName);
+	}
 	uci.set('network', defaultBatmanIfaceName, 'proto', 'batadv_hardif');
 	uci.set('network', defaultBatmanIfaceName, 'master', deviceName);
 
-	// Create secondary batman interface on the batman device for 2.4ghz wifi
-	// Don't create if it already exists
+	// Create or repair the secondary batman interface for 2.4 GHz Wi-Fi.
 	const batmanSecondaryIfaceName = 'batmesh1';
-	const batmanSecondaryInterface = uci.sections('network', 'interface').find(s => s.proto === 'batadv_hardif' && s.master=== deviceName && s['.name'] === batmanSecondaryIfaceName);
-	if (!batmanSecondaryInterface) {
+	if (!uci.sections('network', 'interface').some(s => s['.name'] === batmanSecondaryIfaceName)) {
 		uci.add('network', 'interface', batmanSecondaryIfaceName);
-		uci.set('network', batmanSecondaryIfaceName, 'proto', 'batadv_hardif');
-		uci.set('network', batmanSecondaryIfaceName, 'master', deviceName);
 	}
+	uci.set('network', batmanSecondaryIfaceName, 'proto', 'batadv_hardif');
+	uci.set('network', batmanSecondaryIfaceName, 'master', deviceName);
 
-	// Loop through devices using uci.sections('network', 'device') and find the one with the name br-ahwlan
-	// Then set the bat0 device as a port on that bridge
-	for (const device of uci.sections('network', 'device')) {
-		if (device.type === 'bridge' && device.name == 'br-ahwlan') {
-			// device.ports can be either a string, array or null/undefined
-			// If there are existing ports, convert to array
-			// Otherwise we add the batman device as the only port
-			let ports = [];
-			if (device.ports) {
-				if (Array.isArray(device.ports)) {
-					ports = device.ports;
-				} else {
-					ports = [device.ports];
-				}
-			}
-			// Check if batman device is already a port
-			if (!ports.includes(deviceName)) {
-				ports.push(deviceName);
-			}
-
-			uci.set('network', device['.name'], 'ports', ports);
-			break;
-		}
+	// The scenario may not have needed a bridge before moving HaLow to Batman.
+	// Ensure both the bridge and its network binding exist on every run.
+	if (!bridge) {
+		const section = uci.add('network', 'device');
+		uci.set('network', section, 'name', 'br-ahwlan');
+		uci.set('network', section, 'type', 'bridge');
+		bridge = { '.name': section };
 	}
+	if (oldBridge && oldBridge['.name'] !== bridge['.name'] && !reservedPorts.has(currentDevice)) {
+		uci.unset('network', oldBridge['.name'], 'ports');
+	}
+	uci.set('network', bridge['.name'], 'ports', ports);
+	uci.set('network', 'ahwlan', 'device', 'br-ahwlan');
 
 	// change wifi-iface ahwlan to use batman interface default_radio0
 	uci.set('wireless', morseInterfaceName, 'network', defaultBatmanIfaceName);
 	// Disable mesh11sd to use batman-adv instead
 	uci.set('mesh11sd', 'mesh_params', 'mesh_fwding', '0');
-	uci.set('mesh11sd', 'mesh_params', 'nolearn', '1');
+	uci.set('mesh11sd', 'mesh_params', 'mesh_nolearn', '1');
 	// Set a DNS server on the LAN interface so that clients can resolve names across the batman mesh
 	uci.set('network', 'lan', 'dns', '1.1.1.1');
 
-	// Allow forwarding from ahwlan to lan
-	const forwardingId = uci.add('firewall', 'forwarding');
-	uci.set('firewall', forwardingId, 'src', 'ahwlan');
-	uci.set('firewall', forwardingId, 'dest', 'lan');
+	// Firewall forwarding is topology-specific and is created by the scenario
+	// layer. Adding ahwlan -> lan here would leave a router/firewall gate with
+	// both ahwlan -> wan and ahwlan -> lan enabled after a wizard rerun.
 
 	return uci.get('network', defaultBatmanIfaceName, 'name');
 }
@@ -716,6 +757,10 @@ return baseclass.extend({
 	getEthernetPorts,
 	getEthernetStaticIp,
 	getNetworkInterfaces,
+	applyOnboardWifiHtDefaults,
+	isRaspberryPiBuiltinWifi,
+	isWifiEncryptionAllowed,
+	validateWifiEncryption,
 	setupBatmanDeviceOnNetwork,
 	setupBatmanInterfaceOnDevice
 });

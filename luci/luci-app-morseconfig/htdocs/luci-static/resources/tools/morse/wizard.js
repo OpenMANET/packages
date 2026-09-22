@@ -415,6 +415,7 @@ function resetUci() {
 		whitelistFields('wireless', device, [
 			'type', 'path', 'band', 'hwmode', 'htmode', 'reconf', 'bcf', 'country', 'channel',
 			'cell_density', 'txpower', 'enable_ps', 'enable_dynamic_ps_offload', 'enable_twt',
+			'short_gi_40',
 		]);
 	}
 
@@ -1209,6 +1210,7 @@ const AbstractWizardView = view.extend({
 	async save() {
 		// Parse/uci.set our fake wizard section...
 		this.parseWizardOptions();
+		morseuci.applyOnboardWifiHtDefaults();
 
 		// Configure B.A.T.M.A.N. advanced
 		let batmanDeviceName;
