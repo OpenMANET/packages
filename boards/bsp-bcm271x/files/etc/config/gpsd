@@ -3,3 +3,7 @@ config gpsd 'core'
         option device '/dev/ttyAMA0'
         option port '2947'
         option listen_globally '0'
+        # Detect Seeed WM1302 HAT EEPROM identity; use 'wm1302' for a verified
+        # carrier without identity data, or 'none' to disable GPIO setup.
+        option board 'auto'
+        option readonly '0'

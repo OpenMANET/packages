@@ -7,6 +7,7 @@ NAME=init-gps-device
 # WM1302 Pi HAT + Quectel L76K(B)
 GPIO_RST=25       # GPS_RST (active high pulse)
 GPIO_WAKE=12      # GPS_WAKE_UP (high = standby, low = active)
+HAT_DT_PATH=/proc/device-tree/hat
 
 boot() {
     device=$(get_gpsd_device)
@@ -17,12 +18,48 @@ boot() {
         logger -t "$NAME" "GPS device: $device"
     fi
 
-    # Check for Seeed Studio Morse WiFi device
-    check_morse_device
+    # GPS carrier selection is independent of the HaLow radio's bus.
+    local board enabled
+    board=$(uci -q get gpsd.core.board)
+    enabled=$(uci -q get gpsd.core.enabled)
+    [ "$enabled" != "0" ] || return 0
+    case "$board" in
+        auto|"")
+            if ! detect_wm1302; then
+                logger -t "$NAME" "WM1302 HAT identity not detected; GPS GPIOs untouched. Set gpsd.core.board=wm1302 only for a verified WM1302 carrier."
+                return 0
+            fi
+            ;;
+        wm1302) ;;
+        none)
+            logger -t "$NAME" "GPS GPIO initialization disabled (gpsd.core.board=$board)"
+            return 0
+            ;;
+        *)
+            logger -t "$NAME" "ERROR: unsupported GPS board '$board'"
+            return 1
+            ;;
+    esac
+    [ "$device" = "/dev/ttyAMA0" ] || {
+        logger -t "$NAME" "ERROR: WM1302 requires gpsd.core.device=/dev/ttyAMA0"
+        return 1
+    }
     # Initialize the GPS GPIOs and reset the module
     init_gps_gpio
 
     exit 0
+}
+
+# The Pi bootloader exposes valid HAT EEPROM identity here. Do not infer
+# carrier wiring from a radio, UART, or an arbitrary I2C device's presence.
+# Some boards may have no programmed EEPROM; explicit wm1302 is the fallback.
+detect_wm1302() {
+    local vendor product
+    [ -r "$HAT_DT_PATH/vendor" ] && [ -r "$HAT_DT_PATH/product" ] || return 1
+    vendor=$(tr -d '\000' < "$HAT_DT_PATH/vendor" | tr '[:upper:]' '[:lower:]')
+    product=$(tr -d '\000' < "$HAT_DT_PATH/product" | tr '[:upper:]' '[:lower:]')
+    case "$vendor" in *seeed*) ;; *) return 1;; esac
+    printf '%s\n' "$product" | grep -Eq '(^|[^a-z0-9])wm1302([^a-z0-9]|$)'
 }
 
 set_gpio_persistent() {
@@ -48,36 +85,6 @@ get_gpsd_device() {
         return 0
     else
         return 1
-    fi
-}
-
-check_morse_device() {
-    local expected_path="platform/soc/fe204000.spi/spi_master/spi0/spi0.0"
-    local found=0
-
-    # Iterate through all wifi-device sections
-    config_load wireless
-    config_foreach check_morse_section wifi-device "$expected_path"
-
-    return 0
-}
-
-check_morse_section() {
-    local section="$1"
-    local expected_path="$2"
-    local device_type device_path
-
-    device_type=$(uci -q get wireless.${section}.type)
-    device_path=$(uci -q get wireless.${section}.path)
-
-    if [ "$device_type" = "morse" ]; then
-        if [ -z "$device_path" ]; then
-            logger -t "$NAME" "morse wifi-device found but path does not exist"
-            exit 0
-        elif [ "$device_path" != "$expected_path" ]; then
-            logger -t "$NAME" "morse wifi-device path does not match: got '$device_path', expected '$expected_path'"
-            exit 0
-        fi
     fi
 }
 
