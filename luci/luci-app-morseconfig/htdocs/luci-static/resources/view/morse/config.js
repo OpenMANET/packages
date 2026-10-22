@@ -580,7 +580,10 @@ return view.extend({
 
 		option = section.option(SimpleNetworkSelect, 'network', _('Network'));
 		for (const networkIface of uci.sections('network', 'interface')) {
-			if (isNormalNetworkIface(networkIface)) {
+			// Mesh radios attach to BATMAN hard interfaces, not directly to the
+			// LAN bridge. Omitting these makes the required dropdown select a
+			// different network when saving unrelated channel or band settings.
+			if (isNormalNetworkIface(networkIface) || networkIface.proto === 'batadv_hardif') {
 				option.value(networkIface['.name'], networkIface['.name']);
 			}
 		}
