@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 	FILE *f = fopen(p, "r");
 	char config[32] = {0};
 	if (f) { size_t n = fread(config, 1, sizeof(config) - 1, f); config[n] = 0; fclose(f); }
-	if (strcmp(config, "enabled=1\n")) return result("skipped", "disabled (hardware validation pending)");
+	if (strcmp(config, "enabled=1\n")) return result("skipped", "disabled by configuration");
 	if (driver_present()) return result("skipped", "SPI driver already loaded or probing");
 	void *dt = read_dt();
 	if (!dt) return result("skipped", "device tree unavailable or invalid");
