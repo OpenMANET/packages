@@ -114,7 +114,13 @@ release_gpio() {
     pkill -f "(^|/)gpioset[[:space:]].*-c[[:space:]]gpiochip0[[:space:]].*-C[[:space:]]gps-wm1302[[:space:]].*[[:space:]]${gpio}(=|[[:space:]])" 2>/dev/null
     status=$?
     case "$status" in
-        0) sleep 0.1;; # Allow the terminated holder to release its request.
+        0)
+            # This image's BusyBox supports integer sleep durations only.
+            if ! sleep 1; then
+                logger -t "$NAME" "ERROR: wait for GPS GPIO${gpio} release failed"
+                return 1
+            fi
+            ;;
         1) ;;         # No holder remains for this line.
         *)
             logger -t "$NAME" "ERROR: could not release GPS GPIO${gpio}"

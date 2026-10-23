@@ -65,7 +65,7 @@ class GPSResetTests(unittest.TestCase):
                 executable.write_text(TOOLS)
                 executable.chmod(0o755)
             sleep = root / 'sleep'
-            sleep.write_text('#!/bin/sh\nexit 0\n')
+            sleep.write_text("#!/bin/sh\ncase \"$1\" in ''|*[!0-9]*) echo 'integer sleep required' >&2; exit 1;; esac\nexit 0\n")
             sleep.chmod(0o755)
             result = subprocess.run(['/bin/sh', '-c', '''
 . "$1"
