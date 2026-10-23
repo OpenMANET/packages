@@ -54,7 +54,7 @@ boot() {
     }
     logger -t "$NAME" "GPS carrier: $board (Seeed wiring)"
     # Initialize the GPS GPIOs and reset the module
-    init_gps_gpio
+    init_gps_gpio || return 1
 
     exit 0
 }
@@ -101,12 +101,26 @@ set_gpio_persistent() {
     # -c gpiochip0: specify the chip (GPIOs 0-57 are on gpiochip0)
     # -C: set consumer name for identification in gpioinfo
     # -z: daemonize to keep GPIO state after exit (no & needed)
-    gpioset -c gpiochip0 -C "gps-wm1302" -z "${gpio}=${value}" 2>/dev/null
+    if ! gpioset -c gpiochip0 -C "gps-wm1302" -z "${gpio}=${value}"; then
+        logger -t "$NAME" "ERROR: could not request GPIO${gpio}=${value}"
+        return 1
+    fi
 }
 
-get_gpio_val() {
-    local gpio="$1"
-    gpioget -c gpiochip0 "${gpio}" 2>/dev/null || echo "?"
+release_gpio() {
+    local gpio="$1" status
+    # libgpiod replaces '=' with NUL while parsing argv. /proc then exposes
+    # '25 0', not '25=0'. Match either representation, only for our consumer.
+    pkill -f "(^|/)gpioset[[:space:]].*-c[[:space:]]gpiochip0[[:space:]].*-C[[:space:]]gps-wm1302[[:space:]].*[[:space:]]${gpio}(=|[[:space:]])" 2>/dev/null
+    status=$?
+    case "$status" in
+        0) sleep 0.1;; # Allow the terminated holder to release its request.
+        1) ;;         # No holder remains for this line.
+        *)
+            logger -t "$NAME" "ERROR: could not release GPS GPIO${gpio}"
+            return 1
+            ;;
+    esac
 }
 
 get_gpsd_device() {
@@ -124,28 +138,27 @@ init_gps_gpio() {
     logger -t "$NAME" "configuring GPS GPIOs (RST=${GPIO_RST}, WAKE=${GPIO_WAKE})"
 
     # Kill any existing gpioset processes for these pins
-    pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
-    pkill -f "gpioset.*${GPIO_WAKE}=" 2>/dev/null || true
+    release_gpio "$GPIO_RST" || return 1
+    release_gpio "$GPIO_WAKE" || return 1
 
     # Set WAKE low (active) - persistent
-    set_gpio_persistent "$GPIO_WAKE" 0
+    set_gpio_persistent "$GPIO_WAKE" 0 || return 1
 
     # Reset pulse sequence: set low, pulse high, then back to low
-    set_gpio_persistent "$GPIO_RST" 0
+    set_gpio_persistent "$GPIO_RST" 0 || return 1
     sleep 1
 
     logger -t "$NAME" "pulsing GPS reset on GPIO${GPIO_RST}"
     # Kill the persistent low, set high, then set low persistent again
-    pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
-    set_gpio_persistent "$GPIO_RST" 1
+    release_gpio "$GPIO_RST" || return 1
+    set_gpio_persistent "$GPIO_RST" 1 || return 1
     sleep 1
-    pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
-    set_gpio_persistent "$GPIO_RST" 0
+    release_gpio "$GPIO_RST" || return 1
+    set_gpio_persistent "$GPIO_RST" 0 || return 1
 
     # Small Delay for Initialization
     sleep 1
 
-    logger -t "$NAME" "GPIO states:"
-    logger -t "$NAME" "  GPIO${GPIO_RST} (RST)     = $(get_gpio_val ${GPIO_RST})"
-    logger -t "$NAME" "  GPIO${GPIO_WAKE} (WAKEUP) = $(get_gpio_val ${GPIO_WAKE})"
+    # gpioget cannot request lines already held by our persistent gpioset.
+    logger -t "$NAME" "GPS GPIO initialization completed (requested RST=0, WAKE=0)"
 }

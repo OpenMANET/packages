@@ -22,14 +22,14 @@ uci() {
     esac
 }
 logger() { printf 'log: %s\n' "$*"; }
-init_gps_gpio() { echo GPIO_INITIALIZED; }
+init_gps_gpio() { echo GPIO_INITIALIZED; return "$INIT_STATUS"; }
 boot
 '''
 
 
 class GPSBoardTests(unittest.TestCase):
     def run_boot(self, compatible, profile, *, hat=False, marker=False,
-                 board='auto', enabled='1', device='/dev/ttyAMA0', dt_board=None):
+                 board='auto', enabled='1', device='/dev/ttyAMA0', dt_board=None, init_status=0):
         with tempfile.TemporaryDirectory() as directory:
             dt = Path(directory)
             (dt / 'compatible').write_bytes(compatible.encode() + b'\0brcm,bcm2711\0')
@@ -44,7 +44,7 @@ class GPSBoardTests(unittest.TestCase):
                 (dt / 'soc/spi/radio/openmanet,wm6108-reset').touch()
             return subprocess.run(['/bin/sh', '-c', BOOT, 'test', str(SCRIPT), str(dt)],
                                   env={**os.environ, 'PROFILE': profile, 'BOARD': board,
-                                       'ENABLED': enabled, 'DEVICE': device},
+                                       'ENABLED': enabled, 'DEVICE': device, 'INIT_STATUS': str(init_status)},
                                   text=True, capture_output=True, check=False)
 
     def test_auto_selection(self):
@@ -107,6 +107,11 @@ class GPSBoardTests(unittest.TestCase):
                                device='/dev/ttyUSB0')
         self.assertEqual(result.returncode, 1)
         self.assertNotIn('GPIO_INITIALIZED', result.stdout)
+
+    def test_boot_reports_gpio_initialization_failure(self):
+        result = self.run_boot('raspberrypi,4-compute-module', 'bcm2711,mm8108-usb',
+                               init_status=1)
+        self.assertEqual(result.returncode, 1)
 
     def test_default_stays_auto(self):
         self.assertIn("option board 'auto'", (BSP / 'files/etc/config/gpsd').read_text())
