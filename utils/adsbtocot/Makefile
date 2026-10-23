@@ -2,8 +2,9 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=adsbtocot
 PKG_VERSION:=9.0.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PYPI_NAME:=adsbcot
+PKG_SOURCE_URL:=https://github.com/OpenMANET/adsbcot/releases/download/v9.0.1-openmanet-mirror
 PKG_HASH:=fb0a2349ee7ddf52fe9be3d0fc97cf045cddcd2d3187af6f5903f4673490f3ec
 PKG_MAINTAINER:=info@openmanet.net
 PKG_LICENSE:=Apache-2.0
@@ -17,7 +18,7 @@ define Package/adsbtocot
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=ADS-B to Cursor-on-Target (ADSBCOT) for OpenWrt (dump1090 local)
-  URL:=https://github.com/snstac/adsbcot
+  URL:=https://github.com/OpenMANET/adsbcot
   DEPENDS:=+python3-pytak +python3-aircot +python3-aiohttp +python3-websockets10 +dump1090 +rtl-sdr
 endef
 

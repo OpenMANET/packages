@@ -2,10 +2,10 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=aiscot
 PKG_VERSION:=7.3.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_SOURCE_VERSION:=729f548311e660633f88e8e42ce53e51d2e7f5be
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/snstac/aiscot/tar.gz/$(PKG_SOURCE_VERSION)?
+PKG_SOURCE_URL:=https://github.com/OpenMANET/aiscot/releases/download/v7.3.2-openmanet-mirror
 PKG_HASH:=980a8385070a3c8e40fb8306a6a719277b2da83d40742b9351a53013e1849961
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_SOURCE_VERSION)
 PKG_LICENSE:=Apache-2.0 MIT
@@ -19,7 +19,7 @@ define Package/aiscot
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=AIS to Cursor-on-Target gateway
-  URL:=https://github.com/snstac/aiscot
+  URL:=https://github.com/OpenMANET/aiscot
   DEPENDS:=+python3-pytak +python3-aiohttp
 endef
 
