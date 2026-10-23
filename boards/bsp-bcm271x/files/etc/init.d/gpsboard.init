@@ -7,7 +7,8 @@ NAME=init-gps-device
 # WM1302 Pi HAT + Quectel L76K(B)
 GPIO_RST=25       # GPS_RST (active high pulse)
 GPIO_WAKE=12      # GPS_WAKE_UP (high = standby, low = active)
-HAT_DT_PATH=/proc/device-tree/hat
+DT_PATH=/proc/device-tree
+HAT_DT_PATH=$DT_PATH/hat
 
 boot() {
     device=$(get_gpsd_device)
@@ -18,17 +19,24 @@ boot() {
         logger -t "$NAME" "GPS device: $device"
     fi
 
-    # GPS carrier selection is independent of the HaLow radio's bus.
     local board enabled
     board=$(uci -q get gpsd.core.board)
     enabled=$(uci -q get gpsd.core.enabled)
     [ "$enabled" != "0" ] || return 0
+    # Raven has its own GPIO initialization; other SoCs use their own BSP.
+    if ! supported_pi; then
+        logger -t "$NAME" "GPS GPIO setup skipped: not a supported non-Raven Raspberry Pi"
+        return 0
+    fi
     case "$board" in
         auto|"")
-            if ! detect_wm1302; then
-                logger -t "$NAME" "WM1302 HAT identity not detected; GPS GPIOs untouched. Set gpsd.core.board=wm1302 only for a verified WM1302 carrier."
+            # Supported SPI profiles and non-Raven Pi 4/CM4 carriers assume
+            # Seeed wiring even when the HAT has no programmed EEPROM.
+            if ! detect_wm1302 && ! spi_profile && ! pi4_or_cm4; then
+                logger -t "$NAME" "No Seeed GPS carrier detected or assumed; GPS GPIOs untouched"
                 return 0
             fi
+            board=wm1302
             ;;
         wm1302) ;;
         none)
@@ -44,15 +52,39 @@ boot() {
         logger -t "$NAME" "ERROR: WM1302 requires gpsd.core.device=/dev/ttyAMA0"
         return 1
     }
+    logger -t "$NAME" "GPS carrier: $board (Seeed wiring)"
     # Initialize the GPS GPIOs and reset the module
     init_gps_gpio
 
     exit 0
 }
 
-# The Pi bootloader exposes valid HAT EEPROM identity here. Do not infer
-# carrier wiring from a radio, UART, or an arbitrary I2C device's presence.
-# Some boards may have no programmed EEPROM; explicit wm1302 is the fallback.
+supported_pi() {
+    local name
+    name=$(board_name)
+    if [ -r "$DT_PATH/sysinfo-board-name" ]; then
+        name="$name $(tr -d '\000' < "$DT_PATH/sysinfo-board-name")"
+    fi
+    name=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')
+    case "$name" in *raven*) return 1;; esac
+    tr '\000' '\n' < "$DT_PATH/compatible" 2>/dev/null | grep -q '^raspberrypi,'
+}
+
+pi4_or_cm4() {
+    tr '\000' '\n' < "$DT_PATH/compatible" 2>/dev/null |
+        grep -Eq '^raspberrypi,4-(model-b|compute-module)$'
+}
+
+spi_profile() {
+    case "$(board_name)" in
+        bcm2710,mm*-spi|bcm2711,mm*-spi|bcm2712,mm*-spi|morse,*-spi) return 0;;
+    esac
+    # The firmware's SPI overlay supplies this marker, including when the
+    # radio has not probed yet. A USB or SDIO profile does not supply it.
+    find "$DT_PATH" -name openmanet,wm6108-reset -print -quit 2>/dev/null | grep -q .
+}
+
+# EEPROM identity remains sufficient on other supported Raspberry Pi profiles.
 detect_wm1302() {
     local vendor product
     [ -r "$HAT_DT_PATH/vendor" ] && [ -r "$HAT_DT_PATH/product" ] || return 1
