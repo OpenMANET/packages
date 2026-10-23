@@ -370,8 +370,12 @@ return view.extend({
 	// This is called by handleSave above so we can safely interact with the uci
 	// values rather than the form elements.
 	preSaveHook() {
-		// Use a bridge if we have more than one device.
+		// Only adjust bridges for networks managed by this page. BATMAN hard
+		// interfaces carry mesh radios directly and must not become bridges.
 		for (const network of uci.sections('network', 'interface')) {
+			if (!isNormalNetworkIface(network)) {
+				continue;
+			}
 			morseuci.createOrRemoveBridgeAsNeeded(network['.name']);
 			morseuci.validateBridge(network['.name'], this.wifiDevices);
 		}
