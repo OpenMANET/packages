@@ -9,7 +9,7 @@ PKG_SOURCE_URL:=https://github.com/OpenMANET/aiscot/releases/download/v7.3.2-ope
 PKG_HASH:=980a8385070a3c8e40fb8306a6a719277b2da83d40742b9351a53013e1849961
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_SOURCE_VERSION)
 PKG_LICENSE:=Apache-2.0 MIT
-PKG_LICENSE_FILES:=LICENSE
+PKG_LICENSE_FILES:=LICENSE src/aiscot/pyAISm.py
 PKG_MAINTAINER:=info@openmanet.net
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,6 +34,8 @@ define Package/aiscot/conffiles
 endef
 
 define Py3Package/aiscot/install
+	$(INSTALL_DIR) $(1)/usr/share/licenses/aiscot
+	$(INSTALL_DATA) ./files/pyAISm.LICENSE $(1)/usr/share/licenses/aiscot/pyAISm.LICENSE
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/aiscot $(1)/usr/bin/aiscot
 	$(INSTALL_DIR) $(1)/etc/aiscot $(1)/etc/config $(1)/etc/init.d
