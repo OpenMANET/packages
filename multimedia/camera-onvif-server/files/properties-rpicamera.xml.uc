@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CameraProperties xmlns="http://www.onvif.org/ver10/schema" xmlns:tt="http://www.onvif.org/ver10/schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <RTSPStream>
+    <Path>{{ rtsp_name }}</Path>
+    <Port>{{ rtsp_port }}</Port>
+	<Type>mediaMtxRpi</Type>
+	<API><Port>{{ mediamtx_api_port }}</Port></API>
+  </RTSPStream>
+  <DeviceManagementService>
+    <DeviceInformation>
+      <Manufacturer>{{ manufacturer }}</Manufacturer>
+      <Model>{{ model }}</Model>
+      <FirmwareVersion>{{ firmware_version }}</FirmwareVersion>
+      <SerialNumber>{{ serial_number }}</SerialNumber>
+      <HardwareId>{{ hardware_id }}</HardwareId>
+    </DeviceInformation>
+  </DeviceManagementService>
+  <HTMLWebServer>
+    <DeviceHomePage><Port>80</Port><Redirect>false</Redirect></DeviceHomePage>
+  </HTMLWebServer>
+  <MediaService>
+    <VideoSource token="video_source_token">
+      <Framerate>30</Framerate>
+      <Resolution>
+        <Width>1920</Width>
+        <Height>1080</Height>
+      </Resolution>
+    </VideoSource>
+    <VideoSourceConfigurationOptions>
+      <BoundsRange>
+        <XRange>
+          <Min>0</Min>
+          <Max>0</Max>
+        </XRange>
+        <YRange>
+          <Min>0</Min>
+          <Max>0</Max>
+        </YRange>
+        <WidthRange>
+          <Min>1920</Min>
+          <Max>1920</Max>
+        </WidthRange>
+        <HeightRange>
+          <Min>1080</Min>
+          <Max>1080</Max>
+        </HeightRange>
+      </BoundsRange>
+      <VideoSourceTokensAvailable>video_source_token</VideoSourceTokensAvailable>
+      <MaximumNumberOfProfiles>1</MaximumNumberOfProfiles>
+      <Extension>
+        <Rotate>
+          <Mode>ON</Mode>
+          <Mode>OFF</Mode>
+        </Rotate>
+      </Extension>
+    </VideoSourceConfigurationOptions>
+    <VideoEncoderConfigurationOptions>
+      <QualityRange>
+        <Min>1</Min>
+        <Max>1</Max>
+      </QualityRange>
+      <H264>
+        <ResolutionsAvailable>
+          <Width>1920</Width>
+          <Height>1080</Height>
+        </ResolutionsAvailable>
+        <ResolutionsAvailable>
+          <Width>1280</Width>
+          <Height>720</Height>
+        </ResolutionsAvailable>
+        <ResolutionsAvailable>
+          <Width>640</Width>
+          <Height>480</Height>
+        </ResolutionsAvailable>
+        <GovLengthRange>
+          <Min>1</Min>
+          <Max>120</Max>
+        </GovLengthRange>
+        <FrameRateRange>
+          <Min>2</Min>
+          <Max>30</Max>
+        </FrameRateRange>
+        <EncodingIntervalRange>
+          <Min>1</Min>
+          <Max>1</Max>
+        </EncodingIntervalRange>
+        <H264ProfilesSupported>High</H264ProfilesSupported>
+        <H264ProfilesSupported>Main</H264ProfilesSupported>
+        <H264ProfilesSupported>Baseline</H264ProfilesSupported>
+        <H264ProfilesSupported>Extended</H264ProfilesSupported>
+      </H264>
+    </VideoEncoderConfigurationOptions>
+  </MediaService>
+  <ImagingService>
+    <ImagingVideoSourceOptions>
+      <VideoSourceToken>video_source_token</VideoSourceToken>
+      <ImagingOptions>
+        <Brightness>
+          <Min>-1</Min>
+          <Max>1</Max>
+        </Brightness>
+        <ColorSaturation>
+          <Min>0</Min>
+          <Max>3</Max>
+        </ColorSaturation>
+        <Contrast>
+          <Min>-3</Min>
+          <Max>3</Max>
+        </Contrast>
+        <Sharpness>
+          <Min>-1</Min>
+          <Max>1</Max>
+        </Sharpness>
+        <Focus>
+          <AutoFocusModes>AUTO</AutoFocusModes>
+          <AutoFocusModes>MANUAL</AutoFocusModes>
+		</Focus>
+      </ImagingOptions>
+    </ImagingVideoSourceOptions>
+  </ImagingService>
+</CameraProperties>
