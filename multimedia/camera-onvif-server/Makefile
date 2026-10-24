@@ -39,6 +39,11 @@ define Package/camera-onvif-server/description
   (which in turn relies on libcamera).
 endef
 
+define Package/camera-onvif-server/conffiles
+/etc/config/camera-onvif-server
+/etc/camera-onvif-server/config-rpicamera.xml
+endef
+
 define Package/camera-onvif-server/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/camera-onvif-server $(1)/usr/bin
