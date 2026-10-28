@@ -12,6 +12,7 @@ validate_section_gpsd()
 		'enabled:bool:1' \
 		'device:string' \
 		'listen_globally:bool:0' \
+		'readonly:bool:0' \
 		'port:port:2947'
 }
 
@@ -45,6 +46,7 @@ gpsd_instance()
 	procd_set_param command "$PROG" -N -n -F /var/run/gpsd.sock
 
 	[ "$listen_globally" -ne 0 ] && procd_append_param command -G
+	[ "${readonly:-0}" -ne 0 ] && procd_append_param command -b
 	procd_append_param command -S "$port"
 	procd_append_param command "$device"
 	# retry=0: respawn forever so gpsd recovers once the GPS UART is ready,
