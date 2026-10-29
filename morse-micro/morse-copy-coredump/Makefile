@@ -8,6 +8,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=morse-copy-coredump
 PKG_RELEASE=2
 
+# Dependency-only trial packaging; upstream userspace stays unchanged.
+PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MM8108_TRIAL
+ifeq ($(CONFIG_OPENMANET_MM8108_TRIAL),y)
+PKG_RELEASE:=$(PKG_RELEASE).trial1
+endif
+
 PKG_MAINTAINER:=Morse Micro
 
 include $(INCLUDE_DIR)/package.mk

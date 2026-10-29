@@ -3,6 +3,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=smart_manager
 PKG_VERSION:=mm8108-2.0.0
 PKG_RELEASE=3
+
+# Dependency-only trial packaging; upstream userspace stays unchanged.
+PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MM8108_TRIAL
+ifeq ($(CONFIG_OPENMANET_MM8108_TRIAL),y)
+PKG_RELEASE:=$(PKG_RELEASE).trial1
+endif
 PKG_LICENSE:=BSD-3-Clause
 
 PKG_SOURCE_URL:=https://github.com/MorseMicro/smart-manager.git

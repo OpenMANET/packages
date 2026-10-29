@@ -9,6 +9,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=morsecli
 PKG_RELEASE=7
 
+# Dependency-only trial packaging; upstream userspace stays unchanged.
+PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MM8108_TRIAL
+ifeq ($(CONFIG_OPENMANET_MM8108_TRIAL),y)
+PKG_RELEASE:=$(PKG_RELEASE).trial1
+endif
+
 PKG_VERSION:=mm8108-2.0.0
 
 PKG_LICENSE:=GPLv2
