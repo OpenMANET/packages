@@ -31,7 +31,7 @@ MORSE_VERSION:=$(PKG_VERSION)-g$(call version_abbrev,$(PKG_SOURCE_VERSION))
 define KernelPackage/dot11ah-mm8108-trial
   SUBMENU:=Wireless Drivers
   TITLE:=Morse Micro 802.11ah core module
-  DEPENDS:=@TARGET_bcm27xx_bcm2711 +kmod-mac80211
+  DEPENDS:=@OPENMANET_MM8108_TRIAL @TARGET_bcm27xx_bcm2711 +kmod-mac80211
   CONFLICTS:=kmod-dot11ah kmod-mm6108 kmod-mm8108 kmod-morse
   FILES:=$(PKG_BUILD_DIR)/dot11ah/dot11ah.ko
   AUTOLOAD:=$(call AutoLoad,50,dot11ah)
@@ -45,7 +45,7 @@ define KernelPackage/mm8108-trial
   SUBMENU:=Wireless Drivers
   TITLE:=Morse Micro WIFI HaLow mm8108 USB 2.1 EXPERIMENTAL driver
   CONFLICTS:=kmod-mm6108 kmod-mm8108 kmod-morse
-  DEPENDS:= @TARGET_bcm27xx_bcm2711 +kmod-dot11ah-mm8108-trial +kmod-mac80211 +kmod-lib-crc7 +kmod-usb-core
+  DEPENDS:= @OPENMANET_MM8108_TRIAL @TARGET_bcm27xx_bcm2711 +kmod-dot11ah-mm8108-trial +kmod-mac80211 +kmod-lib-crc7 +kmod-usb-core
   FILES:= $(PKG_BUILD_DIR)/morse.ko
   AUTOLOAD:=$(call AutoProbe,morse)
   MODPARAMS.morse:=country=US
