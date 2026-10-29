@@ -26,7 +26,7 @@ define Package/netifd-morse
   # This package is also depends on netifd and kmod-cfg80211.
   # These are already pulled in by hostapd_s1g. Listing them
   # explicitly here creates a recursive dependency.
-  DEPENDS:= +kmod-dot11ah +morse-regdb +wpa_supplicant_s1g +hostapd_s1g +morsecli
+  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial +morse-regdb +wpa_supplicant_s1g +hostapd_s1g +morsecli
 endef
 
 define Build/Compile

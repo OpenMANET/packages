@@ -24,7 +24,7 @@ define Package/smart_manager
   CATEGORY:=Morse Micro
   SUBMENU:=Features
   TITLE:=Morse Micro HaLow DCS Smart Manager
-  DEPENDS:= +kmod-dot11ah +libnl +libpthread +libconfig +hostapd_s1g
+  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial +libnl +libpthread +libconfig +hostapd_s1g
   USERID:=network=101:network=101
 endef
 

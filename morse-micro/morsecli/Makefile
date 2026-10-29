@@ -30,7 +30,7 @@ define Package/morsecli
   CATEGORY:=Morse Micro
   SUBMENU:=Essentials
   TITLE:=Morse Micro WIFI HaLow driver command line tool
-  DEPENDS:= +kmod-dot11ah +libnl +libusb-1.0
+  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial +libnl +libusb-1.0
   FILES:=\
 	$(PKG_BUILD_DIR)/morse_cli
 endef

@@ -17,7 +17,7 @@ define Package/morse-copy-coredump
   CATEGORY:=Morse Micro
   SUBMENU:=Features
   TITLE:=Morse Micro copy coredumps from sysfs
-  DEPENDS:=+kmod-dot11ah
+  DEPENDS:=+!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial
 endef
 
 define Package/morse-copy-coredump/description
