@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=morse_cli
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_VERSION:=2.0.0
 
@@ -23,7 +23,7 @@ define Package/morse_cli
   SECTION:=utils
   CATEGORY:=Network
   TITLE:=Morse Micro WIFI HaLow driver command line tool
-  DEPENDS:= +kmod-dot11ah +libnl +libusb-1.0
+  DEPENDS:= +kmod-morse +libnl +libusb-1.0
   FILES:=\
 	$(PKG_BUILD_DIR)/morse_cli
   PROVIDES:=morsectrl

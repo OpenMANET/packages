@@ -1,13 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant_s1g
-PKG_RELEASE=2
-
-# Dependency-only trial packaging; upstream userspace stays unchanged.
-PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MORSE_22_TRIAL CONFIG_OPENMANET_MM8108_TRIAL CONFIG_OPENMANET_MM6108_TRIAL
-ifeq ($(CONFIG_OPENMANET_MORSE_22_TRIAL),y)
-PKG_RELEASE:=$(PKG_RELEASE).trial2
-endif
+PKG_RELEASE=3
 
 PKG_VERSION:=mm8108-2.0.0
 
@@ -35,7 +29,7 @@ define Package/wpa_supplicant_s1g
   CATEGORY:=Morse Micro
   SUBMENU:=Essentials
   TITLE:=Morse Micro HaLow wpa_supplicant
-  DEPENDS:= +!OPENMANET_MORSE_22_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-mm8108-trial +OPENMANET_MM6108_TRIAL:kmod-mm6108-trial +!MORSE_CUSTOM_CFG80211:kmod-cfg80211 +morsecli +libnl +libopenssl +libubus +MORSE_WPA_SUPPLICANT_S1G_DBUS:dbus +MORSE_WPA_SUPPLICANT_S1G_DBUS:libdbus +libblobmsg-json
+  DEPENDS:= +kmod-morse +!MORSE_CUSTOM_CFG80211:kmod-cfg80211 +morsecli +libnl +libopenssl +libubus +MORSE_WPA_SUPPLICANT_S1G_DBUS:dbus +MORSE_WPA_SUPPLICANT_S1G_DBUS:libdbus +libblobmsg-json
   USERID:=network=101:network=101
 endef
 

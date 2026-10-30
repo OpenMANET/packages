@@ -1,22 +1,11 @@
-From 9a90f25f260aa62e4ede5a8d893eb522d0cccdea Mon Sep 17 00:00:00 2001
-From: James Haggerty <james.haggerty@morsemicro.com>
-Date: Thu, 11 Sep 2025 14:11:04 +1000
-Subject: [PATCH] APP-5501 Load driver even if region not in BCF
+Subject: [PATCH] Allow invalid-region discovery, preserve 2.1 BCF fallbacks
 
-This helps us correctly hotplug the wireless configuration
-on OpenWrt and exposes the available countries in sysfs.
-Obviously, this is a hack and the driver should _not_ be used
-in this state; we prevent this by blocking interface
-bring-up.
----
- firmware.c | 32 ++++++++++++++++++++++++++++++--
- mac.c      |  6 ++++++
- morse.h    |  1 +
- 3 files changed, 37 insertions(+), 2 deletions(-)
+Recognize successful direct and upstream fallback matches. Reset validity on
+each load; discovery-only fallback still cannot create a VIF.
 
 --- a/firmware.c
 +++ b/firmware.c
-@@ -436,6 +436,8 @@
+@@ -486,6 +486,8 @@
  static int morse_bcf_load(struct morse *mors, const struct firmware *bcf,
  			  unsigned int bcf_address)
  {
@@ -25,29 +14,33 @@ bring-up.
  	int i = 0;
  	int ret = 0;
  	morse_elf_ehdr ehdr;
-@@ -527,6 +529,11 @@
- 				goto exit;
- 		}
+@@ -525,6 +527,7 @@
  
+ 	sh_strs = (const char *)bcf->data + sh_strtab.sh_offset;
+ 
++	mors->has_valid_regdom = false;
+ 	mors->regdoms.count = 0;
+ 	if (test_bit(MORSE_STATE_FLAG_REGDOM_SET_BY_OTP, &mors->state_flags)) {
+ 		/* If OTP set, just report this (even if BCF does not define
+@@ -579,6 +582,11 @@
+ 			ret = add_fallback_regdoms_to_buffer(mors, regdom_buff, regdom_cc);
+ 			if (ret)
+ 				goto exit;
++		}
++
 +		if (!first_regdom_found) {
 +			first_regdom_hdr = shdr;
 +			first_regdom_found = true;
-+		}
-+
- 		if ((strncmp(regdom_cc, mors->country, 2) == 0) && regdom_len < 0) {
- 			ret = copy_bcf_section(bcf, bcf_buf + config_len, shdr,
- 					       bcf_buf_len - config_len);
-@@ -534,6 +541,7 @@
- 			if (ret < 0)
- 				goto exit;
- 			regdom_len = ret;
-+			mors->has_valid_regdom = true;
+ 		}
  
- 			/* Do not break if parsing all regdoms to save to sysfs */
- 			if (!fill_regdom_info_from_bcf)
-@@ -542,9 +550,27 @@
+ 		if ((strncmp(regdom_cc, mors->country, 2) == 0) && regdom_len < 0) {
+@@ -625,10 +633,31 @@
+ 		}
  	}
  
++	/* Direct matches and successful upstream country fallbacks are valid. */
++	mors->has_valid_regdom = regdom_len >= 0;
++
  	if (regdom_len < 0) {
 -		MORSE_ERR(mors, "Country code %s not found in BCF", mors->country);
 -		ret = -ENOENT;

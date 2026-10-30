@@ -10,12 +10,11 @@ PARAMS = SOURCE[SOURCE.index('change_module_parameters() {'):SOURCE.index('\nmor
 BLOCK = SOURCE[SOURCE.index('\tlocal morse_module_config_file='):SOURCE.index('\t# don\'t do iw reg set as in mac80211')]
 
 class Modules(unittest.TestCase):
-    def run_case(self, package, module, integrated):
+    def run_case(self, package):
+        module = "morse"
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / package).write_text(module + ' country=US\n')
-            if not integrated:
-                (root / '50-dot11ah').write_text('dot11ah channelization_scheme=1\n')
             block = BLOCK.replace('/etc/modules.d', directory).replace('/sbin/kmodloader', 'kmodloader')
             script = PARAMS + '''
 is_module_loaded() { return 0; }
@@ -31,25 +30,18 @@ run() {
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertNotIn('FAIL', result.stdout)
             self.assertEqual(result.stdout.count('load:' + str(root / package) + '\n'), 1, result.stdout)
-            self.assertEqual('channelization_scheme=3' in (root / package).read_text(), integrated)
-            if integrated:
-                self.assertNotIn('unload:dot11ah', result.stdout)
-                self.assertNotIn('50-dot11ah', result.stdout)
-                self.assertFalse((root / '50-dot11ah').exists())
-            else:
-                self.assertIn('unload:dot11ah', result.stdout)
-                self.assertIn('load:' + str(root / '50-dot11ah'), result.stdout)
-                self.assertIn('channelization_scheme=3', (root / '50-dot11ah').read_text())
+            self.assertIn('channelization_scheme=3', (root / package).read_text())
+            self.assertNotIn('unload:dot11ah', result.stdout)
+            self.assertNotIn('50-dot11ah', result.stdout)
+            self.assertFalse((root / '50-dot11ah').exists())
 
-    def test_usb_trial(self): self.run_case('mm8108-trial', 'morse', True)
-    def test_spi_trial(self): self.run_case('mm6108-trial', 'morse', True)
-    def test_legacy_spi(self): self.run_case('mm6108', 'mm6108_sdio', False)
-    def test_legacy_usb(self): self.run_case('mm8108', 'morse', False)
+    def test_usb(self): self.run_case('mm8108')
+    def test_spi(self): self.run_case('mm6108')
 
 class BoardDefaults(unittest.TestCase):
     def test_external_crystal_defaults(self):
         source = (pathlib.Path(__file__).parents[3] / 'boards/bsp-common/files/uci-defaults/99_morse_radio_defaults').read_text()
-        for package, expected in [('mm6108', True), ('mm6108-trial', True), ('mm8108', False), ('mm8108-trial', False)]:
+        for package, expected in [('mm6108', True), ('mm8108', False)]:
             with self.subTest(package=package), tempfile.TemporaryDirectory() as directory:
                 (pathlib.Path(directory) / package).touch()
                 script = source.replace('. /lib/functions.sh', '').replace('/etc/modules.d', directory)

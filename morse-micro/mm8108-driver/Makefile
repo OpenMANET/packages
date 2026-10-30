@@ -7,15 +7,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mm8108-driver
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
-PKG_VERSION:=2.0.0
+PKG_VERSION:=2.2.3
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=LICENSE
-PKG_SOURCE_VERSION:=mm8108-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=270da4733cd4dc62e78e897746f98f6dfb3bef80
 PKG_SOURCE_URL:=https://github.com/MorseMicro/morse_driver.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.zst
-PKG_MIRROR_HASH:=4bdabca7daa67de8861baec81ef7045f69c9f0b6d8c9ad4f6acf7c94a18ba94f
+PKG_MIRROR_HASH:=2e4ccd9a55ccfba85d70a99e156bc5678fdf70b1575272362b8eb288b8ec4bec
 PKG_SOURCE_PROTO:=git
 
 PKG_MAINTAINER:=OpenMANET
@@ -28,26 +28,10 @@ include $(INCLUDE_DIR)/package.mk
 MAC80211_VERSION:=v$(shell grep '^PKG_VERSION:=' $(TOPDIR)/package/kernel/mac80211/Makefile | cut -d'=' -f2 | head -1)
 MORSE_VERSION:=$(PKG_VERSION)-g$(call version_abbrev,$(PKG_SOURCE_VERSION))
 
-define KernelPackage/dot11ah
-  SUBMENU:=Wireless Drivers
-  TITLE:=Morse Micro 802.11ah core module
-  DEPENDS:=+kmod-mac80211
-  FILES:=$(PKG_BUILD_DIR)/dot11ah/dot11ah.ko
-  AUTOLOAD:=$(call AutoLoad,50,dot11ah)
-endef
-
-define KernelPackage/dot11ah/description
-	Core 802.11ah shim driver module for Morse Micro HaLow chips.
-endef
-
 define KernelPackage/mm8108
   SUBMENU:=Wireless Drivers
   TITLE:=Morse Micro WIFI HaLow mm8108 USB/SDIO driver
-  # Both the USB and SDIO bus front-ends are compiled into morse.ko (see
-  # MORSE_MAKEDEFS below), so kmod-mmc and kmod-usb-core are both hard
-  # runtime dependencies; each front-end only probes when matching
-  # hardware exists (USB: raven/venice, SDIO: halowlink2).
-  DEPENDS:= +kmod-dot11ah +kmod-mac80211 +kmod-lib-crc7 +kmod-mmc +kmod-usb-core
+  DEPENDS:= +kmod-mac80211 +kmod-lib-crc7 +kmod-usb-core +kmod-mmc
   FILES:= $(PKG_BUILD_DIR)/morse.ko
   AUTOLOAD:=$(call AutoProbe,morse)
   MODPARAMS.morse:=country=US
@@ -55,7 +39,7 @@ define KernelPackage/mm8108
 endef
 
 define KernelPackage/mm8108/description
-	This package contains the proprietary wireless driver for the MorseMicro mm8108 chip USB and SDIO interfaces.
+	This package contains the wireless driver for the Morse Micro MM8108 chip USB and SDIO interfaces.
 endef
 
 MORSE_MAKEDEFS += \
@@ -65,6 +49,7 @@ MORSE_MAKEDEFS += \
   CONFIG_MORSE_USB=y \
   CONFIG_MORSE_SDIO=y \
   CONFIG_MORSE_SDIO_ALIGNMENT=4 \
+  CONFIG_MORSE_SPI=n \
   CONFIG_MORSE_USER_ACCESS=y \
   CONFIG_MORSE_POWERSAVE_MODE=0 \
   CONFIG_MORSE_VENDOR_COMMAND=y \
@@ -93,5 +78,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,dot11ah))
 $(eval $(call KernelPackage,mm8108))
