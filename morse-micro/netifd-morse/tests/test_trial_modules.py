@@ -26,11 +26,11 @@ wireless_set_retry() { echo "FAIL retry:$1"; }
 MOD_PARAMS="country=US"
 DOT11AH_MOD_PARAMS="channelization_scheme=3"
 run() {
-''' + block + '\n}\nrun\n'
+''' + block + '\n}\nrun\nrun\n'
             result = subprocess.run(['bash', '-c', script], text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertNotIn('FAIL', result.stdout)
-            self.assertIn('load:' + str(root / package), result.stdout)
+            self.assertEqual(result.stdout.count('load:' + str(root / package) + '\n'), 1, result.stdout)
             self.assertEqual('channelization_scheme=3' in (root / package).read_text(), integrated)
             if integrated:
                 self.assertNotIn('unload:dot11ah', result.stdout)
