@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# Ensure the OpenMANET package repository signing key is trusted. Runs every
+# boot because sysupgrade config restore can mask or drop the copy that
+# base-files ships in ROM, leaving opkg unable to verify the openmanet feeds.
+
+START=11
+
+KEY_FILE=/etc/opkg/keys/a0e0dd4a324a953d
+
+boot() {
+	[ -s "$KEY_FILE" ] && return 0
+	mkdir -p /etc/opkg/keys
+	cat > "$KEY_FILE" << 'EOF'
+untrusted comment: OpenMANET packages public key
+RWSg4N1KMkqVPeTS+1YUelNvIGHb7IGB6cnl6gfQzSuktHB68ExPRwfp
+EOF
+}

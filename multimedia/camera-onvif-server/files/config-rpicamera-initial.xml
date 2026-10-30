@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CameraConfiguration xmlns="http://www.onvif.org/ver10/schema" xmlns:tt="http://www.onvif.org/ver10/schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<MediaService>
+		<VideoSourceConfiguration token="video_source_configuration_token">
+			<Name>Default</Name>
+			<UseCount>1</UseCount>
+			<SourceToken>video_source_token</SourceToken>
+			<Bounds xsi:type="IntRectangle" x="0" y="0" width="1280" height="720"></Bounds>
+			<Extension>
+				<Rotate>
+					<Mode>ON</Mode>
+				</Rotate>
+			</Extension>
+		</VideoSourceConfiguration>
+		<VideoEncoderConfiguration token="video_encoder_configuration_token">
+			<Name>Default</Name>
+			<UseCount>1</UseCount>
+			<Encoding>H264</Encoding>
+			<Resolution>
+				<Width>1280</Width>
+				<Height>720</Height>
+			</Resolution>
+			<Quality>1</Quality>
+			<RateControl>
+				<FrameRateLimit>30</FrameRateLimit>
+				<EncodingInterval>1</EncodingInterval>
+				<BitrateLimit>1000</BitrateLimit>
+			</RateControl>
+			<H264>
+				<GovLength>60</GovLength>
+				<H264Profile>High</H264Profile>
+			</H264>
+			<Multicast>
+				<Address>
+					<Type>IPv4</Type>
+				</Address>
+				<Port>0</Port>
+				<TTL>0</TTL>
+				<AutoStart>false</AutoStart>
+			</Multicast>
+			<SessionTimeout>PT0S</SessionTimeout>
+		</VideoEncoderConfiguration>
+		<Profile>
+			<Name>Default profile</Name>
+			<ProfileToken>profile_token</ProfileToken>
+			<VideoEncoderConfigurationToken>video_encoder_configuration_token</VideoEncoderConfigurationToken>
+			<VideoSourceConfigurationToken>video_source_configuration_token</VideoSourceConfigurationToken>
+		</Profile>
+		<CurrentProfile>profile_token</CurrentProfile>
+	</MediaService>
+	<ImagingService>
+		<ImagingVideoSource>
+			<VideoSourceToken>video_source_token</VideoSourceToken>
+			<ImagingSettings>
+				<Brightness>0</Brightness>
+				<Contrast>1</Contrast>
+				<ColorSaturation>1</ColorSaturation>
+				<Sharpness>0</Sharpness>
+				<Focus>
+					<AutoFocusMode>AUTO</AutoFocusMode>
+				</Focus>
+			</ImagingSettings>
+		</ImagingVideoSource>
+	</ImagingService>
+</CameraConfiguration>

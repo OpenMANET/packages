@@ -2,12 +2,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openmanetd
 
-PKG_VERSION:=1.3.10
-PKG_RELEASE:=2
+PKG_VERSION:=main
+PKG_RELEASE:=5
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/OpenMANET/openmanetd
-PKG_SOURCE_VERSION:=$(PKG_VERSION)
+PKG_SOURCE_VERSION:=main
 PKG_HASH:=skip
 
 PKG_LICENSE:=MIT
@@ -18,6 +18,8 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 
 GO_PKG:=github.com/openmanet/openmanetd
+# Ship only the daemon, not developer tools under scripts/.
+GO_PKG_BUILD_PKG:=$(GO_PKG)
 GO_PKG_LDFLAGS:=-s -w
 GO_PKG_LDFLAGS_X:=github.com/openmanet/openmanetd/cmd.version=$(PKG_VERSION)
 

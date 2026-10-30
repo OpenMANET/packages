@@ -4,9 +4,25 @@ START=21
 USE_PROCD=1
 NAME=init-gps-device
 
-# WM1302 Pi HAT + Quectel L76K(B)
-GPIO_RST=25       # GPS_RST (active high pulse)
-GPIO_WAKE=12      # GPS_WAKE_UP (high = standby, low = active)
+# RAVEN CM4 carrier board + Quectel LC76G GNSS module (U4).
+#
+# GPIO map (BCM numbers == gpiochip0 line offsets; line names come from
+# the raven device tree overlay, firmware patch 991-0004):
+#
+#   GPIO14  GPS_UART_TX   CM4 TXD0 -> LC76G RX    UART0, /dev/ttyAMA0 (gpsd)
+#   GPIO15  GPS_UART_RX   CM4 RXD0 <- LC76G TX
+#   GPIO18  GPS_PPS       LC76G 1PPS out          dtoverlay=pps-gpio,gpiopin=18
+#   GPIO23  GPS_JAM_IND   LC76G jamming indicator input, logged only
+#   GPIO12  GPS_WAKE      PI_GPS_WAKE  -> BSS138 level shifter -> LC76G AP_REQ
+#                         high = standby, low = active
+#   GPIO25  GPS_RESET     PI_GPS_RESET -> BSS138 level shifter -> LC76G RESET_N
+#                         active-high pulse from the CM4 side
+#
+# The raven overlay disables uart5 (GPIO12/13) so TXD5 idling high cannot
+# hold the module in standby before this script claims GPIO12.
+GPIO_RST=25       # GPS_RESET
+GPIO_WAKE=12      # GPS_WAKE
+GPIO_JAM=23       # GPS_JAM_IND (read-only)
 
 boot() {
     device=$(get_gpsd_device)
@@ -30,7 +46,7 @@ set_gpio_persistent() {
     # -c gpiochip0: specify the chip (GPIOs 0-57 are on gpiochip0)
     # -C: set consumer name for identification in gpioinfo
     # -z: daemonize to keep GPIO state after exit (no & needed)
-    gpioset -c gpiochip0 -C "gps-wm1302" -z "${gpio}=${value}" 2>/dev/null
+    gpioset -c gpiochip0 -C "raven-gps" -z "${gpio}=${value}" 2>/dev/null
 }
 
 get_gpio_val() {
@@ -56,7 +72,7 @@ init_gps_gpio() {
     pkill -f "gpioset.*${GPIO_RST}=" 2>/dev/null || true
     pkill -f "gpioset.*${GPIO_WAKE}=" 2>/dev/null || true
 
-    # Set WAKE low (active) - persistent
+    # Set WAKE low (AP_REQ active) - persistent
     set_gpio_persistent "$GPIO_WAKE" 0
 
     # Reset pulse sequence: set low, pulse high, then back to low
@@ -77,4 +93,5 @@ init_gps_gpio() {
     logger -t "$NAME" "GPIO states:"
     logger -t "$NAME" "  GPIO${GPIO_RST} (RST)     = $(get_gpio_val ${GPIO_RST})"
     logger -t "$NAME" "  GPIO${GPIO_WAKE} (WAKEUP) = $(get_gpio_val ${GPIO_WAKE})"
+    logger -t "$NAME" "  GPIO${GPIO_JAM} (JAM_IND) = $(get_gpio_val ${GPIO_JAM})"
 }
