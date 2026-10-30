@@ -40,7 +40,7 @@ define KernelPackage/mm8108-trial
 endef
 
 define KernelPackage/mm8108-trial/description
-	This package contains the proprietary wireless driver for the MorseMicro mm8108 chip USB interface (isolated 2.2 trial).
+	This package contains the wireless driver for the Morse Micro MM8108 chip USB interface (isolated 2.2 trial).
 endef
 
 MORSE_MAKEDEFS += \
