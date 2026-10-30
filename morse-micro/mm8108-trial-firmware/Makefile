@@ -27,7 +27,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/mm8108-trial-firmware
   DEPENDS:=@OPENMANET_MM8108_TRIAL @TARGET_bcm27xx_bcm2711
-  CONFLICTS:=mm6108-trial-firmware mm8108-firmware mm6108-firmware
+  CONFLICTS:=mm8108-firmware mm6108-firmware
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=$(PKG_SOURCE_URL)
