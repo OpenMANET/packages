@@ -517,11 +517,12 @@ drv_morse_setup() {
 		return 1
 	fi
 
+	local driver_mod_params="$MOD_PARAMS"
 	local integrated_dot11ah=0
 	case "$morse_module_config_file" in
 	*/mm8108-trial|*/mm6108-trial)
 		integrated_dot11ah=1
-		MOD_PARAMS="$MOD_PARAMS $DOT11AH_MOD_PARAMS"
+		driver_mod_params="$MOD_PARAMS $DOT11AH_MOD_PARAMS"
 		;;
 	esac
 
@@ -531,7 +532,7 @@ drv_morse_setup() {
 		is_module_loaded dot11ah && rmmod dot11ah
 	fi
 
-	if change_module_parameters "$morse_module" "$morse_module_config_file" "$MOD_PARAMS" || ! is_module_loaded "$morse_module"; then
+	if change_module_parameters "$morse_module" "$morse_module_config_file" "$driver_mod_params" || ! is_module_loaded "$morse_module"; then
 		is_module_loaded "$morse_module" && rmmod "$morse_module"
 		# This needs to be separate to force kmodloader to
 		# read the dot11ah modparams.
