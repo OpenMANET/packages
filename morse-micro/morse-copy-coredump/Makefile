@@ -17,7 +17,7 @@ define Package/morse-copy-coredump
   CATEGORY:=Morse Micro
   SUBMENU:=Features
   TITLE:=Morse Micro copy coredumps from sysfs
-  DEPENDS:=+kmod-morse
+  DEPENDS:=+kmod-mac80211
 endef
 
 define Package/morse-copy-coredump/description
