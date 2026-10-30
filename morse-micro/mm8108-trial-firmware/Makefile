@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=mm8108-trial-firmware
 PKG_RELEASE=1
 
-PKG_VERSION:=2.1.0
+PKG_VERSION:=2.2.3
 
-PKG_SOURCE_VERSION:=919f27a6dc2d46a988682d6ff64dd3fdb9ffc465
+PKG_SOURCE_VERSION:=db4b69fd212990c59c5f1712e23060cbb94276ec
 PKG_SOURCE_URL:=https://github.com/MorseMicro/morse-firmware.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.zst
-PKG_MIRROR_HASH:=f753174a6b7a78634728e8abfdf8bc62c19e844fb707e5f9c5605b8e89463dc4
+PKG_MIRROR_HASH:=eefdaf701aa171a4f1c7b2391db5e84e09eb748fa8cd75e2a2626b6c5145a555
 PKG_SOURCE_PROTO:=git
 
 PKG_MAINTAINER:=OpenMANET
@@ -42,8 +42,8 @@ define Package/mm8108-trial-firmware/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/firmware/mm8108b2-rl.bin $(1)/lib/firmware/morse
 	$(INSTALL_DATA) ./files/bcf_mm8108_m20_us.bin $(1)/lib/firmware/morse
 	ln -s bcf_mm8108_m20_us.bin $(1)/lib/firmware/morse/bcf_boardtype_0808.bin
-	# Preserve baseline board calibration; generic BCFs remain owned by
-	# the pinned morse-board-config package. Do not copy upstream 2.1 BCFs.
+	# Use the M20-US BCF from the pinned 2.2 firmware release.
+	# Generic BCFs remain owned by the pinned morse-board-config package.
 endef
 
 $(eval $(call BuildPackage,mm8108-trial-firmware))

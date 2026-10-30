@@ -13,7 +13,7 @@ PKG_RELEASE=2
 # Dependency-only trial packaging; upstream userspace stays unchanged.
 PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MM8108_TRIAL
 ifeq ($(CONFIG_OPENMANET_MM8108_TRIAL),y)
-PKG_RELEASE:=$(PKG_RELEASE).trial1
+PKG_RELEASE:=$(PKG_RELEASE).trial2
 endif
 
 PKG_LICENSE:=GPLv2
@@ -32,7 +32,7 @@ define Package/netifd-morse
   # This package is also depends on netifd and kmod-cfg80211.
   # These are already pulled in by hostapd_s1g. Listing them
   # explicitly here creates a recursive dependency.
-  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial +morse-regdb +wpa_supplicant_s1g +hostapd_s1g +morsecli
+  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-mm8108-trial +morse-regdb +wpa_supplicant_s1g +hostapd_s1g +morsecli
 endef
 
 define Build/Compile

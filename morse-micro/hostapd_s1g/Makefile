@@ -6,7 +6,7 @@ PKG_RELEASE=5
 # Dependency-only trial packaging; upstream userspace stays unchanged.
 PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MM8108_TRIAL
 ifeq ($(CONFIG_OPENMANET_MM8108_TRIAL),y)
-PKG_RELEASE:=$(PKG_RELEASE).trial1
+PKG_RELEASE:=$(PKG_RELEASE).trial2
 endif
 
 PKG_VERSION:=mm8108-2.0.0
@@ -29,7 +29,7 @@ define Package/hostapd_s1g
   CATEGORY:=Morse Micro
   SUBMENU:=Essentials
   TITLE:=Morse Micro HaLow hostapd
-  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial +!MORSE_CUSTOM_CFG80211:kmod-cfg80211 +morsecli +libnl +libopenssl +libubus +libblobmsg-json
+  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-mm8108-trial +!MORSE_CUSTOM_CFG80211:kmod-cfg80211 +morsecli +libnl +libopenssl +libubus +libblobmsg-json
   USERID:=network=101:network=101
 endef
 

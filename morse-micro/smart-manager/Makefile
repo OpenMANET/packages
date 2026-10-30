@@ -7,7 +7,7 @@ PKG_RELEASE=3
 # Dependency-only trial packaging; upstream userspace stays unchanged.
 PKG_CONFIG_DEPENDS += CONFIG_OPENMANET_MM8108_TRIAL
 ifeq ($(CONFIG_OPENMANET_MM8108_TRIAL),y)
-PKG_RELEASE:=$(PKG_RELEASE).trial1
+PKG_RELEASE:=$(PKG_RELEASE).trial2
 endif
 PKG_LICENSE:=BSD-3-Clause
 
@@ -30,7 +30,7 @@ define Package/smart_manager
   CATEGORY:=Morse Micro
   SUBMENU:=Features
   TITLE:=Morse Micro HaLow DCS Smart Manager
-  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-dot11ah-mm8108-trial +libnl +libpthread +libconfig +hostapd_s1g
+  DEPENDS:= +!OPENMANET_MM8108_TRIAL:kmod-dot11ah +OPENMANET_MM8108_TRIAL:kmod-mm8108-trial +libnl +libpthread +libconfig +hostapd_s1g
   USERID:=network=101:network=101
 endef
 
