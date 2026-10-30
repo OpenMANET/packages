@@ -6,7 +6,7 @@ This tests selection/validity, not physical firmware or RF behavior.
 import pathlib, subprocess, sys, tempfile
 s = (pathlib.Path(sys.argv[1]) / 'firmware.c').read_text()
 a = s.index('struct morse_bcf_fallback_entry {')
-b = s.index('static int morse_firmware_reset', a)
+b = s.index('static int morse_firmware_trigger', a)
 code = s[a:b]
 pre = r'''
 #include <stdbool.h>

@@ -1,23 +1,22 @@
-# Isolated RPi4 MM8108 USB trial
+# Isolated RPi4 MM8108 USB 2.2 trial
 
-Use only with firmware's `rpi4-mm8108-2.1-trial` board and configuration gate.
-This package owns experimental `morse.ko` and `dot11ah.ko` together. It does
-not replace or provide baseline `kmod-dot11ah`; MM6108 continues to use 2.0.
-Do not publish these packages to production feeds or mix modules across builds.
+Use with firmware's `rpi4-mm8108-2.2-trial` profile. This package builds one
+`morse.ko` containing dot11ah and enables only USB. The separate MM6108 SPI
+trial is opt-in; baseline MM6108 packages remain on 2.0.1.
 
-Sources are exact 2.1 commits with generated OpenWrt tar.zst SHA256 values.
-Only USB is compiled. The two `0001-*` baseline patches are already upstream.
-Five remaining patches apply with `patch --fuzz=0`; patch 016 is adapted for
-2.1's valid BCF country fallbacks and keeps unsupported-region VIF blocking.
+Driver 2.2.3 and its rate-control submodule are pinned with a complete OpenWrt
+archive hash. Five retained radio patches apply without fuzz. A sixth patch
+allows the package version to appear in module metadata. The trial firmware
+package contains the matching 2.2.3 binary and upstream 2.2 M20-US BCF.
 
-After OpenWrt package preparation, run:
+After package preparation, run:
 
 ```sh
-python3 tests/regdom.py /path/to/prepared/mm8108-trial-driver-2.1.0
+python3 tests/regdom.py /path/to/prepared/mm8108-trial-driver-2.2.3
 ```
 
-The test compiles actual patched BCF selection code with synthetic ELF sections
-and bus stubs. It covers direct selection, four country fallbacks, unavailable
-fallback, unsupported country, absent regdom, and OTP behavior. It is not a
-hardware test. Existing userspace and board calibration are deliberately held
-constant; compatibility and RF performance require the firmware hardware plan.
+The same test accepts prepared MM6108 2.2.2 trial sources. It compiles the actual
+patched BCF selection code with synthetic ELF sections and bus stubs, exercising
+direct selection, country fallbacks, discovery-only behavior and OTP cases.
+This does not validate firmware command compatibility or RF behavior.
+See firmware's `docs/MORSE_2.2_TRIAL.md` for image builds and hardware checks.
