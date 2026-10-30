@@ -46,4 +46,23 @@ run() {
     def test_legacy_spi(self): self.run_case('mm6108', 'mm6108_sdio', False)
     def test_legacy_usb(self): self.run_case('mm8108', 'morse', False)
 
+class BoardDefaults(unittest.TestCase):
+    def test_external_crystal_defaults(self):
+        source = (pathlib.Path(__file__).parents[3] / 'boards/bsp-common/files/uci-defaults/99_morse_radio_defaults').read_text()
+        for package, expected in [('mm6108', True), ('mm6108-trial', True), ('mm8108', False), ('mm8108-trial', False)]:
+            with self.subTest(package=package), tempfile.TemporaryDirectory() as directory:
+                (pathlib.Path(directory) / package).touch()
+                script = source.replace('. /lib/functions.sh', '').replace('/etc/modules.d', directory)
+                mocks = '''
+config_get() { eval "$1=morse"; }
+board_name() { echo bcm2711,mm6108-spi; }
+uci() { echo "uci:$*"; }
+config_load() { :; }
+config_foreach() { "$1" radio0; }
+'''
+                result = subprocess.run(['sh', '-c', mocks + script], text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual('enable_ext_xtal_init=1' in result.stdout, expected, result.stdout)
+                self.assertIn('bcf=bcf_fgh100mhaamd.bin', result.stdout)
+
 if __name__ == '__main__': unittest.main()

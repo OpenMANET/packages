@@ -63,7 +63,8 @@ fix_bcf_default() {
 	# the driver's modules.d file from UCI, so this must live in UCI or the
 	# rewrite drops it. Keyed off the kmod's modules.d file so it only
 	# applies to images shipping the mm6108 driver.
-	[ -f /etc/modules.d/mm6108 ] && uci -q set wireless."${config}".enable_ext_xtal_init=1
+	{ [ -f /etc/modules.d/mm6108 ] || [ -f /etc/modules.d/mm6108-trial ]; } && \
+		uci -q set wireless."${config}".enable_ext_xtal_init=1
 
 	[ -z "$bcf" ] && return 0
 
