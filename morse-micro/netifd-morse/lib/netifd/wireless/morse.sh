@@ -488,7 +488,7 @@ drv_morse_setup() {
 	local morse_test_module_config_file="/etc/modules.d/morse-test-driver"
 	local dot11ah_module_config_file="/etc/modules.d/dot11ah"
 	local f
-	for f in /etc/modules.d/morse /etc/modules.d/mm6108 /etc/modules.d/mm8108; do
+	for f in /etc/modules.d/morse /etc/modules.d/mm6108 /etc/modules.d/mm8108 /etc/modules.d/mm8108-trial /etc/modules.d/mm6108-trial; do
 		if [ -f "$f" ]; then
 			morse_module_config_file="$f"
 			break
@@ -502,7 +502,7 @@ drv_morse_setup() {
 		wireless_set_retry 0
 		return 1
 	elif [ -z "$morse_module_config_file" -a ! -f "$morse_test_module_config_file" ]; then
-		echo "No morse driver config (morse-test-driver, morse, mm6108 or mm8108) in /etc/modules.d; refusing to configure" >&2
+		echo "No morse driver config (morse-test-driver, morse, mm6108, mm8108 or a trial package) in /etc/modules.d; refusing to configure" >&2
 		wireless_set_retry 0
 		return 1
 	elif [ -f "$morse_test_module_config_file" ]; then
@@ -517,8 +517,16 @@ drv_morse_setup() {
 		return 1
 	fi
 
+	local integrated_dot11ah=0
+	case "$morse_module_config_file" in
+	*/mm8108-trial|*/mm6108-trial)
+		integrated_dot11ah=1
+		MOD_PARAMS="$MOD_PARAMS $DOT11AH_MOD_PARAMS"
+		;;
+	esac
+
 	local inserted_module=0
-	if change_module_parameters dot11ah "$dot11ah_module_config_file" "$DOT11AH_MOD_PARAMS"; then
+	if [ "$integrated_dot11ah" = 0 ] && change_module_parameters dot11ah "$dot11ah_module_config_file" "$DOT11AH_MOD_PARAMS"; then
 		is_module_loaded "$morse_module" && rmmod "$morse_module"
 		is_module_loaded dot11ah && rmmod dot11ah
 	fi
@@ -527,7 +535,7 @@ drv_morse_setup() {
 		is_module_loaded "$morse_module" && rmmod "$morse_module"
 		# This needs to be separate to force kmodloader to
 		# read the dot11ah modparams.
-		/sbin/kmodloader $dot11ah_module_config_file
+		[ "$integrated_dot11ah" = 1 ] || /sbin/kmodloader "$dot11ah_module_config_file"
 		/sbin/kmodloader $morse_module_config_file
 		# Give time for 15-morse-wifi-re-enable to run, otherwise
 		# if this script finishes very quickly after reinsertion

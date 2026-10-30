@@ -31,7 +31,7 @@ MORSE_VERSION:=$(PKG_VERSION)-g$(call version_abbrev,$(PKG_SOURCE_VERSION))
 define KernelPackage/mm8108-trial
   SUBMENU:=Wireless Drivers
   TITLE:=Morse Micro WIFI HaLow mm8108 USB 2.2 EXPERIMENTAL driver
-  CONFLICTS:=kmod-mm6108 kmod-mm8108 kmod-dot11ah kmod-dot11ah-mm8108-trial
+  CONFLICTS:=kmod-mm6108-trial kmod-mm6108 kmod-mm8108 kmod-dot11ah kmod-dot11ah-mm8108-trial
   DEPENDS:= @OPENMANET_MM8108_TRIAL @TARGET_bcm27xx_bcm2711 +kmod-mac80211 +kmod-lib-crc7 +kmod-usb-core
   FILES:= $(PKG_BUILD_DIR)/morse.ko
   AUTOLOAD:=$(call AutoProbe,morse)
