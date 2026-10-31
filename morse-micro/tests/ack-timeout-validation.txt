@@ -1,0 +1,35 @@
+ACK timeout persistence workaround
+
+Targets: MM6108 2.2.2 and MM8108 2.2.3, mac80211/softmac mode.
+Patch: 040-preserve-ack-timeout.patch in each driver package.
+
+Run the host regression test against each prepared driver source directory:
+  python3 test_ack_timeout.py /path/to/patched/driver
+It compiles the actual setter, restore helper, channel-change function and
+parameter postprocessing block against a simulated firmware transport.
+
+Hardware validation still required (not established by the host tests):
+- Record the original ACK timeout on both ends of a link.
+- Set a chosen test value using morse_cli set ack_timeout_adjust VALUE.
+- Read it back with morse_cli get ack_timeout_adjust.
+- Exercise channel changes, normal/aborted scans and reconnects. Check the
+  timeout after each operation and check logs for restoration errors.
+- Exercise firmware watchdog recovery in a controlled test and verify replay.
+- Test AP, station, mesh and multiple interfaces, including a nonzero VIF ID.
+  The driver already treats this generic parameter as radio-wide; confirm
+  firmware accepts replay with VIF 0 on both chips.
+- Validate long-distance association, packet loss and throughput on both ends.
+- Restore the original timeout after testing.
+
+Compatibility workarounds may increase the setting to 1000 us. They must not
+reduce a longer saved value. An explicit user SET can replace the saved value.
+Only successful SETs persist. GET results do not overwrite the replay value.
+Zero is a valid value; UINT32_MAX is a host representation test, not a useful
+or validated radio setting.
+
+The saved value lasts for the driver instance, including firmware recovery.
+Module unload/reload and reboot require configuration to be applied again.
+This patch does not add a boot configuration option or change slot timing.
+Firmware-controlled channel hops DURING hardware/scheduled scans remain outside
+host control. Replay at scan completion cannot provide continuous protection
+throughout a scan. Fullmac mode is outside this patch's scope.
