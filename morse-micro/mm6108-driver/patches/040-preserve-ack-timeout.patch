@@ -1,0 +1,188 @@
+Subject: [PATCH] Preserve ACK timeout adjustments across channel changes
+
+Keep successful SETs separate from observed GET values and firmware state.
+Replay the radio-wide adjustment after host channel changes, scan
+completion and mac80211 recovery. Preserve longer settings when applying
+compatibility workarounds, and retain the unsigned firmware parameter range.
+
+This is a host workaround: firmware-controlled channel changes during a
+scan still require a firmware fix for continuous protection. No slot timing
+changes.
+
+---
+--- a/morse.h
++++ b/morse.h
+@@ -1389,7 +1389,11 @@
+ 	unsigned int restart_counter;
+ 
+ 	/** Extra timeout applied to wait for ctrl-resp frames */
+-	int extra_ack_timeout_us;
++	s64 extra_ack_timeout_us;
++
++	/* Last successful SET, independent of GET results and firmware resets. */
++	u32 configured_ack_timeout_us;
++	bool configured_ack_timeout_valid;
+ 
+ 	/** Num of beacon enabled VIFs (AP/Mesh/IBSS) */
+ 	atomic_t num_bcn_vifs;
+--- a/command.h
++++ b/command.h
+@@ -222,6 +222,9 @@
+  */
+ int morse_cmd_ack_timeout_adjust(struct morse *mors, u16 vif_id, u32 timeout_us);
+ 
++/* Restore the radio-wide timeout after firmware changes channel. Caller holds mors->lock. */
++int morse_cmd_restore_ack_timeout(struct morse *mors);
++
+ /**
+  * morse_cmd_pv1_set_rx_ampdu_state() - Configure RX AMPDU state for PV1 STA in the firmware.
+  *
+--- a/command.c
++++ b/command.c
+@@ -782,6 +782,9 @@
+ 			   (is_off_channel) ? " (offchan)" : "");
+ 	}
+ 
++	if (!ret)
++		ret = morse_cmd_restore_ack_timeout(mors);
++
+ 	return ret;
+ }
+ 
+@@ -1278,6 +1281,9 @@
+ 	if (ret)
+ 		return ret;
+ 
++	ret = morse_cmd_restore_ack_timeout(mors);
++	if (ret)
++		return ret;
+ 
+ 	/* Store info */
+ 	if (op_chan_freq_hz != MORSE_CMD_CHANNEL_FREQ_NOT_SET)
+@@ -1930,10 +1936,14 @@
+ 
+ 			if (le32_to_cpu(get_set_cmd->param_id) ==
+ 					MORSE_CMD_PARAM_ID_EXTRA_ACK_TIMEOUT_ADJUST_US) {
+-				if (get_set_cmd->action == MORSE_CMD_PARAM_ACTION_SET)
++				if (le32_to_cpu(get_set_cmd->action) ==
++				    MORSE_CMD_PARAM_ACTION_SET) {
++					mors->configured_ack_timeout_us =
++						le32_to_cpu(get_set_cmd->value);
++					mors->configured_ack_timeout_valid = true;
+ 					mors->extra_ack_timeout_us =
+-						le32_to_cpu(get_set_cmd->value);
+-				else if (le32_to_cpu(get_set_cmd->action) ==
++						mors->configured_ack_timeout_us;
++				} else if (le32_to_cpu(get_set_cmd->action) ==
+ 					MORSE_CMD_PARAM_ACTION_GET)
+ 					mors->extra_ack_timeout_us =
+ 						le32_to_cpu(get_set_resp->value);
+@@ -2599,6 +2609,10 @@
+ 	int ret;
+ 	struct morse_cmd_req_get_set_generic_param req;
+ 
++	/* Compatibility workarounds must not shorten an explicitly configured timeout. */
++	if (mors->configured_ack_timeout_valid)
++		timeout_us = max(timeout_us, mors->configured_ack_timeout_us);
++
+ 	morse_cmd_init(mors, &req.hdr, MORSE_CMD_ID_GET_SET_GENERIC_PARAM, vif_id, sizeof(req));
+ 
+ 	req.param_id = cpu_to_le32(MORSE_CMD_PARAM_ID_EXTRA_ACK_TIMEOUT_ADJUST_US);
+@@ -2608,10 +2622,28 @@
+ 
+ 	ret = morse_cmd_tx(mors, NULL, (struct morse_cmd_req *)&req, 0, 0, __func__);
+ 
+-	/* Store ack timeout adjust as it's used in a vendor WAR */
+-	if (ret == 0)
++	/* Only successful SETs become persistent; GETs only update observed state. */
++	if (!ret) {
+ 		mors->extra_ack_timeout_us = timeout_us;
+-
++		mors->configured_ack_timeout_us = timeout_us;
++		mors->configured_ack_timeout_valid = true;
++	}
++
++	return ret;
++}
++
++int morse_cmd_restore_ack_timeout(struct morse *mors)
++{
++	int ret;
++
++	lockdep_assert_held(&mors->lock);
++	if (!mors->configured_ack_timeout_valid)
++		return 0;
++
++	/* The generic parameter is radio-wide, like SET_CHANNEL (VIF 0). */
++	ret = morse_cmd_ack_timeout_adjust(mors, 0, mors->configured_ack_timeout_us);
++	if (ret)
++		MORSE_ERR(mors, "Failed to restore ACK timeout adjustment: %d\n", ret);
+ 	return ret;
+ }
+ 
+--- a/hw_scan.c
++++ b/hw_scan.c
+@@ -1322,6 +1322,8 @@
+ 		};
+ 
+ 		mutex_lock(&mors->lock);
++		if (morse_mlme_is_started(mors) && !morse_mlme_in_reconfig(mors))
++			morse_cmd_restore_ack_timeout(mors);
+ 		ieee80211_scan_completed(mors->hw, &info);
+ 		mors->hw_scan.state = HW_SCAN_STATE_IDLE;
+ 
+@@ -1344,6 +1346,11 @@
+ 	struct cfg80211_scan_info info = {0};
+ 
+ 	mutex_lock(&mors->lock);
++
++	/* Firmware scan channel switches do not pass through morse_cmd_set_channel(). */
++	if (mors->hw_scan.state != HW_SCAN_STATE_IDLE &&
++	    morse_cmd_restore_ack_timeout(mors))
++		info.aborted = true;
+ 
+ 	MORSE_HWSCAN_INFO(mors, "hw scan: complete\n");
+ 	MORSE_HWSCAN_DBG(mors, "%s: done event (%d)\n", __func__, mors->hw_scan.state);
+@@ -1364,7 +1371,7 @@
+ 		goto exit;
+ 	case HW_SCAN_STATE_RUNNING:
+ 	case HW_SCAN_STATE_ABORTING:
+-		info.aborted = (mors->hw_scan.state == HW_SCAN_STATE_ABORTING);
++		info.aborted |= (mors->hw_scan.state == HW_SCAN_STATE_ABORTING);
+ 		mors->hw_scan.state = HW_SCAN_STATE_IDLE;
+ 	}
+ 
+--- a/mac.c
++++ b/mac.c
+@@ -5376,7 +5376,9 @@
+ 		/* Install agreements after handling events in case there is an accept event. */
+ 		if (new_state > old_state && new_state == IEEE80211_STA_AUTHORIZED) {
+ 			morse_twt_process_pending_cmds(mors, mors_vif);
++			mutex_lock(&mors->lock);
+ 			morse_vendor_update_ack_timeout_on_assoc(mors, vif, sta);
++			mutex_unlock(&mors->lock);
+ 		}
+ 
+ 		/* Since agreements are negotiated in the (re)assoc frames, remove sta data if we
+@@ -5923,6 +5925,10 @@
+ 		return;
+ 
+ 	morse_mac_restore_all_vif_conf(mors);
++
++	mutex_lock(&mors->lock);
++	morse_cmd_restore_ack_timeout(mors);
++	mutex_unlock(&mors->lock);
+ 
+ 	/* Triggers a re-association after a watchdog reset. Without this, the Packet Numbers
+ 	 * in a WPA3 network will no longer be synchronised between the AP and STA following
+--- a/firmware.c
++++ b/firmware.c
+@@ -1393,7 +1393,7 @@
+ 	dev_info(mors->dev, "Loaded firmware from %s, size %zu, crc32 0x%08x\n",
+ 		fw_name, fw->size, binary_crc(fw));
+ 
+-	/* Clear out extra ACK timeout; its value is unknown */
++	/* Firmware state is unknown; retain configured_ack_timeout_* for replay. */
+ 	mors->extra_ack_timeout_us = -1;
+ 
+ 	/* store the fw binary string into our coredump */
