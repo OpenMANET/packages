@@ -3897,7 +3897,6 @@ div[style*="display:grid;grid-template-columns:repeat"] {
 
 /* other fix */
 input[type="checkbox"] {
-  appearance: none !important;
   border: 1px solid var(--primary);
   width: 16px !important;
   height: 16px !important;
