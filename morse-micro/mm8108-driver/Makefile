@@ -32,6 +32,7 @@ define KernelPackage/mm8108
   SUBMENU:=Wireless Drivers
   TITLE:=Morse Micro WIFI HaLow mm8108 USB/SDIO driver
   DEPENDS:= +kmod-mac80211 +kmod-lib-crc7 +kmod-usb-core +kmod-mmc
+  KCONFIG:=CONFIG_DEV_COREDUMP=y
   FILES:= $(PKG_BUILD_DIR)/morse.ko
   AUTOLOAD:=$(call AutoProbe,morse)
   MODPARAMS.morse:=country=US
