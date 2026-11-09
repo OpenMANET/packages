@@ -1,0 +1,80 @@
+From: Sven Eckelmann <sven@narfation.org>
+Subject: batman-adv: Avoid double-rtnl_lock ELP metric worker
+
+Backport upstream commit cfc83a3c71517b59c1047db57da31e26a9dc2f33.
+The wireless ELP metric worker must use rtnl_trylock because interface
+removal holds RTNL while synchronously cancelling that worker.
+
+diff --git a/net/batman-adv/bat_v_elp.c b/net/batman-adv/bat_v_elp.c
+index cb16c1e..fe83209 100644
+--- a/net/batman-adv/bat_v_elp.c
++++ b/net/batman-adv/bat_v_elp.c
+@@ -111,7 +111,15 @@ static bool batadv_v_elp_get_throughput(struct batadv_hardif_neigh_node *neigh,
+ 			/* unsupported WiFi driver version */
+ 			goto default_throughput;
+ 
+-		real_netdev = batadv_get_real_netdev(hard_iface->net_dev);
++		/* only use rtnl_trylock because the elp worker will be cancelled while
++		 * the rntl_lock is held. the cancel_delayed_work_sync() would otherwise
++		 * wait forever when the elp work_item was started and it is then also
++		 * trying to rtnl_lock
++		 */
++		if (!rtnl_trylock())
++			return false;
++		real_netdev = __batadv_get_real_netdev(hard_iface->net_dev);
++		rtnl_unlock();
+ 		if (!real_netdev)
+ 			goto default_throughput;
+ 
+diff --git a/net/batman-adv/hard-interface.c b/net/batman-adv/hard-interface.c
+index 5113f87..1c48804 100644
+--- a/net/batman-adv/hard-interface.c
++++ b/net/batman-adv/hard-interface.c
+@@ -204,7 +204,7 @@ static bool batadv_is_valid_iface(const struct net_device *net_dev)
+ }
+ 
+ /**
+- * batadv_get_real_netdevice() - check if the given netdev struct is a virtual
++ * __batadv_get_real_netdev() - check if the given netdev struct is a virtual
+  *  interface on top of another 'real' interface
+  * @netdev: the device to check
+  *
+@@ -214,7 +214,7 @@ static bool batadv_is_valid_iface(const struct net_device *net_dev)
+  * Return: the 'real' net device or the original net device and NULL in case
+  *  of an error.
+  */
+-static struct net_device *batadv_get_real_netdevice(struct net_device *netdev)
++struct net_device *__batadv_get_real_netdev(struct net_device *netdev)
+ {
+ 	struct batadv_hard_iface *hard_iface = NULL;
+ 	struct net_device *real_netdev = NULL;
+@@ -267,7 +267,7 @@ struct net_device *batadv_get_real_netdev(struct net_device *net_device)
+ 	struct net_device *real_netdev;
+ 
+ 	rtnl_lock();
+-	real_netdev = batadv_get_real_netdevice(net_device);
++	real_netdev = __batadv_get_real_netdev(net_device);
+ 	rtnl_unlock();
+ 
+ 	return real_netdev;
+@@ -336,7 +336,7 @@ static u32 batadv_wifi_flags_evaluate(struct net_device *net_device)
+ 	if (batadv_is_cfg80211_netdev(net_device))
+ 		wifi_flags |= BATADV_HARDIF_WIFI_CFG80211_DIRECT;
+ 
+-	real_netdev = batadv_get_real_netdevice(net_device);
++	real_netdev = __batadv_get_real_netdev(net_device);
+ 	if (!real_netdev)
+ 		return wifi_flags;
+ 
+diff --git a/net/batman-adv/hard-interface.h b/net/batman-adv/hard-interface.h
+index 9db8a31..9ba8fb2 100644
+--- a/net/batman-adv/hard-interface.h
++++ b/net/batman-adv/hard-interface.h
+@@ -67,6 +67,7 @@ enum batadv_hard_if_bcast {
+ 
+ extern struct notifier_block batadv_hard_if_notifier;
+ 
++struct net_device *__batadv_get_real_netdev(struct net_device *net_device);
+ struct net_device *batadv_get_real_netdev(struct net_device *net_device);
+ bool batadv_is_cfg80211_hardif(struct batadv_hard_iface *hard_iface);
+ bool batadv_is_wifi_hardif(struct batadv_hard_iface *hard_iface);
