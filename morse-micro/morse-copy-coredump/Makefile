@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=morse-copy-coredump
-PKG_RELEASE=2
+PKG_RELEASE=3
 
 PKG_MAINTAINER:=Morse Micro
 
@@ -17,7 +17,7 @@ define Package/morse-copy-coredump
   CATEGORY:=Morse Micro
   SUBMENU:=Features
   TITLE:=Morse Micro copy coredumps from sysfs
-  DEPENDS:=+kmod-dot11ah
+  DEPENDS:=+kmod-mac80211
 endef
 
 define Package/morse-copy-coredump/description

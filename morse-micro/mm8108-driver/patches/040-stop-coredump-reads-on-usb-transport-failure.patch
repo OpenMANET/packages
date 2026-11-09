@@ -1,0 +1,125 @@
+Stop issuing coredump reads after a USB transport timeout, overflow or
+disconnect. Preserve the metadata and any readable segments by keeping the
+existing zero-sized segment representation for the remaining regions.
+
+--- a/coredump.c
++++ b/coredump.c
+@@ -62,10 +62,13 @@
+ 
+ static int read_memory_region(struct morse *mors,
+ 			      const struct morse_coredump_mem_region *region,
+-			      void *copy_to)
++			      void *copy_to, int *transport_error)
+ {
+ 	int ret;
+ 	void *buffer;
++
++	if (*transport_error)
++		return *transport_error;
+ 
+ 	if (WARN_ON(ROUND_BYTES_TO_WORD(region->len) > INT_MAX)) {
+ 		MORSE_COREDUMP_ERR(mors, "%s: invalid length for region 0x%08x:%u",
+@@ -99,6 +102,14 @@
+ 						   region->addr,
+ 						   region->len);
+ 
++	if (mors->bus_type == MORSE_HOST_BUS_TYPE_USB &&
++	    (ret == -ETIMEDOUT || ret == -EOVERFLOW || ret == -ENODEV ||
++	     ret == -ESHUTDOWN)) {
++		*transport_error = ret;
++		MORSE_COREDUMP_WARN(mors, "Stopping memory reads after USB error %d; keeping partial coredump",
++				    ret);
++	}
++
+ 	kfree(buffer);
+ 	return ret;
+ }
+@@ -226,7 +237,7 @@
+ 	}
+ }
+ 
+-static char *get_crash_info(struct morse *mors)
++static char *get_crash_info(struct morse *mors, int *transport_error)
+ {
+ 	const struct morse_crash_info_location *crash_info_location;
+ 	const struct morse_coredump_data *crash = &mors->coredump.crash;
+@@ -258,7 +269,7 @@
+ 			continue;
+ 		}
+ 
+-		if (read_memory_region(mors, &crash_info_location->region, info) == 0) {
++		if (read_memory_region(mors, &crash_info_location->region, info, transport_error) == 0) {
+ 			uint hart = le32_to_cpu(info->hart);
+ 			uint line = le32_to_cpu(info->line);
+ 			uint info_strlen = strnlen(info->info,
+@@ -270,6 +281,8 @@
+ 		}
+ 
+ 		kfree(info);
++		if (*transport_error)
++			break;
+ 		if (out)
+ 			return out;
+ 	}
+@@ -278,7 +291,8 @@
+ }
+ 
+ static void elf_copy_memory_regions(struct morse *mors, struct elf32_hdr *ehdr,
+-				     struct elf32_phdr **phdr, size_t *offset)
++				     struct elf32_phdr **phdr, size_t *offset,
++				     int *transport_error)
+ {
+ 	const struct morse_coredump_mem_region *region;
+ 	u32 region_idx;
+@@ -302,7 +316,7 @@
+ 		(*phdr)->p_flags = PF_R | PF_W | PF_X;
+ 		(*phdr)->p_align = 0;
+ 
+-		if (read_memory_region(mors, region, insert_at)) {
++		if (read_memory_region(mors, region, insert_at, transport_error)) {
+ 			/* Failed to read the memory region */
+ 			(*phdr)->p_filesz = 0;
+ 			(*phdr)->p_memsz = 0;
+@@ -364,6 +378,7 @@
+ static int coredump_build(struct morse *mors, void **cd, size_t *cd_size)
+ {
+ 	int ret;
++	int transport_error = 0;
+ 	size_t file_size = 0;
+ 	struct elf32_hdr *ehdr;
+ 	struct elf32_phdr *phdr;
+@@ -383,7 +398,7 @@
+ 		mors->coredump.crash.information = NULL;
+ 	}
+ 
+-	mors->coredump.crash.information = get_crash_info(mors);
++	mors->coredump.crash.information = get_crash_info(mors, &transport_error);
+ 	if (mors->coredump.crash.information)
+ 		MORSE_COREDUMP_ERR(mors, "crash at %s\n", mors->coredump.crash.information);
+ 
+@@ -412,7 +427,7 @@
+ 	offset = sizeof(*ehdr) + (sizeof(*phdr) * ehdr->e_phnum);
+ 
+ 	/* Insert memory regions */
+-	elf_copy_memory_regions(mors, ehdr, &phdr, &offset);
++	elf_copy_memory_regions(mors, ehdr, &phdr, &offset, &transport_error);
+ 
+ 	morse_release_bus(mors);
+ 
+@@ -498,6 +513,7 @@
+ int morse_coredump_get_crash_info(struct morse *mors, char **info)
+ {
+ 	int ret = 0;
++	int transport_error = 0;
+ 
+ 	if (WARN_ON(*info))
+ 		return -EINVAL;
+@@ -511,7 +527,7 @@
+ 	mutex_lock(&mors->coredump.lock);
+ 
+ 	morse_claim_bus(mors);
+-	*info = get_crash_info(mors);
++	*info = get_crash_info(mors, &transport_error);
+ 	morse_release_bus(mors);
+ 
+ 	mutex_unlock(&mors->coredump.lock);

@@ -6,9 +6,10 @@ PKG_VERSION:=main
 PKG_RELEASE:=5
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/OpenMANET/openmanetd
-PKG_SOURCE_VERSION:=b6020914a938c25483e6b1263150591daa2805bf
+PKG_SOURCE_URL:=ssh://git@github.com/OpenMANET/openmanetd.git
+PKG_SOURCE_VERSION:=92a1f382bdc49705524c9cc77f8f098c30e87902
 PKG_HASH:=skip
+PKG_MIRROR_HASH:=skip
 
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=Corey Wagehoft
@@ -54,7 +55,7 @@ endef
 
 define Build/Configure
 	# Compile Alfred Bindings
-	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred
+	$(MAKE) -C $(PKG_BUILD_DIR)/internal/alfred/alfred CC="$(TARGET_CC)"
 
 	$(call GoPackage/Build/Configure,$(1))
 	$(call Build/Configure/Default,$(1))

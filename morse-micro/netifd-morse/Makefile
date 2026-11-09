@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=netifd-morse
-PKG_RELEASE=2
+PKG_RELEASE=3
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -26,7 +26,7 @@ define Package/netifd-morse
   # This package is also depends on netifd and kmod-cfg80211.
   # These are already pulled in by hostapd_s1g. Listing them
   # explicitly here creates a recursive dependency.
-  DEPENDS:= +kmod-dot11ah +morse-regdb +wpa_supplicant_s1g +hostapd_s1g +morsecli
+  DEPENDS:= +kmod-mac80211 +morse-regdb +wpa_supplicant_s1g +hostapd_s1g +morsecli
 endef
 
 define Build/Compile
