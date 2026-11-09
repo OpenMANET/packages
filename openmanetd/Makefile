@@ -7,7 +7,7 @@ PKG_RELEASE:=5
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=ssh://git@github.com/OpenMANET/openmanetd.git
-PKG_SOURCE_VERSION:=49ca6b6b1df49a450da92957e28d5da6cf74f2bd
+PKG_SOURCE_VERSION:=b6020914a938c25483e6b1263150591daa2805bf
 PKG_HASH:=skip
 PKG_MIRROR_HASH:=skip
 
@@ -67,6 +67,7 @@ MAKE_FLAGS += \
 
 define Package/openmanetd/conffiles
 /etc/openmanetd/
+/etc/config/openmanetd
 endef
 
 define Package/openmanetd/install
