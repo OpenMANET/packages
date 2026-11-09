@@ -18,5 +18,7 @@ comms:
   # - openvlm: Use a Open Voice Link Module USB audio device for PTT control.
   # - nanoPTT: Use a NanoPTT device for PTT control.
   # - web: Use a web-based interface for PTT control.
+  # - bs22: Native BTECH BS-22 Bluetooth PTT, with SCO audio through BlueALSA.
+  # - bluealsa_xevent: BlueALSA RFCOMM XEVENT PTT with SCO audio.
   controlSource: openvlm
 
