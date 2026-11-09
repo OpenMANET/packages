@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 PKG_NAME:=morsecli
-PKG_RELEASE=7
+PKG_RELEASE=8
 
 PKG_VERSION:=mm8108-2.0.0
 
@@ -30,7 +30,7 @@ define Package/morsecli
   CATEGORY:=Morse Micro
   SUBMENU:=Essentials
   TITLE:=Morse Micro WIFI HaLow driver command line tool
-  DEPENDS:= +kmod-dot11ah +libnl +libusb-1.0
+  DEPENDS:= +kmod-mac80211 +libnl +libusb-1.0
   FILES:=\
 	$(PKG_BUILD_DIR)/morse_cli
 endef

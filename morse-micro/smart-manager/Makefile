@@ -2,7 +2,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=smart_manager
 PKG_VERSION:=mm8108-2.0.0
-PKG_RELEASE=3
+PKG_RELEASE=4
+
 PKG_LICENSE:=BSD-3-Clause
 
 PKG_SOURCE_URL:=https://github.com/MorseMicro/smart-manager.git
@@ -24,7 +25,7 @@ define Package/smart_manager
   CATEGORY:=Morse Micro
   SUBMENU:=Features
   TITLE:=Morse Micro HaLow DCS Smart Manager
-  DEPENDS:= +kmod-dot11ah +libnl +libpthread +libconfig +hostapd_s1g
+  DEPENDS:= +kmod-mac80211 +libnl +libpthread +libconfig +hostapd_s1g
   USERID:=network=101:network=101
 endef
 
