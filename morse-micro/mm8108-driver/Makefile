@@ -35,7 +35,7 @@ define KernelPackage/mm8108
   KCONFIG:=CONFIG_DEV_COREDUMP=y
   FILES:= $(PKG_BUILD_DIR)/morse.ko
   AUTOLOAD:=$(call AutoProbe,morse)
-  MODPARAMS.morse:=country=US
+  MODPARAMS.morse:=country=EU
   PROVIDES:=kmod-morse
 endef
 
@@ -57,7 +57,7 @@ MORSE_MAKEDEFS += \
   CONFIG_MORSE_RC=y \
   CONFIG_MORSE_MONITOR=y \
   CONFIG_MORSE_DEBUGFS=y \
-  CONFIG_MORSE_COUNTRY=US \
+  CONFIG_MORSE_COUNTRY=EU \
   CONFIG_WLAN_VENDOR_MORSE=m
 
 NOSTDINC_FLAGS = \

@@ -89,6 +89,21 @@ lower integer values still allowed. This subsequent change was tested locally
 and committed without deploying it or flashing the node; EU mesh at 16 dBm has
 not been hardware-tested. manet01 was then returned to its original US settings.
 
+## Dedicated 1.8-eu images
+
+The `codex/eu-mesh-init` branch now also sets MM8108 module and first-boot
+defaults for the dedicated test images to EU, channel 5, 1 MHz, 16 dBm, explicit
+EU mesh enablement, and automatic spread duty cycling. The setup wizard retains
+these extra fields rather than removing them. Select `EU` in the wizard, keep
+the same channel/bandwidth/mesh ID/security on every test node, and reduce the
+power if the antenna installation requires it. These defaults intentionally
+replace retained radio settings when this test image's defaults script runs.
+Back up configuration first and use the image matching the exact hardware.
+
+Only HaLowLink 2 and Pi 4/CM4 MM8108 USB images are intended for release. The
+HaLowLink 2 image has not been boot-tested here. No node is flashed as part of
+building or publishing this test release.
+
 Backups and the US-at-0-dBm rollback script are in
 `/root/eu-mesh-trial-20261111/` on the node.
 Run `sh /root/eu-mesh-trial-20261111/restore.sh` from an independent management
