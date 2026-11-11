@@ -243,7 +243,6 @@ drv_morse_init_device_config() {
 	config_add_int txpower
 	config_add_int s1g_chanbw
 	config_add_boolean svt_restricted_mode
-	config_add_boolean enable_eu_mesh
 	config_add_int s1g_prim_chwidth
 	config_add_string s1g_prim_1mhz_chan_index
 	config_add_boolean ampdu
@@ -455,7 +454,7 @@ drv_morse_setup() {
 	json_select config
 	json_get_vars \
 		phy macaddr path \
-		svt_restricted_mode enable_eu_mesh \
+		svt_restricted_mode \
 		txpower \
 		frag rts htmode \
 		ampdu \
@@ -469,8 +468,13 @@ drv_morse_setup() {
 
 	# Match the driver's conservative EU regulatory ceiling. BCF and driver
 	# limits still apply; installations must account for antenna gain in EIRP.
-	if [ "$enable_eu_mesh" = 1 ] && [ "$country" = EU -o "$country" = GB ]; then
+	if [ "$country" = EU -o "$country" = GB ]; then
 		set_default txpower 16
+		set_default s1g_chanbw 1
+		case "$txpower" in
+			*[!0-9]*|'') ;;
+			*) [ "$txpower" -gt 16 ] && txpower=16 ;;
+		esac
 	fi
 
 	mm_region=$(persistent_vars_storage.sh READ mm_region 2> /dev/null)
@@ -718,7 +722,7 @@ drv_morse_teardown() {
 	uci commit mesh11sd
 }
 
-# Opt-in configuration for duty-cycled EU mesh on the 2.2 stack.
+# Duty-cycled EU mesh on the 2.2 stack, selected by the normal country setting.
 # Do not use svt_restricted_mode: that selects different regulatory conditions.
 morse_eu_mesh_ready() {
 	[ "$svt_restricted_mode" != 1 ] || return 1
@@ -827,14 +831,9 @@ morse_iface_create() {
 				return 11
 			fi
 			[ "$has_chan_info" != 1 ] && return 6
-			if [ "$enable_eu_mesh" = 1 ]; then
-				case "$country" in
-					EU|GB) morse_eu_mesh_ready || return 12 ;;
-					*) return 12 ;;
-				esac
-			elif [ "$auto_channel_only" = 1 ]; then
-				return 9
-			fi
+			case "$country" in
+				EU|GB) morse_eu_mesh_ready || return 12 ;;
+			esac
 			[ "$auto_channel" -gt 0 ] && return 4
 
 			morse_iw_interface_add "$phy" "$ifname" "$macaddr" mp || return 1
@@ -945,7 +944,7 @@ morse_iface_bringup() {
 			echo "wifi-iface $iface_index mode=$mode ignored; firmware_type cannot be "$firmware_type" for this mode"
 			;;
 		12)
-			echo "wifi-iface $iface_index mode=$mode ignored; experimental EU mesh requires country=EU/GB, 1 MHz, txpower=0..16 dBm, svt_restricted_mode disabled, and automatic duty cycling in spread mode"
+			echo "wifi-iface $iface_index mode=$mode ignored; EU/GB mesh requires 1 MHz, txpower=0..16 dBm, svt_restricted_mode disabled, and automatic duty cycling in spread mode"
 			;;
 		0)
 			# This helps us track if we've managed to successfully create

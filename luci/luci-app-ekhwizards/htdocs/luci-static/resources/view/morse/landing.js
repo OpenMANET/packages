@@ -176,8 +176,13 @@ return view.extend({
 
 			// Set channel appropriately if the country was mutated
 			// so we're less likely to leave this in a broken state.
-			const bestChannel = Object.values(channelMap[value]).reduce((a, b) => Number(a.bw) > Number(b.bw) ? a : b);
+			// The 2.2 driver's EU mesh regulatory table supports 1 MHz.
+			// Keep the normal country picker; choose a usable width/channel pair.
+			const channels = Object.values(channelMap[value]);
+			const candidates = ['EU', 'GB'].includes(value) ? channels.filter(c => Number(c.bw) === 1) : channels;
+			const bestChannel = candidates.reduce((a, b) => Number(a.bw) > Number(b.bw) ? a : b);
 			uci.set('wireless', morseDevice['.name'], 'channel', bestChannel['s1g_chan']);
+			uci.set('wireless', morseDevice['.name'], 's1g_chanbw', String(bestChannel.bw));
 		};
 
 		const systemMap = new form.Map('system');

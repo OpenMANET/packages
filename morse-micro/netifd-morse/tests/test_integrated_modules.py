@@ -56,12 +56,5 @@ config_foreach() { "$1" radio0; }
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual('enable_ext_xtal_init=1' in result.stdout, expected, result.stdout)
                 self.assertIn('bcf=bcf_fgh100mhaamd.bin', result.stdout)
-                if package == 'mm8108':
-                    for setting in ('country=EU', 'channel=5', 's1g_chanbw=1',
-                                    'txpower=16', 'enable_eu_mesh=1',
-                                    'enable_auto_duty_cycle=1', 'duty_cycle_mode=0'):
-                        self.assertIn(setting, result.stdout)
-                else:
-                    self.assertNotIn('enable_eu_mesh=1', result.stdout)
 
 if __name__ == '__main__': unittest.main()

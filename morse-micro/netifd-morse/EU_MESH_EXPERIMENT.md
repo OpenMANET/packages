@@ -1,136 +1,73 @@
-# EU mesh initialization experiment
+# EU mesh test build
 
-This branch adds an explicit `enable_eu_mesh` wifi-device option for
-testing with the Morse 2.2 stack. Normal configurations retain the existing
-EU/GB mesh restriction. This is an initialization experiment, not a claim of
-regulatory certification or usable mesh throughput.
+These changes make EU mesh available through the normal LuCI country picker.
+There is no separate permanent EU configuration and no hidden enable flag.
+First-boot country, channel, power, and module defaults remain the original
+normal defaults. The firmware files are labeled `1.8-eu` only to identify an
+experimental build that should not be mistaken for a general release.
 
-The option permits a mesh interface only with:
+## Use the normal wizard
 
-- Country `EU` or `GB` and a valid fixed channel.
-- `s1g_chanbw=1` and integer `txpower` from 0 through 16 dBm. Omitted power
-  defaults to 16 dBm, matching the driver's conservative EU ceiling.
-- `svt_restricted_mode` unset or disabled.
-- The loaded driver reporting `enable_auto_duty_cycle=Y` and `duty_cycle_mode=0`
-  (spread). Missing driver parameters fail the check.
+Back up configuration and use the image matching the exact hardware. Open the
+normal LuCI setup wizard, select country **EU**, and configure the mesh as usual.
+The country picker chooses a compatible 1 MHz channel/width pair. Set every peer
+to the same country, channel, bandwidth, mesh ID, passphrase, and security mode.
+No SSH commands or special enable flags are required.
 
-AP and adhoc behavior is unchanged. This option does not enable DCS or change
-regulatory tables, BCF contents, firmware, or duty-cycle values. It deliberately
-requires the explicit `EU`/`GB` country rather than relying on how older drivers
-handle country aliases such as `NL`.
+With country EU or GB, netifd defaults omitted transmit power to 16 dBm and
+limits higher retained values to 16 dBm. Lower integer settings remain allowed.
+Automatic duty cycling must be enabled in the loaded driver in spread mode;
+these are the driver's normal defaults. Missing parameters, disabled duty
+cycling, SVT mode, or an incompatible bandwidth prevent mesh startup.
+AP/adhoc behavior and non-EU behavior are otherwise unchanged.
 
-For the duty-cycled 863–868 MHz wideband-data mode, the EU limit is 25 mW ERP
-(about 16.13 dBm EIRP). The 16 dBm setting remains subject to BCF/driver limits;
-antenna gain minus cable loss must be included in the EIRP budget, reducing the
-configured conducted power when necessary. This power limit alone does not
-establish compliance of an installation or mesh implementation. Sources:
-[EU Decision 2025/105](https://eur-lex.europa.eu/eli/dec_impl/2025/105/oj/eng/pdf),
-[Gateworks GW16167 EU guidance](https://trac.gateworks.com/wiki/expansion/gw16167).
+The duty-cycled 863–868 MHz wideband-data limit is 25 mW ERP (about 16.13 dBm
+EIRP). The configured power is still subject to BCF/driver limits, and antenna
+gain minus cable loss must be included in the EIRP budget. Reduce conducted
+power as necessary. This initialization work does not establish compliance of
+a complete installation or mesh implementation.
 
-## Configure a prepared test node
+Sources: [EU Decision 2025/105](https://eur-lex.europa.eu/eli/dec_impl/2025/105/oj/eng/pdf),
+[Gateworks GW16167 guidance](https://trac.gateworks.com/wiki/expansion/gw16167),
+[OpenMANET discussion 79](https://github.com/orgs/OpenMANET/discussions/79),
+[Morse Micro engineering response](https://community.morsemicro.com/t/802-11s-mesh-for-eu-bands/1355/10).
 
-Preserve a backup and use a management link independent of the HaLow radio.
-Install this branch's `netifd-morse` script/package first. For manet01's existing
-`radio1` and mesh interface:
+## Hardware evidence and limits
 
-```sh
-uci set wireless.radio1.country=EU
-uci set wireless.radio1.channel=5
-uci set wireless.radio1.s1g_chanbw=1
-uci set wireless.radio1.txpower=16
-uci set wireless.radio1.enable_eu_mesh=1
-uci set wireless.radio1.enable_auto_duty_cycle=1
-uci set wireless.radio1.duty_cycle_mode=0
-uci set wireless.radio1.svt_restricted_mode=0
-uci commit wireless
-```
+On November 11, 2026, manet01 (CM4 / Gateworks MM8108 USB) was tested with driver
+`2.2.3-g270da473`, firmware 2.2.3 and BCF `bcf_boardtype_0807.bin`.
+An earlier explicit-enable version of the integration initialized EU mesh at
+865.5 MHz / 1 MHz / 0 dBm, reached `MESH-GROUP-STARTED`, activated the BATMAN
+interface, reported a 2.80% spread duty cycle with control responses included,
+and passed firmware health checks. A radio down/up cycle repeated the result.
+Both NL and EU driver initialization had already succeeded on this newer driver.
 
-When first adding the option, restart netifd through `/etc/init.d/network restart`
-to load the updated driver schema; this briefly interrupts management networking.
-Subsequent `wifi down radio1; wifi up radio1` cycles use the loaded schema.
+No second EU peer was available. Peer formation, forwarding, throughput,
+independent power/airtime measurements, the final wizard flow on real hardware,
+and EU mesh at 16 dBm remain unverified. The HaLowLink 2 image has not been
+boot-tested here. Building/publishing these test images does not flash any node;
+manet01 remains on its original US settings.
 
-Verify the actual radio, not just UCI:
+Verify a test node using `morse_cli -i wlh0 channel`,
+`morse_cli -i wlh0 duty_cycle`, `morse_cli -i wlh0 health`, `iw dev wlh0 info`,
+`batctl if`, and the `MESH-GROUP-STARTED` log. `iw` shows synthetic 802.11ac
+channel mappings; `morse_cli channel` reports the actual HaLow RF frequency.
+A firmware-configured duty cycle is not an independent airtime measurement.
 
-```sh
-cat /sys/module/morse/parameters/country
-iw dev wlh0 info
-morse_cli -i wlh0 channel
-morse_cli -i wlh0 duty_cycle
-morse_cli -i wlh0 health
-batctl if
-logread | grep MESH-GROUP-STARTED
-```
-
-`iw` displays synthetic 802.11ac channel mappings for HaLow. Use `morse_cli
-channel` to establish the actual RF frequency and bandwidth.
-
-## manet01 validation, November 11, 2026
-
-- CM4, Gateworks MM8108 USB, driver `2.2.3-g270da473`, firmware package 2.2.3,
-  BCF `bcf_boardtype_0807.bin`.
-- Applied only the changed netifd script and explicit UCI settings, with an
-  independent rollback watchdog. No firmware image was flashed.
-- The installed script matched this branch's script byte for byte.
-- EU mesh reached `MESH-GROUP-STARTED`; `batctl if` reported `wlh0: active`.
-- `morse_cli channel`: 865500 kHz, operating/primary bandwidth 1 MHz.
-- `iw`: 0.00 dBm. Requests of -1 mBm and -1000 mBm were rejected by this stack;
-  0 dBm is its lowest accepted setting through `iw`.
-- `morse_cli duty_cycle`: spread, configured duty cycle 2.80%, control responses
-  included in the budget. This queries firmware configuration; it does not
-  independently measure transmitted airtime.
-- Firmware health check succeeded. No second EU peer was configured, so peer
-  formation, forwarding, throughput, and independently measured RF power/airtime
-  remain unverified.
-- A subsequent radio down/up cycle again reached `MESH-GROUP-STARTED` with the
-  same frequency, bandwidth, power, duty-cycle configuration, and healthy firmware.
-
-After that hardware experiment, the code default was changed to 16 dBm, with
-lower integer values still allowed. This subsequent change was tested locally
-and committed without deploying it or flashing the node; EU mesh at 16 dBm has
-not been hardware-tested. manet01 was then returned to its original US settings.
-
-## Dedicated 1.8-eu images
-
-The `codex/eu-mesh-init` branch now also sets MM8108 module and first-boot
-defaults for the dedicated test images to EU, channel 5, 1 MHz, 16 dBm, explicit
-EU mesh enablement, and automatic spread duty cycling. The setup wizard retains
-these extra fields rather than removing them. Select `EU` in the wizard, keep
-the same channel/bandwidth/mesh ID/security on every test node, and reduce the
-power if the antenna installation requires it. These defaults intentionally
-replace retained radio settings when this test image's defaults script runs.
-Back up configuration first and use the image matching the exact hardware.
-
-Only HaLowLink 2 and Pi 4/CM4 MM8108 USB images are intended for release. The
-HaLowLink 2 image has not been boot-tested here. No node is flashed as part of
-building or publishing this test release.
-
-Backups and the US-at-0-dBm rollback script are in
-`/root/eu-mesh-trial-20261111/` on the node.
-Run `sh /root/eu-mesh-trial-20261111/restore.sh` from an independent management
-link to restore the prior script/configuration while retaining low power.
-
-## Validation commands
+## Source validation
 
 ```sh
 python -m unittest discover -s morse-micro/netifd-morse/tests -v
+node luci/luci-app-ekhwizards/tests/test_country_selection.js
+node luci/luci-app-ekhwizards/tests/test_mesh_wizard_address_reservation.js
+node luci/luci-app-morseconfig/tests/test_quick_config.js
+node luci/luci-app-morseconfig/tests/test_batman_setup.js
 sh -n morse-micro/netifd-morse/lib/netifd/wireless/morse.sh
 git diff --check
 ```
 
-The shell tests run the real interface-creation logic with interface operations
-stubbed. They cover explicit opt-in, missing/disabled duty cycling, burst mode,
-wrong country/power/bandwidth, automatic or invalid channels, firmware mode
-restrictions, and preservation of existing US/AP/adhoc behavior.
-
-## Background
-
-- [OpenMANET discussion 79](https://github.com/orgs/OpenMANET/discussions/79)
-  reports older-driver `NL` initialization failures.
-- [Morse Micro engineering response](https://community.morsemicro.com/t/802-11s-mesh-for-eu-bands/1355/10)
-  distinguishes the `NL` versus `EU` driver issue from mesh restrictions and
-  describes fixed-channel operation with duty cycling and poor expected EU mesh
-  performance.
-
-On this node's newer driver, both `NL` and `EU` already initialize. The change
-here addresses the remaining explicit netifd mesh restriction in a constrained,
-opt-in configuration.
+Tests exercise real shell and wizard code with hardware/UI operations stubbed.
+They cover EU/GB selection, normal US behavior, default and reduced power,
+retained power above the EU ceiling, duty-cycle and bandwidth rejection, and
+existing configuration preservation. Release CI separately inspects the actual
+root filesystems of the HaLowLink 2 and Pi 4/CM4 MM8108 USB images.

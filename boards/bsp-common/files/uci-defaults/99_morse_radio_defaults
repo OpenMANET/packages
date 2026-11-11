@@ -57,18 +57,6 @@ fix_bcf_default() {
 	uci -q set wireless."${config}".enable_ps=0
 	uci -q set wireless."${config}".enable_dynamic_ps_offload=0
 	uci -q set wireless."${config}".enable_twt=0
-	# Dedicated 1.8-eu test images: start MM8108 devices with the tested
-	# fixed-channel EU setup. Other radio families retain their defaults.
-	if [ -f /etc/modules.d/mm8108 ]; then
-		uci -q set wireless."${config}".country=EU
-		uci -q set wireless."${config}".channel=5
-		uci -q set wireless."${config}".s1g_chanbw=1
-		uci -q set wireless."${config}".txpower=16
-		uci -q set wireless."${config}".enable_eu_mesh=1
-		uci -q set wireless."${config}".enable_auto_duty_cycle=1
-		uci -q set wireless."${config}".duty_cycle_mode=0
-		uci -q set wireless."${config}".svt_restricted_mode=0
-	fi
 
 	# The mm6108 requires the external-XTAL init sequence and, unlike the
 	# mm8108, cannot auto-detect its BCF. netifd's morse handler rewrites

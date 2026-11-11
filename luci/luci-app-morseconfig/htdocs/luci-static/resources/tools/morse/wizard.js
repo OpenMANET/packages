@@ -415,7 +415,7 @@ function resetUci() {
 		whitelistFields('wireless', device, [
 			'type', 'path', 'band', 'hwmode', 'htmode', 'reconf', 'bcf', 'country', 'channel',
 			'cell_density', 'txpower', 'enable_ps', 'enable_dynamic_ps_offload', 'enable_twt',
-			'enable_eu_mesh', 'enable_auto_duty_cycle', 'duty_cycle_mode',
+			'enable_auto_duty_cycle', 'duty_cycle_mode',
 			's1g_chanbw', 'svt_restricted_mode',
 			'short_gi_40',
 		]);

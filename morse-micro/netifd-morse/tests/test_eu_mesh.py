@@ -11,7 +11,7 @@ FUNCTIONS = SOURCE[SOURCE.index('morse_eu_mesh_ready() {'):SOURCE.index('\nmorse
 
 class EUMesh(unittest.TestCase):
     def run_case(self, expected, *, duty='Y', duty_mode='0', **config):
-        settings = dict(country='EU', mode='mesh', enable_eu_mesh='1',
+        settings = dict(country='EU', mode='mesh',
                         svt_restricted_mode='0', s1g_chanbw='1', txpower='16',
                         firmware_type='', interface_count='0', auto_channel='0',
                         interface_first='', has_chan_info='1', phy='phy0',
@@ -38,15 +38,10 @@ class EUMesh(unittest.TestCase):
             self.assertEqual('CREATE:' in result.stdout, expected == 0, result.stdout)
             self.assertEqual(result.stderr, '')
 
-    def test_opt_in_mesh(self):
+    def test_normal_country_selection_enables_mesh(self):
         for country in ('EU', 'GB'):
             with self.subTest(country=country):
                 self.run_case(0, country=country)
-
-    def test_default_still_blocks_mesh(self):
-        for country in ('EU', 'GB'):
-            with self.subTest(country=country):
-                self.run_case(9, country=country, enable_eu_mesh='')
 
     def test_requires_live_duty_cycle_settings(self):
         for duty, mode in [('N', '0'), (None, '0'), ('Y', '1')]:
@@ -54,15 +49,14 @@ class EUMesh(unittest.TestCase):
                 self.run_case(12, duty=duty, duty_mode=mode)
 
     def test_requires_bench_configuration(self):
-        for config in [dict(txpower='17'), dict(txpower='-1'), dict(txpower='auto'),
+        for config in [dict(txpower='-1'), dict(txpower='auto'),
                        dict(txpower='16.5'), dict(txpower='abc'),
-                       dict(s1g_chanbw='2'), dict(svt_restricted_mode='1'),
-                       dict(country='NL'), dict(country='US')]:
+                       dict(s1g_chanbw='2'), dict(svt_restricted_mode='1'),]:
             with self.subTest(config=config):
                 self.run_case(12, **config)
 
     def test_default_and_lower_power(self):
-        for power in ('', '0', '1', '9', '10', '15', '16'):
+        for power in ('', '0', '1', '9', '10', '15', '16', '17', '24', '36'):
             with self.subTest(power=power):
                 self.run_case(0, txpower=power)
 
@@ -75,7 +69,7 @@ class EUMesh(unittest.TestCase):
         self.run_case(8, mode='ap')
 
     def test_us_mesh_unchanged(self):
-        self.run_case(0, country='US', enable_eu_mesh='', txpower='24')
+        self.run_case(0, country='US', txpower='24')
 
     def test_firmware_mode_restrictions_remain(self):
         for firmware in ('fullmac', 'thin_lmac'):
