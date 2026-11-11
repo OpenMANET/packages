@@ -467,6 +467,12 @@ drv_morse_setup() {
 	json_get_values basic_rate_list basic_rate
 	json_select ..
 
+	# Match the driver's conservative EU regulatory ceiling. BCF and driver
+	# limits still apply; installations must account for antenna gain in EIRP.
+	if [ "$enable_eu_mesh" = 1 ] && [ "$country" = EU -o "$country" = GB ]; then
+		set_default txpower 16
+	fi
+
 	mm_region=$(persistent_vars_storage.sh READ mm_region 2> /dev/null)
 	mm_region_unlocked=$(persistent_vars_storage.sh READ mm_region_unlocked 2> /dev/null)
 	if [ "$mm_region_unlocked" != 1 -a -n "$mm_region" -a "$mm_region" != "$country" ]; then
@@ -712,11 +718,15 @@ drv_morse_teardown() {
 	uci commit mesh11sd
 }
 
-# Opt-in bench configuration for duty-cycled EU mesh on the 2.2 stack.
+# Opt-in configuration for duty-cycled EU mesh on the 2.2 stack.
 # Do not use svt_restricted_mode: that selects different regulatory conditions.
 morse_eu_mesh_ready() {
 	[ "$svt_restricted_mode" != 1 ] || return 1
-	[ "$s1g_chanbw" = 1 ] && [ "$txpower" = 0 ] || return 1
+	[ "$s1g_chanbw" = 1 ] || return 1
+	case "$txpower" in
+		0|[1-9]|1[0-6]) ;;
+		*) return 1 ;;
+	esac
 	[ "$(cat /sys/module/morse/parameters/enable_auto_duty_cycle 2>/dev/null)" = Y ] || return 1
 	[ "$(cat /sys/module/morse/parameters/duty_cycle_mode 2>/dev/null)" = 0 ] || return 1
 }
@@ -935,7 +945,7 @@ morse_iface_bringup() {
 			echo "wifi-iface $iface_index mode=$mode ignored; firmware_type cannot be "$firmware_type" for this mode"
 			;;
 		12)
-			echo "wifi-iface $iface_index mode=$mode ignored; experimental EU mesh requires country=EU/GB, 1 MHz, txpower=0, svt_restricted_mode disabled, and automatic duty cycling in spread mode"
+			echo "wifi-iface $iface_index mode=$mode ignored; experimental EU mesh requires country=EU/GB, 1 MHz, txpower=0..16 dBm, svt_restricted_mode disabled, and automatic duty cycling in spread mode"
 			;;
 		0)
 			# This helps us track if we've managed to successfully create

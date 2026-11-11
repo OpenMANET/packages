@@ -12,7 +12,7 @@ FUNCTIONS = SOURCE[SOURCE.index('morse_eu_mesh_ready() {'):SOURCE.index('\nmorse
 class EUMesh(unittest.TestCase):
     def run_case(self, expected, *, duty='Y', duty_mode='0', **config):
         settings = dict(country='EU', mode='mesh', enable_eu_mesh='1',
-                        svt_restricted_mode='0', s1g_chanbw='1', txpower='0',
+                        svt_restricted_mode='0', s1g_chanbw='1', txpower='16',
                         firmware_type='', interface_count='0', auto_channel='0',
                         interface_first='', has_chan_info='1', phy='phy0',
                         ifname='wlh0', macaddr='')
@@ -23,6 +23,11 @@ class EUMesh(unittest.TestCase):
                 (root / 'enable_auto_duty_cycle').write_text(duty + '\n')
             (root / 'duty_cycle_mode').write_text(duty_mode + '\n')
             script = FUNCTIONS.replace('/sys/module/morse/parameters', directory)
+            start = SOURCE.index('\t# Match the driver\'s conservative EU regulatory ceiling.')
+            end = SOURCE.index('\n\tmm_region=', start)
+            defaults = SOURCE[start:end]
+            script += '\nset_default() { eval "[ -n \\"\\${$1}\\" ] || $1=$2"; }\n'
+            script += defaults + '\n'
             script += '\nmorse_iw_interface_add() { echo "CREATE:$*"; }\n'
             # Inputs are constants in these tests; pass values as environment variables.
             script += 'morse_iface_create\nrc=$?\necho "RESULT:$rc"\n'
@@ -49,11 +54,17 @@ class EUMesh(unittest.TestCase):
                 self.run_case(12, duty=duty, duty_mode=mode)
 
     def test_requires_bench_configuration(self):
-        for config in [dict(txpower=''), dict(txpower='16'), dict(txpower='-1'),
+        for config in [dict(txpower='17'), dict(txpower='-1'), dict(txpower='auto'),
+                       dict(txpower='16.5'), dict(txpower='abc'),
                        dict(s1g_chanbw='2'), dict(svt_restricted_mode='1'),
                        dict(country='NL'), dict(country='US')]:
             with self.subTest(config=config):
                 self.run_case(12, **config)
+
+    def test_default_and_lower_power(self):
+        for power in ('', '0', '1', '9', '10', '15', '16'):
+            with self.subTest(power=power):
+                self.run_case(0, txpower=power)
 
     def test_channel_validation_remains(self):
         self.run_case(4, auto_channel='1')

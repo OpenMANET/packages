@@ -1,14 +1,15 @@
 # EU mesh initialization experiment
 
-This branch adds an explicit `enable_eu_mesh` wifi-device option for low-power
-bench testing with the Morse 2.2 stack. Normal configurations retain the existing
+This branch adds an explicit `enable_eu_mesh` wifi-device option for
+testing with the Morse 2.2 stack. Normal configurations retain the existing
 EU/GB mesh restriction. This is an initialization experiment, not a claim of
 regulatory certification or usable mesh throughput.
 
 The option permits a mesh interface only with:
 
 - Country `EU` or `GB` and a valid fixed channel.
-- `s1g_chanbw=1` and `txpower=0` (0 dBm, nominally 1 mW).
+- `s1g_chanbw=1` and integer `txpower` from 0 through 16 dBm. Omitted power
+  defaults to 16 dBm, matching the driver's conservative EU ceiling.
 - `svt_restricted_mode` unset or disabled.
 - The loaded driver reporting `enable_auto_duty_cycle=Y` and `duty_cycle_mode=0`
   (spread). Missing driver parameters fail the check.
@@ -17,6 +18,14 @@ AP and adhoc behavior is unchanged. This option does not enable DCS or change
 regulatory tables, BCF contents, firmware, or duty-cycle values. It deliberately
 requires the explicit `EU`/`GB` country rather than relying on how older drivers
 handle country aliases such as `NL`.
+
+For the duty-cycled 863–868 MHz wideband-data mode, the EU limit is 25 mW ERP
+(about 16.13 dBm EIRP). The 16 dBm setting remains subject to BCF/driver limits;
+antenna gain minus cable loss must be included in the EIRP budget, reducing the
+configured conducted power when necessary. This power limit alone does not
+establish compliance of an installation or mesh implementation. Sources:
+[EU Decision 2025/105](https://eur-lex.europa.eu/eli/dec_impl/2025/105/oj/eng/pdf),
+[Gateworks GW16167 EU guidance](https://trac.gateworks.com/wiki/expansion/gw16167).
 
 ## Configure a prepared test node
 
@@ -28,7 +37,7 @@ Install this branch's `netifd-morse` script/package first. For manet01's existin
 uci set wireless.radio1.country=EU
 uci set wireless.radio1.channel=5
 uci set wireless.radio1.s1g_chanbw=1
-uci set wireless.radio1.txpower=0
+uci set wireless.radio1.txpower=16
 uci set wireless.radio1.enable_eu_mesh=1
 uci set wireless.radio1.enable_auto_duty_cycle=1
 uci set wireless.radio1.duty_cycle_mode=0
@@ -75,8 +84,13 @@ channel` to establish the actual RF frequency and bandwidth.
 - A subsequent radio down/up cycle again reached `MESH-GROUP-STARTED` with the
   same frequency, bandwidth, power, duty-cycle configuration, and healthy firmware.
 
-The requested EU/1 MHz/0 dBm configuration is left on manet01. Backups and the
-US-at-0-dBm rollback script are in `/root/eu-mesh-trial-20261111/` on the node.
+After that hardware experiment, the code default was changed to 16 dBm, with
+lower integer values still allowed. This subsequent change was tested locally
+and committed without deploying it or flashing the node; EU mesh at 16 dBm has
+not been hardware-tested. manet01 was then returned to its original US settings.
+
+Backups and the US-at-0-dBm rollback script are in
+`/root/eu-mesh-trial-20261111/` on the node.
 Run `sh /root/eu-mesh-trial-20261111/restore.sh` from an independent management
 link to restore the prior script/configuration while retaining low power.
 
