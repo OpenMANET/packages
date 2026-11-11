@@ -243,6 +243,7 @@ drv_morse_init_device_config() {
 	config_add_int txpower
 	config_add_int s1g_chanbw
 	config_add_boolean svt_restricted_mode
+	config_add_boolean enable_eu_mesh
 	config_add_int s1g_prim_chwidth
 	config_add_string s1g_prim_1mhz_chan_index
 	config_add_boolean ampdu
@@ -454,7 +455,7 @@ drv_morse_setup() {
 	json_select config
 	json_get_vars \
 		phy macaddr path \
-		svt_restricted_mode \
+		svt_restricted_mode enable_eu_mesh \
 		txpower \
 		frag rts htmode \
 		ampdu \
@@ -711,6 +712,15 @@ drv_morse_teardown() {
 	uci commit mesh11sd
 }
 
+# Opt-in bench configuration for duty-cycled EU mesh on the 2.2 stack.
+# Do not use svt_restricted_mode: that selects different regulatory conditions.
+morse_eu_mesh_ready() {
+	[ "$svt_restricted_mode" != 1 ] || return 1
+	[ "$s1g_chanbw" = 1 ] && [ "$txpower" = 0 ] || return 1
+	[ "$(cat /sys/module/morse/parameters/enable_auto_duty_cycle 2>/dev/null)" = Y ] || return 1
+	[ "$(cat /sys/module/morse/parameters/duty_cycle_mode 2>/dev/null)" = 0 ] || return 1
+}
+
 morse_iface_create() {
 	local auto_channel_only=0
 	if [ "$svt_restricted_mode" != 1 ] && [ "$country" = EU -o "$country" = GB ]; then
@@ -807,7 +817,14 @@ morse_iface_create() {
 				return 11
 			fi
 			[ "$has_chan_info" != 1 ] && return 6
-			[ "$auto_channel_only" = 1 ] && return 9
+			if [ "$enable_eu_mesh" = 1 ]; then
+				case "$country" in
+					EU|GB) morse_eu_mesh_ready || return 12 ;;
+					*) return 12 ;;
+				esac
+			elif [ "$auto_channel_only" = 1 ]; then
+				return 9
+			fi
 			[ "$auto_channel" -gt 0 ] && return 4
 
 			morse_iw_interface_add "$phy" "$ifname" "$macaddr" mp || return 1
@@ -916,6 +933,9 @@ morse_iface_bringup() {
 			;;
 		11)
 			echo "wifi-iface $iface_index mode=$mode ignored; firmware_type cannot be "$firmware_type" for this mode"
+			;;
+		12)
+			echo "wifi-iface $iface_index mode=$mode ignored; experimental EU mesh requires country=EU/GB, 1 MHz, txpower=0, svt_restricted_mode disabled, and automatic duty cycling in spread mode"
 			;;
 		0)
 			# This helps us track if we've managed to successfully create
