@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-raven
-PKG_RELEASE=3
+PKG_RELEASE=6
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -17,7 +17,10 @@ define Package/bsp-raven
 	CATEGORY:=OpenMANET
 	SUBMENU:=Boards
 	TITLE:=OpenMANET Raven board support package
-	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +ntpd +pps-tools +openvlm
+	DEPENDS:=+bsp-common +kmod-fs-configfs +usbgadget +gpsd +procps-ng +procps-ng-pkill +ntpd +pps-tools +kmod-pps-gpio +gpiod-tools +openvlm +kmod-camera-bcm2835-unicam +kmod-i2c-mux-pinctrl +libcamera +libgnutls +libcamera-utils \
+		+PACKAGE_libcamera-utils:libcamera-utils \
+		+PACKAGE_mediamtx:mediamtx \
+		+PACKAGE_camera-onvif-server:camera-onvif-server
 endef
 
 define Package/bsp-raven/description

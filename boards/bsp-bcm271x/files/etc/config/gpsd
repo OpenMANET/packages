@@ -3,3 +3,7 @@ config gpsd 'core'
         option device '/dev/ttyAMA0'
         option port '2947'
         option listen_globally '0'
+        # Auto uses Seeed wiring for SPI profiles and non-Raven Pi 4/CM4,
+        # or a detected WM1302 HAT. Use 'none' to disable GPIO setup.
+        option board 'auto'
+        option readonly '0'

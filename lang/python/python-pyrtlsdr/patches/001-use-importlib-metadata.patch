@@ -1,0 +1,13 @@
+Use the standard library for version metadata, avoiding a runtime setuptools dependency.
+
+--- a/rtlsdr/__init__.py
++++ b/rtlsdr/__init__.py
+@@ -18,2 +18,2 @@
+ import warnings
+-import pkg_resources
++import importlib.metadata
+@@ -21,3 +21,3 @@
+ try:
+-    __version__ = pkg_resources.require('pyrtlsdr')[0].version
++    __version__ = importlib.metadata.version('pyrtlsdr')
+ except: # pragma: no cover

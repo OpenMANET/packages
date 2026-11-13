@@ -1,0 +1,139 @@
+#!/bin/sh /etc/rc.common
+
+START=90
+STOP=10
+
+USE_PROCD=1
+
+SERVICE=camera-onvif-server
+
+. "${IPKG_INSTROOT}/lib/functions/network.sh"
+
+# Frustratingly procd reports that there is an error after using procd_append_param error
+# but doesn't tell you what the error is. You can find the error doing something like:
+#   ubus call service list '{"name":"camera-onvif-server"}'
+# However, given it's hard enough to get people to call logread, we duplicate
+# the message in the log.
+error() {
+	procd_append_param error "$2"
+	logger -p 3 -t "$SERVICE" "$1: $2"
+}
+
+start_instance() {
+	local s="$1"
+	local propertiesuc="/usr/share/$SERVICE/properties-$s.xml.uc"
+	local propertiesfile="/var/run/$SERVICE-properties-$s.xml"
+	local conffile="/etc/$SERVICE/config-$s.xml"
+
+	procd_open_instance "$s"
+
+	# get options
+	# Ideally we'd feed these directly into ucode as json,
+	# which I could sort of do with ubus call, but I also
+	# want to use the config_foreach mechanism...
+	config_get service_port "$s" 'service_port' 8082
+
+	# Point to a particular mediamtx config (default to first one).
+	config_get mediamtx_service "$s" 'mediamtx_service' '@mediamtx[0]'
+	mediamtx_api_port="$(uci get "mediamtx.$mediamtx_service.api_address")"
+	mediamtx_api_port="${mediamtx_api_port/*:/}"
+	if ! [ "$mediamtx_api_port" -gt 0 ]; then
+		error "$s" "invalid mediamtx.$mediamtx_service.api_address: $mediamtx_api_port"
+	fi
+
+	rtsp_port="$(uci get "mediamtx.$mediamtx_service.rtsp_address")"
+	rtsp_port="${rtsp_port/*:/}"
+	if ! [ "$rtsp_port" -gt 0 ]; then
+		error "$s" "invalid mediamtx.$mediamtx_service.rtsp_address: $rtsp_port"
+	fi
+
+	# We use the name of the service as the default rtsp_name to avoid clashes
+	config_get rtsp_name "$s" 'rtsp_name' "$s"
+	config_get interface "$s" 'interface' loopback
+	# It's not clear from the spec exactly what this is.
+	# For now, leaving it blank.
+	config_get hardware_id "$s" 'hardware_id' ''
+	config_get serial_number "$s" 'serial_number' ''
+
+	# TODO detect no camera situation better
+	if [ ! -e /dev/video0 ]; then
+		error "$s" "/dev/video0 doesn't exist"
+	fi
+
+	network_get_ipaddr ip "$interface"
+
+	network_is_up "$interface" && [ -n "$ip" ] || {
+		error "$s" "interface $interface not ready"
+	}
+
+	# Generate template parameters from options.
+	json_init
+
+	json_add_string "mediamtx_api_port" "$mediamtx_api_port"
+	json_add_string "rtsp_name" "$rtsp_name"
+	json_add_string "rtsp_port" "$rtsp_port"
+
+	json_add_string "manufacturer" "$MANUFACTURER"
+	json_add_string "model" "$MODEL"
+	json_add_string "firmware_version" "$FW_VERSION"
+	json_add_string "hardware_id" "$hardware_id"
+	json_add_string "serial_number" "$serial_number"
+	json_close_object
+
+	ucode -S -T -D "$(json_dump)" "$propertiesuc" > "$propertiesfile"
+
+	procd_set_param file "$propertiesfile"
+	procd_set_param netdev "$interface"
+	procd_set_param command $SERVICE $ip --port "$service_port" --config "$conffile" --properties "$propertiesfile"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param respawn
+	procd_close_instance
+}
+
+start_service() {
+	. /etc/device_info
+	MANUFACTURER="${DEVICE_MANUFACTURER}"
+	if [ -n "${DEVICE_PRODUCT}" ] && [ "$DEVICE_PRODUCT" != Generic ]; then
+		MODEL="${DEVICE_PRODUCT}"
+	else
+		MODEL="$(cat /tmp/sysinfo/model)"
+		MODEL="${MODEL#$MANUFACTURER }"
+	fi
+	FW_VERSION="$(cat /etc/openwrt_version)"
+
+	config_load "$SERVICE"
+	config_foreach start_instance "$SERVICE"
+}
+
+_add_interface_trigger() {
+	config_get interface "$1" 'interface' loopback
+	procd_add_reload_interface_trigger "$interface"
+}
+
+reload_service() {
+	# We want to make sure camera-onvif-server runs _after_ mediamtx
+	# has reloaded its configuration, because it sets up its own stream
+	# (and when MediaMTX reloads configuration it removes any dynamically
+	# allocated stream). AFAIK procd has no way to do this
+	# (we can only react to UCI file changes, not other process states,
+	# and mediamtx automatically reloads configuration on its file changing
+	# anyway so procd has little visibility).
+	#
+	# Unfortunately, because the reload trigger stuff runs synchronously,
+	# if we just put a sleep in here this may also delay MediaMTX
+	# restarting (in the case that a mediamtx restart was required),
+	# which would mean that our config may still get clobbered.
+	# So we dodgily background this step and, well, it seems to work...
+	(
+		sleep 3
+		start
+	) &
+}
+
+service_triggers() {
+	procd_add_reload_trigger mediamtx "$SERVICE"
+
+	config_load "$SERVICE"
+	config_foreach _add_interface_trigger "$SERVICE"
+}

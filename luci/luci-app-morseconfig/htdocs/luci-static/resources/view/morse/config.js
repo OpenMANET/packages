@@ -252,7 +252,8 @@ const WifiEncryptionList = form.ListValue.extend({
 		}
 
 		this.clear();
-		for (const encryptionOption of encryptionOptions) {
+		for (const encryptionOption of encryptionOptions.filter(value =>
+			morseuci.isWifiEncryptionAllowed(this.radioConfig, value))) {
 			this.value(encryptionOption, ENCRYPTION_OPTIONS[encryptionOption]);
 		}
 
@@ -369,8 +370,12 @@ return view.extend({
 	// This is called by handleSave above so we can safely interact with the uci
 	// values rather than the form elements.
 	preSaveHook() {
-		// Use a bridge if we have more than one device.
+		// Only adjust bridges for networks managed by this page. BATMAN hard
+		// interfaces carry mesh radios directly and must not become bridges.
 		for (const network of uci.sections('network', 'interface')) {
+			if (!isNormalNetworkIface(network)) {
+				continue;
+			}
 			morseuci.createOrRemoveBridgeAsNeeded(network['.name']);
 			morseuci.validateBridge(network['.name'], this.wifiDevices);
 		}
@@ -579,7 +584,10 @@ return view.extend({
 
 		option = section.option(SimpleNetworkSelect, 'network', _('Network'));
 		for (const networkIface of uci.sections('network', 'interface')) {
-			if (isNormalNetworkIface(networkIface)) {
+			// Mesh radios attach to BATMAN hard interfaces, not directly to the
+			// LAN bridge. Omitting these makes the required dropdown select a
+			// different network when saving unrelated channel or band settings.
+			if (isNormalNetworkIface(networkIface) || networkIface.proto === 'batadv_hardif') {
 				option.value(networkIface['.name'], networkIface['.name']);
 			}
 		}
@@ -742,6 +750,9 @@ return view.extend({
 			}
 		}
 		option.deviceType = deviceType;
+		option.radioConfig = uci.get('wireless', deviceName);
+		option.validate = (sectionId, value) => readOnly ? true
+			: morseuci.validateWifiEncryption(uci.get('wireless', deviceName), value);
 		option.default = 'none';
 		option.onchange = function (ev, sectionId, _value, previousValue) {
 			const mode = this.section.formvalue(sectionId, 'mode');

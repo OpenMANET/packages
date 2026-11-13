@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# OpenMANET reserves 8080/8081 for the daemon HTTP/HTTPS frontend.
+# Migrate the camera package's old defaults and retain other custom ports.
+[ -f /etc/config/camera-onvif-server ] || exit 0
+
+. /lib/functions.sh
+
+changed=0
+failed=0
+
+migrate_port() {
+	local section="$1"
+	local port
+
+	config_get port "$section" service_port ''
+	case "$port" in
+		''|8080|8081)
+			uci -q set "camera-onvif-server.$section.service_port=8082" || {
+				failed=1
+				return
+			}
+			changed=1
+			;;
+	esac
+}
+
+config_load camera-onvif-server || exit 1
+config_foreach migrate_port camera-onvif-server
+
+[ "$failed" = 0 ] || exit 1
+if [ "$changed" = 1 ]; then
+	uci commit camera-onvif-server || exit 1
+fi
+
+exit 0
