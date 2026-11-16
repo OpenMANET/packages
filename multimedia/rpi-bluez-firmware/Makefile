@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpi-bluez-firmware
 PKG_VERSION:=1.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_VERSION:=cdf61dc691a49ff01a124752bd04194907f0f9cd
 PKG_SOURCE:=bluez-firmware-$(PKG_SOURCE_VERSION).tar.gz
@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/rpi-bluez-firmware
   SECTION:=firmware
   CATEGORY:=Firmware
-  TITLE:=Raspberry Pi 4 Bluetooth controller firmware
+  TITLE:=Raspberry Pi onboard Bluetooth controller firmware
   URL:=https://github.com/RPi-Distro/bluez-firmware
   PKGARCH:=all
 endef
@@ -28,6 +28,8 @@ endef
 
 define Package/rpi-bluez-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/debian/firmware/broadcom/BCM43430A1.hcd $(1)/lib/firmware/brcm/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/debian/firmware/broadcom/BCM43430B0.hcd $(1)/lib/firmware/brcm/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/debian/firmware/broadcom/BCM4345C0.hcd $(1)/lib/firmware/brcm/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/debian/firmware/broadcom/BCM4345C5.hcd $(1)/lib/firmware/brcm/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/debian/firmware/broadcom/LICENSE.cypress $(1)/lib/firmware/brcm/LICENSE.cypress-rpi-bluez
