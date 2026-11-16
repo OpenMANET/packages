@@ -67,7 +67,7 @@ class GPSResetTests(unittest.TestCase):
             sleep = root / 'sleep'
             sleep.write_text("#!/bin/sh\ncase \"$1\" in ''|*[!0-9]*) echo 'integer sleep required' >&2; exit 1;; esac\nexit 0\n")
             sleep.chmod(0o755)
-            result = subprocess.run(['/bin/sh', '-c', '''
+            result = subprocess.run(['bash', '-c', '''
 . "$1"
 logger() { echo "$*"; }
 init_gps_gpio

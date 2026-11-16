@@ -102,7 +102,9 @@ set_gpio_persistent() {
     # -c gpiochip0: specify the chip (GPIOs 0-57 are on gpiochip0)
     # -C: set consumer name for identification in gpioinfo
     # -z: daemonize to keep GPIO state after exit (no & needed)
-    if ! gpioset -c gpiochip0 -C "gps-wm1302" -z "${gpio}=${value}"; then
+    # A daemonized holder must not retain rc.common's procd service lock.
+    # Otherwise even `gpsboard.init enabled` (and sysupgrade backups) block.
+    if ! gpioset -c gpiochip0 -C "gps-wm1302" -z "${gpio}=${value}" 1000>&-; then
         logger -t "$NAME" "ERROR: could not request GPIO${gpio}=${value}"
         return 1
     fi
