@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bluez-alsa
 PKG_VERSION:=4.3.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=bluez-alsa-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/arkq/bluez-alsa/tar.gz/refs/tags/

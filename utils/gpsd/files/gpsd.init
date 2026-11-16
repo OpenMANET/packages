@@ -24,6 +24,14 @@ gpsd_instance()
 	}
 
 	[ "$enabled" = "0" ] && return 1
+	if [ -x /usr/libexec/openmanet-gps-device ]; then
+		local resolved_device
+		resolved_device=$(/usr/libexec/openmanet-gps-device "$device") || {
+			logger -t gpsd "GPS UART unavailable ($device); service not started"
+			return 0
+		}
+		device="$resolved_device"
+	fi
 
 	# gpsd drops to nobody:dialout after its first device open. Magic Hat
 	# (pairing /dev/ttyAMA0 with /dev/pps0 for kernel PPS) checks

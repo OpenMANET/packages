@@ -12,18 +12,16 @@ DT_PATH=/proc/device-tree
 HAT_DT_PATH=$DT_PATH/hat
 
 boot() {
-    device=$(get_gpsd_device)
-    if [ $? -ne 0 ] || [ -z "$device" ]; then
-        logger -t "$NAME" "WARNING: GPS device not configured in /etc/config/gpsd"
-        device=""
-    else
-        logger -t "$NAME" "GPS device: $device"
-    fi
-
     local board enabled
     board=$(uci -q get gpsd.core.board)
     enabled=$(uci -q get gpsd.core.enabled)
     [ "$enabled" != "0" ] || return 0
+    device=$(get_gpsd_device)
+    if [ $? -ne 0 ] || [ -z "$device" ]; then
+        logger -t "$NAME" "GPS UART unavailable; GPIO setup skipped"
+        return 0
+    fi
+    logger -t "$NAME" "GPS device: $device"
     # Raven has its own GPIO initialization; other SoCs use their own BSP.
     if ! supported_pi; then
         logger -t "$NAME" "GPS GPIO setup skipped: not a supported non-Raven Raspberry Pi"
@@ -49,8 +47,10 @@ boot() {
             return 1
             ;;
     esac
-    [ "$device" = "/dev/ttyAMA0" ] || {
-        logger -t "$NAME" "ERROR: WM1302 requires gpsd.core.device=/dev/ttyAMA0"
+    [ "$device" = "/dev/ttyAMA0" ] ||
+    { [ -x /usr/libexec/openmanet-gps-device ] &&
+      [ "$device" = "$(/usr/libexec/openmanet-gps-device auto)" ]; } || {
+        logger -t "$NAME" "ERROR: WM1302 requires the GPIO14/15 header UART"
         return 1
     }
     logger -t "$NAME" "GPS carrier: $board (Seeed wiring)"
@@ -133,6 +133,10 @@ release_gpio() {
 get_gpsd_device() {
     local device
     device=$(uci -q get gpsd.core.device)
+    if [ -x /usr/libexec/openmanet-gps-device ]; then
+        /usr/libexec/openmanet-gps-device "$device"
+        return $?
+    fi
     if [ -n "$device" ]; then
         echo "$device"
         return 0

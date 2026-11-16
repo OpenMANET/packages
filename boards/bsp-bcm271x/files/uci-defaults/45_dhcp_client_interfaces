@@ -1,0 +1,30 @@
+#!/bin/sh
+# Pi Ethernet is a DHCP client. Do not listen for DHCP requests there
+# unless an operator has explicitly configured a DHCP section for it.
+. /lib/functions.sh
+
+configured_interfaces=""
+remember_dhcp_interface() {
+    local interface
+    config_get interface "$1" interface
+    [ -z "$interface" ] || configured_interfaces="$configured_interfaces $interface"
+}
+
+exclude_client() {
+    local interface="$1" proto
+    config_get proto "$interface" proto
+    [ "$proto" = dhcp ] || [ "$proto" = dhcpv6 ] || return 0
+    # Include anonymous DHCP sections and sections with a different name.
+    case " $configured_interfaces " in *" $interface "*) return 0;; esac
+    uci -q get "dhcp.$interface" >/dev/null && return 0
+    uci set "dhcp.$interface=dhcp"
+    uci set "dhcp.$interface.interface=$interface"
+    uci set "dhcp.$interface.ignore=1"
+}
+
+config_load dhcp
+config_foreach remember_dhcp_interface dhcp
+config_load network
+config_foreach exclude_client interface
+uci commit dhcp
+exit 0

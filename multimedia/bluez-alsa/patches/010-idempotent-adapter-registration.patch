@@ -1,0 +1,16 @@
+--- a/src/bluez.c
++++ b/src/bluez.c
+@@ -233,6 +233,13 @@
+ 
+ 	struct bluez_adapter *ba = &bluez_adapters[a->hci.dev_id];
+ 
++	/* GetManagedObjects and InterfacesAdded can report the same adapter.
++	 * The cache already owns its reference; release the extra lookup. */
++	if (ba->adapter != NULL) {
++		ba_adapter_unref(a);
++		return ba;
++	}
++
+ 	ba->adapter = a;
+ 	ba->device_sep_configs_map = g_hash_table_new_full(
+ 			g_bdaddr_hash, g_bdaddr_equal, g_free, (GDestroyNotify)g_array_unref);

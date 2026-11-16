@@ -1,0 +1,24 @@
+#!/bin/sh
+# Resolve the header UART from the live DT, rather than a ttyAMA number.
+# On Pi4 with native Bluetooth, serial0 is the mini UART (ttyS0).
+device="$1"
+if [ "$device" != auto ] && [ -c "$device" ]; then
+    printf '%s\n' "$device"
+    exit 0
+fi
+
+# Allow migration of the old absent default, but preserve explicit ports.
+case "$device" in auto|/dev/ttyAMA0) ;; *) exit 1;; esac
+dt_root="${GPS_DT_ROOT:-/proc/device-tree}"
+sys_tty="${GPS_SYS_TTY:-/sys/class/tty}"
+alias=$(tr -d '\000' 2>/dev/null < "$dt_root/aliases/serial0") || exit 1
+[ -n "$alias" ] || exit 1
+primary=$(readlink -f "$dt_root$alias") || exit 1
+for tty in "$sys_tty"/*; do
+    [ "$(readlink -f "$tty/device/of_node")" = "$primary" ] || continue
+    device="/dev/${tty##*/}"
+    [ -c "$device" ] || continue
+    printf '%s\n' "$device"
+    exit 0
+done
+exit 1

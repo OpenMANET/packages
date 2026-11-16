@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsp-bcm271x
-PKG_RELEASE=16
+PKG_RELEASE=17
 PKG_VERSION:=1.0
 
 PKG_LICENSE:=GPLv2
@@ -40,6 +40,7 @@ endef
 define Package/bsp-bcm271x/install
 	$(INSTALL_DIR) $(1)/usr/libexec
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wm6108-spi-reset $(1)/usr/libexec/
+	$(INSTALL_BIN) ./files/openmanet-gps-device $(1)/usr/libexec/
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/wm6108-spi-reset.conf $(1)/etc/
 	$(INSTALL_DIR) $(1)/etc/init.d/
