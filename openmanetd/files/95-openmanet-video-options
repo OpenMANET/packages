@@ -1,0 +1,12 @@
+#!/bin/sh
+# Earlier camera settings pages saved blank optional fields. Drop these so
+# go-uci can read the existing transport, encoder, and push preferences.
+changed=0
+for key in push_path push_destination; do
+	option="openmanet_video.playback.$key"
+	value="$(uci -q get "$option")" || continue
+	[ -z "$value" ] || continue
+	uci -q delete "$option" || exit 1
+	changed=1
+done
+[ "$changed" = 0 ] || uci commit openmanet_video
