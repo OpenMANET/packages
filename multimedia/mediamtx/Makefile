@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mediamtx
 PKG_VERSION:=1.4.0
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/bluenviron/mediamtx/tar.gz/v$(PKG_VERSION)?
@@ -53,6 +53,8 @@ endif
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) $(CURDIR)/files/srt_push.go $(PKG_BUILD_DIR)/
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/cmd
+	$(CP) $(CURDIR)/files/openmanet-videorate $(PKG_BUILD_DIR)/cmd/
 endef
 
 define Package/mediamtx/conffiles

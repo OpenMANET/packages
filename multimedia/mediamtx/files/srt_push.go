@@ -17,6 +17,7 @@ const pushStatusFile = "/var/run/mediamtx-srt-push.json"
 type pushStatus struct {
 	State            string  `json:"state"`
 	Updated          int64   `json:"updated"`
+	Path             string  `json:"path,omitempty"`
 	RemoteAddr       string  `json:"remoteAddr,omitempty"`
 	RTTMillis        float64 `json:"rttMillis"`
 	SendBufferMillis uint64  `json:"sendBufferMillis"`
@@ -35,6 +36,7 @@ func writePushStatus(status pushStatus) {
 // Clients paste FFmpeg URLs. gosrt takes milliseconds for the latency option.
 func pushDestination(raw string) (string, srt.Config, error) {
 	config := srt.DefaultConfig()
+	config.IPTOS = 0x48 // AF21, matching the video queue probes.
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "srt" || u.Hostname() == "" || u.Port() == "" {
 		return "", config, errors.New("enter an SRT destination with a host and port")
@@ -111,7 +113,7 @@ func runSRTPush() (err error) {
 		if now := time.Now(); !now.Before(next) {
 			dest.Stats(&stats)
 			writePushStatus(pushStatus{
-				State: "Sending", RemoteAddr: dest.RemoteAddr().String(),
+				State: "Sending", Path: os.Getenv("SRT_PATH"), RemoteAddr: dest.RemoteAddr().String(),
 				RTTMillis: stats.Instantaneous.MsRTT, SendBufferMillis: stats.Instantaneous.MsSendBuf,
 				BytesSent: stats.Accumulated.ByteSent, Retransmissions: stats.Accumulated.PktRetrans,
 			})

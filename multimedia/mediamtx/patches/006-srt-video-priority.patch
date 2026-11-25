@@ -1,0 +1,8 @@
+--- a/internal/servers/srt/server.go
++++ b/internal/servers/srt/server.go
+@@ -93,4 +93,5 @@
+ 	conf := srt.DefaultConfig()
++	conf.IPTOS = 0x48 // AF21, matching the camera bitrate controller's queue probes.
+ 	conf.ConnectionTimeout = time.Duration(s.ReadTimeout)
+ 	conf.PayloadSize = uint32(srtMaxPayloadSize(s.UDPMaxPayloadSize))
+ 
