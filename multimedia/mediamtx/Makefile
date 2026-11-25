@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mediamtx
 PKG_VERSION:=1.4.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/bluenviron/mediamtx/tar.gz/v$(PKG_VERSION)?
@@ -47,10 +47,17 @@ endef
 
 endif
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(CURDIR)/files/srt_push.go $(PKG_BUILD_DIR)/
+endef
+
 define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(CURDIR)/files/mediamtx.init $(1)/etc/init.d/mediamtx
+
+	$(INSTALL_BIN) $(CURDIR)/files/srt-push.init $(1)/etc/init.d/mediamtx-srt-push
 
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) $(CURDIR)/files/mediamtx.config $(1)/etc/config/mediamtx

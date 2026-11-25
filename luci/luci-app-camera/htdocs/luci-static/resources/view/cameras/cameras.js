@@ -28,6 +28,7 @@
 'require view';
 'require uci';
 'require ui';
+'require view.cameras.transport as transport';
 
 'require view.cameras.videolive as videolive';
 
@@ -505,28 +506,19 @@ class ONVIFDevice {
 	}
 
 	renderStreamLinks() {
-		const streamLinks = [];
-
-		if (this.streamUrl) {
-			streamLinks.push(E('a', { href: this.streamUrl }, _('RTSP')));
-		}
-
-		if (this.proxyUrls.rtsp) {
-			streamLinks.push(' | ');
-			streamLinks.push(E('a', { href: this.proxyUrls.rtsp }, _('Proxy RTSP')));
-		}
-
-		if (this.proxyUrls.webrtc) {
-			streamLinks.push(' | ');
-			streamLinks.push(E('a', { href: this.proxyUrls.webrtc }, _('WebRTC')));
-		}
-
-		if (this.proxyUrls.hls) {
-			streamLinks.push(' | ');
-			streamLinks.push(E('a', { href: this.proxyUrls.hls }, _('HLS')));
-		}
-
-		return streamLinks;
+		const links = [];
+		const add = (url, label) => {
+			if (!url) return;
+			if (links.length) links.push(' | ');
+			links.push(E('a', { href: url }, label));
+		};
+		if (transport.preferred() === 'srt') add(this.proxyUrls.srt, _('SRT'));
+		add(this.streamUrl, _('RTSP'));
+		add(this.proxyUrls.rtsp, _('Proxy RTSP'));
+		if (transport.preferred() === 'rtsp') add(this.proxyUrls.srt, _('SRT'));
+		add(this.proxyUrls.webrtc, _('WebRTC'));
+		add(this.proxyUrls.hls, _('HLS'));
+		return links;
 	}
 
 	renderVideo() {
@@ -1078,6 +1070,7 @@ return view.extend({
 		const host = window.location.hostname;
 
 		return {
+			srt: ports.srt && transport.url(ports.srt, 'read', path),
 			webrtc: ports.webrtc && `http://${host}:${ports.webrtc}/${path}/`,
 			rtsp: ports.rtsp && `rtsp://${host}:${ports.rtsp}/${path}`,
 			hls: ports.hls && `http://${host}:${ports.hls}/${path}/`,
@@ -1417,6 +1410,7 @@ return view.extend({
 		}
 
 		const res = [
+			E('p', {}, E('a', { href: L.url('admin/services/camera-transport') }, _('Video transport and SRT statistics'))),
 			E('section', { class: 'cbi-section' }, [
 				E('h2', {}, _('Cameras')),
 				E('div', { class: 'button-row' }, [

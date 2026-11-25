@@ -1,0 +1,73 @@
+--- a/apidocs/openapi.yaml
++++ b/apidocs/openapi.yaml
+@@ -585,6 +585,15 @@
+           type: integer
+           format: int64
+ 
++        rttMillis:
++          type: number
++          format: double
++          description: Smoothed round-trip time in milliseconds.
++        sendBufferMillis:
++          type: integer
++          format: int64
++          description: Time span of unacknowledged packets in the sender buffer.
++
+     SRTConnList:
+       type: object
+       properties:
+--- a/internal/defs/api.go
++++ b/internal/defs/api.go
+@@ -146,13 +146,15 @@
+ 
+ // APISRTConn is a SRT connection.
+ type APISRTConn struct {
+-	ID            uuid.UUID       `json:"id"`
+-	Created       time.Time       `json:"created"`
+-	RemoteAddr    string          `json:"remoteAddr"`
+-	State         APISRTConnState `json:"state"`
+-	Path          string          `json:"path"`
+-	BytesReceived uint64          `json:"bytesReceived"`
+-	BytesSent     uint64          `json:"bytesSent"`
++	RTTMillis        float64         `json:"rttMillis"`
++	SendBufferMillis uint64          `json:"sendBufferMillis"`
++	ID               uuid.UUID       `json:"id"`
++	Created          time.Time       `json:"created"`
++	RemoteAddr       string          `json:"remoteAddr"`
++	State            APISRTConnState `json:"state"`
++	Path             string          `json:"path"`
++	BytesReceived    uint64          `json:"bytesReceived"`
++	BytesSent        uint64          `json:"bytesSent"`
+ }
+ 
+ // APISRTConnList is a list of SRT connections.
+--- a/internal/servers/srt/conn.go
++++ b/internal/servers/srt/conn.go
+@@ -409,18 +409,24 @@
+ 
+ 	bytesReceived := uint64(0)
+ 	bytesSent := uint64(0)
++	var rttMillis float64
++	var sendBufferMillis uint64
+ 
+ 	if c.sconn != nil {
+ 		var s srt.Statistics
+ 		c.sconn.Stats(&s)
+ 		bytesReceived = s.Accumulated.ByteRecv
+ 		bytesSent = s.Accumulated.ByteSent
++		rttMillis = s.Instantaneous.MsRTT
++		sendBufferMillis = s.Instantaneous.MsSendBuf
+ 	}
+ 
+ 	return &defs.APISRTConn{
+-		ID:         c.uuid,
+-		Created:    c.created,
+-		RemoteAddr: c.connReq.RemoteAddr().String(),
++		RTTMillis:        rttMillis,
++		SendBufferMillis: sendBufferMillis,
++		ID:               c.uuid,
++		Created:          c.created,
++		RemoteAddr:       c.connReq.RemoteAddr().String(),
+ 		State: func() defs.APISRTConnState {
+ 			switch c.state {
+ 			case connStateRead:

@@ -1,0 +1,23 @@
+--- a/main.go
++++ b/main.go
+@@ -3,6 +3,7 @@
+ package main
+ 
+ import (
++	"fmt"
+ 	"os"
+ 
+ 	"github.com/bluenviron/mediamtx/internal/core"
+@@ -10,6 +11,13 @@
+ 
+ func main() {
++	if len(os.Args) == 2 && os.Args[1] == "srt-push" {
++		if err := runSRTPush(); err != nil {
++			fmt.Fprintln(os.Stderr, err)
++			os.Exit(1)
++		}
++		return
++	}
+ 	s, ok := core.New(os.Args[1:])
+ 	if !ok {
+ 		os.Exit(1)
