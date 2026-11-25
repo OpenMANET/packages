@@ -6,11 +6,11 @@ STOP=9
 
 start_service() {
 	local enabled path destination listener
-	config_load cameras
-	config_get_bool enabled luci push_enabled 0
+	config_load openmanet_video
+	config_get_bool enabled playback push_enabled 0
 	[ "$enabled" = 1 ] || return 0
-	config_get destination luci push_destination
-	config_get path luci push_path
+	config_get destination playback push_destination
+	config_get path playback push_path
 	[ -n "$destination" ] || return 0
 	if [ -z "$path" ]; then
 		config_load camera-onvif-server
@@ -26,5 +26,5 @@ start_service() {
 }
 
 service_triggers() {
-	procd_add_reload_trigger cameras mediamtx camera-onvif-server
+	procd_add_reload_trigger openmanet_video mediamtx camera-onvif-server
 }

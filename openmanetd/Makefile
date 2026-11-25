@@ -3,11 +3,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=openmanetd
 
 PKG_VERSION:=main
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=ssh://git@github.com/OpenMANET/openmanetd.git
-PKG_SOURCE_VERSION:=a8b9412139df069bc174512f3bcbcc6701b05e38
+PKG_SOURCE_VERSION:=af80af080a3c8a424002884159d23f1c243c7ac6
+PKG_SOURCE:=openmanetd-$(PKG_SOURCE_VERSION).tar.zst
 PKG_HASH:=skip
 PKG_MIRROR_HASH:=skip
 

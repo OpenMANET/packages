@@ -1,0 +1,225 @@
+diff --git a/internal/protocols/rpicamera/exe/Makefile b/internal/protocols/rpicamera/exe/Makefile
+index d2a1901..e52ced3 100644
+--- a/internal/protocols/rpicamera/exe/Makefile
++++ b/internal/protocols/rpicamera/exe/Makefile
+@@ -34,6 +34,12 @@ OBJS = \
+ 	text.o \
+ 	window.o
+ 
++ifdef SOFTWARE_H264
++CFLAGS += -DSOFTWARE_H264 $$(pkg-config --cflags x264)
++LDFLAGS += $$(pkg-config --libs x264)
++OBJS += software_encoder.o
++endif
++
+ all: exe
+ 
+ text_font.h: text_font.ttf
+diff --git a/internal/protocols/rpicamera/exe/encoder.h b/internal/protocols/rpicamera/exe/encoder.h
+index eb1e792..0fc99ed 100644
+--- a/internal/protocols/rpicamera/exe/encoder.h
++++ b/internal/protocols/rpicamera/exe/encoder.h
+@@ -12,4 +12,9 @@ bool encoder_create(const parameters_t *params, int stride, int colorspace, enco
+ void encoder_encode(encoder_t *enc, int buffer_fd, size_t size, int64_t timestamp_us);
+ void encoder_reload_params(encoder_t *enc, const parameters_t *params);
+ 
++#ifdef SOFTWARE_H264
++bool software_encoder_create(const parameters_t *params, encoder_output_cb cb);
++void software_encoder_frame(uint8_t *pixels, int stride, int height, uint64_t size, uint64_t ts);
++void software_encoder_reload(const parameters_t *params);
++#endif
+ #endif
+diff --git a/internal/protocols/rpicamera/exe/main.c b/internal/protocols/rpicamera/exe/main.c
+index bb37921..e71b671 100644
+--- a/internal/protocols/rpicamera/exe/main.c
++++ b/internal/protocols/rpicamera/exe/main.c
+@@ -16,6 +16,9 @@ static int pipe_video_fd;
+ static pthread_mutex_t pipe_video_mutex;
+ static text_t *text;
+ static encoder_t *enc;
++#ifdef SOFTWARE_H264
++static bool software;
++#endif
+ 
+ static void on_frame(
+     uint8_t *mapped_buffer,
+@@ -25,6 +28,12 @@ static void on_frame(
+     uint64_t size,
+     uint64_t timestamp) {
+     text_draw(text, mapped_buffer, stride, height);
++#ifdef SOFTWARE_H264
++    if (software) {
++        software_encoder_frame(mapped_buffer, stride, height, size, timestamp);
++        return;
++    }
++#endif
+     encoder_encode(enc, buffer_fd, size, timestamp);
+ }
+ 
+@@ -68,15 +77,26 @@ int main() {
+         return 5;
+     }
+ 
+-    ok = encoder_create(
+-        &params,
+-        camera_get_mode_stride(cam),
+-        camera_get_mode_colorspace(cam),
+-        on_encoder_output,
+-        &enc);
+-    if (!ok) {
+-        pipe_write_error(pipe_video_fd, "encoder_create(): %s", encoder_get_error());
+-        return 5;
++#ifdef SOFTWARE_H264
++    software = getenv("OPENMANET_SOFTWARE_H264") != NULL;
++    if (software) {
++        if (!software_encoder_create(&params, on_encoder_output)) {
++            pipe_write_error(pipe_video_fd, "could not open software H.264 encoder");
++            return 5;
++        }
++    } else
++#endif
++    {
++        ok = encoder_create(
++            &params,
++            camera_get_mode_stride(cam),
++            camera_get_mode_colorspace(cam),
++            on_encoder_output,
++            &enc);
++        if (!ok) {
++            pipe_write_error(pipe_video_fd, "encoder_create(): %s", encoder_get_error());
++            return 5;
++        }
+     }
+ 
+     ok = camera_start(cam);
+@@ -106,7 +126,12 @@ int main() {
+                     continue;
+                 }
+                 camera_reload_params(cam, &params);
+-                encoder_reload_params(enc, &params);
++#ifdef SOFTWARE_H264
++                if (software)
++                    software_encoder_reload(&params);
++                else
++#endif
++                    encoder_reload_params(enc, &params);
+                 parameters_destroy(&params);
+             }
+         }
+diff --git a/internal/protocols/rpicamera/exe/software_encoder.c b/internal/protocols/rpicamera/exe/software_encoder.c
+new file mode 100644
+index 0000000..44852fe
+--- /dev/null
++++ b/internal/protocols/rpicamera/exe/software_encoder.c
+@@ -0,0 +1,94 @@
++// CPU encoder for the contiguous I420 frames produced by libcamera on the Pi.
++#include <stdint.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <pthread.h>
++#include <linux/videodev2.h>
++#include <x264.h>
++
++#include "parameters.h"
++#include "encoder.h"
++
++static x264_t *codec;
++static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
++static unsigned int frame;
++static unsigned int idr;
++static uint64_t first_ts;
++static encoder_output_cb output;
++
++static void rate(x264_param_t *p, const parameters_t *camera) {
++    p->rc.i_rc_method = X264_RC_ABR;
++    p->rc.i_bitrate = (camera->bitrate + 999) / 1000;
++    p->rc.i_vbv_max_bitrate = p->rc.i_bitrate;
++    p->rc.i_vbv_buffer_size = p->rc.i_bitrate;
++}
++
++bool software_encoder_create(const parameters_t *camera, encoder_output_cb cb) {
++    x264_param_t p;
++    if (x264_param_default_preset(&p, "ultrafast", "zerolatency") < 0)
++        return false;
++    p.i_width = camera->width;
++    p.i_height = camera->height;
++    p.i_csp = X264_CSP_I420;
++    p.i_fps_num = (int)(camera->fps * 1000 + 0.5);
++    p.i_fps_den = 1000;
++    p.b_repeat_headers = 1;
++    p.b_annexb = 1;
++    p.i_keyint_max = X264_KEYINT_MAX_INFINITE;
++    p.i_scenecut_threshold = 0;
++    p.i_level_idc = camera->level == V4L2_MPEG_VIDEO_H264_LEVEL_4_0 ? 40 :
++                    camera->level == V4L2_MPEG_VIDEO_H264_LEVEL_4_1 ? 41 : 42;
++    rate(&p, camera);
++    const char *profile = camera->profile == V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE ? "baseline" :
++                          camera->profile == V4L2_MPEG_VIDEO_H264_PROFILE_MAIN ? "main" : "high";
++    if (x264_param_apply_profile(&p, profile) < 0)
++        return false;
++    idr = camera->idr_period;
++    output = cb;
++    codec = x264_encoder_open(&p);
++    return codec != NULL;
++}
++
++void software_encoder_reload(const parameters_t *camera) {
++    pthread_mutex_lock(&lock);
++    x264_param_t p;
++    x264_encoder_parameters(codec, &p);
++    rate(&p, camera);
++    if (x264_encoder_reconfig(codec, &p) < 0)
++        fprintf(stderr, "could not change software encoder bitrate\n");
++    idr = camera->idr_period;
++    pthread_mutex_unlock(&lock);
++}
++
++void software_encoder_frame(uint8_t *pixels, int stride, int height, uint64_t size, uint64_t ts) {
++    size_t y = (size_t)stride * height;
++    if (!pixels || size < y + y / 2 || stride % 2 || height % 2) {
++        fprintf(stderr, "invalid I420 camera frame\n");
++        exit(1);
++    }
++    x264_picture_t in, out;
++    x264_picture_init(&in);
++    in.img.i_csp = X264_CSP_I420;
++    in.img.i_plane = 3;
++    in.img.plane[0] = pixels;
++    in.img.plane[1] = pixels + y;
++    in.img.plane[2] = pixels + y + y / 4;
++    in.img.i_stride[0] = stride;
++    in.img.i_stride[1] = in.img.i_stride[2] = stride / 2;
++
++    pthread_mutex_lock(&lock);
++    if (!frame) first_ts = ts;
++    in.i_pts = frame;
++    in.i_type = !frame || (idr && frame % idr == 0) ? X264_TYPE_IDR : X264_TYPE_AUTO;
++    frame++;
++    x264_nal_t *nal;
++    int count;
++    int bytes = x264_encoder_encode(codec, &nal, &count, &in, &out);
++    if (bytes < 0) {
++        fprintf(stderr, "software H.264 encode failed\n");
++        exit(1);
++    }
++    if (bytes > 0) output(ts - first_ts, nal[0].p_payload, bytes);
++    pthread_mutex_unlock(&lock);
++}
+diff --git a/internal/protocols/rpicamera/rpicamera.go b/internal/protocols/rpicamera/rpicamera.go
+index 969d978..8a4734e 100644
+--- a/internal/protocols/rpicamera/rpicamera.go
++++ b/internal/protocols/rpicamera/rpicamera.go
+@@ -154,6 +154,12 @@ func New(
+ 		"PIPE_VIDEO_FD=" + strconv.FormatInt(int64(c.pipeVideo.writeFD), 10),
+ 	}
+ 
++	// Read on camera activation so changing encoders does not restart
++	// MediaMTX or interrupt unrelated publishers and relays.
++	if value, err := exec.Command("/sbin/uci", "-q", "get", "openmanet_video.playback.hardware_acceleration").Output(); err == nil && strings.TrimSpace(string(value)) == "0" {
++		env = append(env, "OPENMANET_SOFTWARE_H264=1")
++	}
++
+ 	c.cmd, err = startEmbeddedExe(exeContent, env)
+ 	if err != nil {
+ 		c.pipeConf.close()
