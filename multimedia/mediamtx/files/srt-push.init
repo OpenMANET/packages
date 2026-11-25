@@ -38,7 +38,7 @@ start_adaptive() {
 	addr="$(uci -q get 'mediamtx.@mediamtx[0].api_address')"
 	port="${addr##*:}"
 	procd_open_instance adaptive
-	procd_set_param command /usr/bin/openmanet-videorate -rpicamera -managed-camera -iface wlh0 \
+	procd_set_param command /usr/bin/openmanet-videorate -rpicamera -managed-camera -iface auto \
 		-api "127.0.0.1:${port:-9997}" -path "${path#/}" -min "$floor" -max "$ceiling" \
 		-start "$ceiling" -status /var/run/openmanet-videorate.json
 	procd_set_param respawn

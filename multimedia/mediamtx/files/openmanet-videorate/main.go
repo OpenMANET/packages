@@ -61,7 +61,7 @@ import (
 const apiTimeout = 2 * time.Second
 
 func main() {
-	iface := flag.String("iface", "wlh0", "HaLow mesh interface (wlh0 on OpenMANET 1.8)")
+	iface := flag.String("iface", "auto", "auto follows bat0 routes to viewers; specify a radio to use its busiest station")
 	start := flag.Int("start", 500, "starting bitrate, kbit/s")
 	minKbps := flag.Int("min", 250, "bitrate floor, kbit/s")
 	maxKbps := flag.Int("max", 1500, "bitrate ceiling, kbit/s")
@@ -143,7 +143,12 @@ func main() {
 	var knownReaders idSet
 	var lastIDR *float64
 	idrTotal := 0
-	prev := stationsByMAC(readStations(*iface))
+	var prev map[string]Station
+	if *iface != "auto" {
+		prev = stationsByMAC(readStations(*iface))
+	}
+	var prevHops meshCounters
+	var lastRoutes map[string]meshHop
 	var pinger *Pinger
 	if !*noQueueCheck {
 		if pinger, err = newPinger(5); err != nil {
@@ -240,13 +245,28 @@ func main() {
 				sent = nil
 			}
 		}
-		if pinger != nil {
+		if pinger != nil || *iface == "auto" {
 			connections := apiGet(apiHost, apiPort, "/v3/srtconns/list", apiTimeout)
 			if *managed {
 				viewers = cameraViewers(connections, *path, "/var/run/mediamtx-srt-push.json", time.Now())
 			} else {
 				viewers = readerHosts(connections, apiGet(apiHost, apiPort, "/v3/rtspsessions/list", apiTimeout))
 			}
+		}
+		var routes map[string]meshHop
+		if *iface == "auto" {
+			routes = meshRoutes(viewers)
+			for host, old := range lastRoutes {
+				if routes[host] != old {
+					delete(delays.samples, host)
+					if pinger != nil {
+						pinger.forget(host)
+					}
+				}
+			}
+			lastRoutes = routes
+		}
+		if pinger != nil {
 			delays.forgetExcept(viewers)
 			queue = nil
 			if len(viewers) > 0 {
@@ -258,9 +278,12 @@ func main() {
 				pinger.send(host, now)
 			}
 		}
-		nowStations := readStations(*iface)
 		var sample *LinkSample
-		if len(nowStations) > 0 {
+		if *iface == "auto" {
+			var samples []*LinkSample
+			prevHops, samples = prevHops.sample(routes, readStations)
+			sample = limitingSample(samples, state, policy, now, queue)
+		} else if nowStations := readStations(*iface); len(nowStations) > 0 {
 			sample = busiestDelta(prev, nowStations)
 			prev = stationsByMAC(nowStations)
 		}
@@ -337,6 +360,9 @@ func main() {
 		status := map[string]any{"t": float64(time.Now().UnixNano()) / 1e9, "kbps": state.Kbps,
 			"reason": reason, "readers": nil, "idr_requests": idrTotal, "min_kbps": *minKbps,
 			"max_kbps": *maxKbps, "viewers": len(viewers), "queue_ms": nil, "picture": nil}
+		if routes != nil {
+			status["mesh_routes"] = routes
+		}
 		if knownReaders != nil {
 			status["readers"] = len(knownReaders)
 		}

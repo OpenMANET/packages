@@ -90,3 +90,12 @@ func (p *Pinger) expire(now float64) []string {
 	}
 	return lost
 }
+
+// A late response from a previous route must not seed the new RTT baseline.
+func (p *Pinger) forget(host string) {
+	for seq, echo := range p.pending {
+		if echo.host == host {
+			delete(p.pending, seq)
+		}
+	}
+}

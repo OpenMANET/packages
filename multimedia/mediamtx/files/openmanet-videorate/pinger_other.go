@@ -18,3 +18,5 @@ func newPinger(float64) (*Pinger, error) { return nil, errors.New("raw ICMP need
 func (p *Pinger) send(string, float64)         {}
 func (p *Pinger) collect(float64) []echoResult { return nil }
 func (p *Pinger) expire(float64) []string      { return nil }
+
+func (p *Pinger) forget(string) {}
