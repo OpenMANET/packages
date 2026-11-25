@@ -1,0 +1,13 @@
+{
+	"admin/services/cameras": {
+		"title": "Cameras",
+		"order": 50,
+		"action": {
+			"type": "view",
+			"path": "cameras/cameras"
+		},
+		"depends": {
+			"acl": ["luci-app-camera"]
+		}
+	}
+}

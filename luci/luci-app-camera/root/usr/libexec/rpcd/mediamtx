@@ -1,0 +1,180 @@
+#!/usr/bin/env lua
+
+local json = require "luci.jsonc"
+local httpclient = require "luci.httpclient"
+local http = require "luci.http"
+
+local API_URL = "http://localhost:9997"
+
+
+local MediaMTXAPI = {
+	new = function (cls, url)
+		self = { url = url }
+		setmetatable(self, cls)
+		cls.__index = cls
+		return self
+	end,
+
+	request = function (self, method, path, body)
+		return httpclient.request_to_buffer(self.url .. path, {
+			headers = {["Content-Type"] = "application/json"},
+			method = method,
+			body = json.stringify(body):gsub("%[%]", "{}")
+		})
+	end,
+
+	paths_list = function (self)
+		return self:request("GET", "/v3/config/paths/list", {})
+	end,
+	config_get = function (self)
+		return self:request("GET", "/v3/config/global/get", {})
+	end,
+	config_paths_add = function (self, name, source)
+		return self:request("POST", "/v3/config/paths/add/" .. name, {
+			source = source,
+			sourceOnDemand = true,
+		})
+	end,
+	config_paths_remove = function (self, name)
+		return self:request("POST", "/v3/config/paths/remove/" .. name, {})
+	end,
+}
+
+local mmtx = MediaMTXAPI:new(API_URL)
+
+
+local ubus_methods = {
+	--- we get away with ignoring deletion here by relying on sourceOnDemand
+
+	set_proxy = {
+		args = { stream_url = "" },
+
+		call = function(args)
+			local url = args.stream_url
+
+			if url == "" or url == nil then
+				return { error = "Must provide a stream_url" }
+			end
+			local response, code, msg = mmtx:paths_list()
+			if not response then
+				if code == 111 then
+					return { error = "MediaMTX API not responding at " .. API_URL }
+				else
+					return { error = "Listing paths failed with code " .. code }
+				end
+			end
+
+			for _, config in pairs(json.parse(response)["items"]) do
+				if config["source"] == args.stream_url then
+					return { path = config["name"] }
+				end
+			end
+
+			local path = http.urlencode(url:gsub("[:/]", "_"))
+			response, code, msg = mmtx:config_paths_add(path, url)
+			if not response then
+				return { error = "Failed adding paths with code " .. code }
+			end
+
+			return { path = path }
+		end
+	},
+
+	get_ports = {
+		args = { },
+
+		call = function(args)
+			local config_response, code, msg = mmtx:config_get()
+			if not config_response then
+				if code == 111 then
+					return { error = "MediaMTX API not responding at " .. API_URL }
+				else
+					return { error = "Getting config failed with code " .. code }
+				end
+			end
+
+			config_response = json.parse(config_response)
+
+			local result = {}
+
+			if config_response["rtsp"] then
+				result["rtsp"] = config_response["rtspAddress"]:gsub(".*:", "")
+			end
+
+			if config_response["rtmp"] then
+				result["rtmp"] = config_response["rtmpAddress"]:gsub(".*:", "")
+			end
+
+			if config_response["hls"] then
+				result["hls"] = config_response["hlsAddress"]:gsub(".*:", "")
+			end
+
+			if config_response["webrtc"] then
+				result["webrtc"] = config_response["webrtcAddress"]:gsub(".*:", "")
+			end
+
+			return result
+		end
+	},
+}
+
+local function parseInput()
+	local parse = json.new()
+	local done, err
+
+	while true do
+		local chunk = io.read(4096)
+		if not chunk then
+			break
+		elseif not done and not err then
+			done, err = parse:parse(chunk)
+		end
+	end
+
+	if not done then
+		print(json.stringify({ error = err or "Incomplete input" }))
+		os.exit(1)
+	end
+
+	return parse:get()
+end
+
+local function validateArgs(func, uargs)
+	local method = ubus_methods[func]
+	if not method then
+		print(json.stringify({ error = "Method not found" }))
+		os.exit(1)
+	end
+
+	if type(uargs) ~= "table" then
+		print(json.stringify({ error = "Invalid arguments - no object" }))
+		os.exit(1)
+	end
+
+	uargs.ubus_rpc_session = nil
+
+	local k, v
+	local margs = method.args or {}
+	for k, v in pairs(uargs) do
+		if margs[k] == nil or
+		   (v ~= nil and type(v) ~= type(margs[k]))
+		then
+			print(json.stringify({ error = "Invalid arguments - wrong type for " .. k }))
+			os.exit(1)
+		end
+	end
+
+	return method
+end
+
+if arg[1] == "list" then
+	local _, method, rv = nil, nil, {}
+	for _, method in pairs(ubus_methods) do rv[_] = method.args or {} end
+	print(json.stringify(rv):gsub("%[%]", "{}"))
+elseif arg[1] == "call" then
+	local args = parseInput()
+	local method = validateArgs(arg[2], args)
+	local result, code = method.call(args)
+	print(json.stringify(result):gsub("%[%]", "{}"))
+	os.exit(code or 0)
+end

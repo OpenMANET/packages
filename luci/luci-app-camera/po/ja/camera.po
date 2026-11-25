@@ -1,0 +1,269 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: morse-feed\n"
+"POT-Creation-Date: 2024-08-20 00:00+0000\n"
+"PO-Revision-Date: 2025-11-23 22:03+0000\n"
+"Last-Translator: LLM\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:465
+msgid "AWS Access Key"
+msgstr "AWSアクセスキー"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1436
+msgid "AWS KVS"
+msgstr "AWS KVS"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:469
+msgid "AWS Region"
+msgstr "AWSリージョン"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:466
+msgid "AWS Secret Key"
+msgstr "AWS秘密鍵"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:470
+msgid "AWS Storage Size in MB"
+msgstr "AWSストレージサイズ（MB単位）"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:468
+msgid "AWS Stream Name"
+msgstr "AWSストリーム名"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:464
+msgid "AWS Stream On"
+msgstr "AWSストリームオン"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:472
+msgid "AWS Stream URL"
+msgstr "AWSストリームURL"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:481
+msgid "AWS Video Stream Configuration:"
+msgstr "AWSビデオストリームの設定:"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:377
+msgid "Bitrate (kbps)"
+msgstr "ビットレート(kbps）"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1365
+msgid ""
+"Camera viewing is currently not supported via https. <a href=\"%s\">Connect "
+"via http</a>."
+msgstr ""
+"現在、https経由でのカメラ表示はサポートされていません。<a href=\"%s\">http経"
+"由で接続します</a>。"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1421
+#: luci/luci-app-camera/root/usr/share/luci/menu.d/luci-app-camera.json:3
+msgid "Cameras"
+msgstr "カメラ"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1413
+msgid "Cameras page is intended for Access Points"
+msgstr "カメラページはアクセスポイントを対象としています"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1257
+msgid "Clear cache and redo discovery"
+msgstr "キャッシュをクリアして検出をやり直す"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1434
+msgid "Config"
+msgstr "設定"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:924
+msgid "Disconnected bad stream. Consider decreasing bitrate before restarting."
+msgstr ""
+"品質の悪いストリームが切断されました。再起動する前にビットレートを下げること"
+"を検討してください。"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1253
+msgid "Discover"
+msgstr "検出"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1375
+msgid "Discovering cameras..."
+msgstr "カメラを検出しています..."
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:426
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:485
+msgid "Dismiss"
+msgstr "閉じる"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:356
+msgid "Encoder configuration:"
+msgstr "エンコーダ設定:"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:339
+msgid "Error: %s"
+msgstr "エラー: %s"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/videolive.js:940
+msgid "Error: decoding problem"
+msgstr "エラー: デコードの問題"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/videolive.js:937
+msgid "Error: network issue"
+msgstr "エラー: ネットワークの問題"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/videolive.js:945
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/videolive.js:953
+msgid "Error: no source specified"
+msgstr "エラー: ソースが指定されていません"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/videolive.js:934
+msgid "Error: playback aborted"
+msgstr "エラー: 再生は中止されました"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/videolive.js:946
+msgid "Error: unsupported source"
+msgstr "エラー: サポートされていないソース"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1433
+msgid "Firmware"
+msgstr "ファームウェア"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1356
+msgid "Force Configs to Default"
+msgstr "設定を強制的にデフォルトに戻す"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:383
+msgid "Framerate (fps)"
+msgstr "フレームレート（fps）"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1389
+msgid "Fullscreen"
+msgstr "全画面表示"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:400
+msgid "GOV length (key frame interval)"
+msgstr "GOV長（キーフレーム間隔）"
+
+#: luci/luci-app-camera/root/usr/share/rpcd/acl.d/luci-app-camera.json:3
+msgid "Grant access to rpcd-mod-onvif proxy"
+msgstr "rpcd-mod-onvifプロキシへのアクセスを許可"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:526
+msgid "HLS"
+msgstr "HLS"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1431
+msgid "Hostname"
+msgstr "ホスト名"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:926
+msgid "Interrupted stream. Consider decreasing bitrate."
+msgstr "ストリームが中断されました。ビットレートを下げることを検討してください。"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1147
+msgid "Last seen 1 minute ago"
+msgid_plural "Last seen %s minutes ago"
+msgstr[0] "最終アクセス: %s分前"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1437
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1444
+msgid "Live view"
+msgstr "ライブビュー"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:826
+msgid "Loading..."
+msgstr "読み込み中..."
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1074
+msgid "MediaMTX port failure:"
+msgstr "MediaMTXポートの障害:"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1432
+msgid "Model"
+msgstr "モデル"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1376
+msgid "No ONVIF-compatible cameras found."
+msgstr "ONVIF互換のカメラが見つかりません。"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:455
+msgid "Non-default settings:"
+msgstr "デフォルト以外の設定:"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:567
+msgid "ONVIF error"
+msgstr "ONVIFエラー"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:388
+msgid "Profile"
+msgstr "プロファイル"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:516
+msgid "Proxy RTSP"
+msgstr "プロキシRTSP"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:395
+msgid "Quality"
+msgstr "品質"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:511
+msgid "RTSP"
+msgstr "RTSP"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:472
+msgid "RTSP URL of the stream"
+msgstr "ストリームのRTSP URL"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:470
+msgid "Recommended storage size is 64MB"
+msgstr "推奨ストレージサイズは64MBです"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1259
+msgid "Reload all"
+msgstr "すべて再読み込み"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1346
+msgid "Reset all devices to %sx%s@%skbps"
+msgstr "すべてのデバイスを%sx%s@%skbpsにリセット"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:370
+msgid "Resolution"
+msgstr "解像度"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1148
+msgid "Retry"
+msgstr "リトライ"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:427
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:486
+msgid "Save"
+msgstr "保存"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:428
+msgid "Save as Default"
+msgstr "デフォルトとして保存"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1435
+msgid "Streams"
+msgstr "ストリーム"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:435
+msgid "Unavailable"
+msgstr "利用不可"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:521
+msgid "WebRTC"
+msgstr "WebRTC"
+
+#: luci/luci-app-camera/htdocs/luci-static/resources/view/cameras/cameras.js:1414
+msgid ""
+"Your device currently operates as a HaLow client. Because the Cameras page "
+"is intended to view all cameras on your network and proxies streams via the "
+"device you're using, for the best performance you should only use this page "
+"on your HaLow Access Point."
+msgstr ""
+"お使いのデバイスは現在、HaLowクライアントとして動作しています。カメラページ"
+"は、ネットワーク上のすべてのカメラと、使用しているデバイスを介したプロキシス"
+"トリームを表示することを目的としているため、最高のパフォーマンスを実現するに"
+"は、このページはHaLowアクセスポイントでのみご使用ください。"

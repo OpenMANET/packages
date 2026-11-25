@@ -1,0 +1,397 @@
+<!-- This is loaded via ajax and inserted directly into the shadowRoot via camera.js -->
+<style>
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+figure {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	background-color: black;
+}
+
+.videocontrols {
+	width: 100%;
+	height: 100%;
+	display: inline-block;
+	overflow: hidden;
+
+	direction: ltr;
+	/* Prevent selection from interacting weirdly with the page,
+	* see bug 1766093. Our text selection story with shadow dom should be
+	* better, see bug 1590379 */
+	user-select: none;
+	/* Prevent unwanted style inheritance. See bug 554717. */
+	text-align: left;
+	list-style-image: none !important;
+	font: normal normal normal 100%/normal sans-serif !important;
+	text-decoration: none !important;
+	white-space: normal !important;
+}
+
+.controlsContainer {
+	--clickToPlay-size: 48px;
+	--button-size: 30px;
+	--timer-size: 40px;
+	--timer-long-size: 60px;
+	--track-size: 5px;
+
+	color: #fff;
+}
+.controlsContainer.touch {
+	--clickToPlay-size: 64px;
+	--button-size: 40px;
+	--timer-size: 52px;
+	--timer-long-size: 78px;
+	--track-size: 7px;
+}
+
+/* Some CSS custom properties defined here are referenced by videocontrols.js */
+.controlBar {
+	/* Do not delete: these variables are accessed by JavaScript directly.
+	see videocontrols.js and search for |-width|. */
+	--clickToPlay-width: var(--clickToPlay-size);
+	--playButton-width: var(--button-size);
+	--muteButton-width: var(--button-size);
+	--volume-width: 48px;
+	--fullscreenButton-width: var(--button-size);
+}
+
+.touch .controlBar {
+	/* Do not delete: these variables are accessed by JavaScript directly.
+	see videocontrols.js and search for |-width|. */
+	--volume-width: 64px;
+	--bitrate-width: 64px;
+	--framerate-width: 64px;
+	--brightness-width: 64px;
+}
+
+.controlsContainer [hidden] {
+	display: none;
+}
+
+/* We hide the controlBar visually so it doesn't obscure the video. However,
+* we still want to expose it to a11y so users who don't use a mouse can access
+* it.
+*/
+.controlBar[hidden] {
+	display: flex;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.controlBar[size="hidden"] {
+	display: none;
+}
+
+.controlsSpacer[hideCursor] {
+	cursor: none;
+}
+
+.controlsContainer {
+	position: relative;
+	height: 100%;
+}
+
+.stackItem {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.statusOverlay {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background-color: rgb(80,80,80, .85);
+}
+
+.controlsOverlay {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	position: relative;
+	overflow: hidden;
+}
+
+.controlsSpacerStack {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	justify-content: center;
+	align-items: center;
+}
+
+.controlBar {
+	font-size: 15px;
+	z-index: 1;
+	display: flex;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+	height: 40px;
+	padding: 0 9px;
+	background-color: rgba(26,26,26,.8);
+}
+
+.controlBar .controlOverflow {
+	overflow: hidden;
+	min-width: 0px;
+}
+
+.touch .controlBar {
+	height: 52px;
+}
+
+.controlBar button {
+	height: 100%;
+	min-width: var(--button-size);
+	min-height: var(--button-size);
+	padding: 6px;
+	border: 0;
+	margin: 0;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-origin: content-box;
+	background-clip: content-box;
+	fill: currentColor;
+	color: inherit;
+	outline: none;
+	background-color: white;
+	mask-position: center;
+	mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	-webkit-mask-repeat: no-repeat;
+}
+
+.controlBar select {
+	appearance: none;
+	font-size: inherit;
+	height: 100%;
+	padding: 6px;
+	border: 0;
+	outline: none;
+	margin: 0;
+	color: inherit;
+	background-color: transparent;
+	fill: currentColor;
+	background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+	background-repeat: no-repeat;
+	background-position-x: 100%;
+	background-position-y: 50%;
+	padding-right: 24px;
+}
+
+.controlBar label[for="brightnessInput"] {
+	background-repeat: no-repeat;
+	background-position-x: 100%;
+	background-position-y: 50%;
+	background-image: url("data:image/svg+xml,%3Csvg fill='white' height='20' width='20' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30.736 30.736'%3E%3Cpath d='M15.367,8.547c-3.768,0-6.822,3.059-6.822,6.818c0,3.768,3.055,6.824,6.822,6.824s6.816-3.057,6.816-6.824 C22.184,11.605,19.135,8.547,15.367,8.547z M15.587,21.076c0-1.262,0-8.49,0-11.414c3.154,0,5.705,2.559,5.705,5.703 C21.292,18.518,18.74,21.076,15.587,21.076z'/%3E%3Cpath d='M14.122,6.6V1.244C14.122,0.555,14.677,0,15.363,0l0,0c0.691,0,1.247,0.555,1.247,1.244l0,0V6.6 c0,0.688-0.556,1.242-1.247,1.242l0,0C14.677,7.842,14.122,7.287,14.122,6.6L14.122,6.6z'/%3E%3Cpath d='M14.122,29.488v-5.35c0-0.689,0.556-1.246,1.242-1.246l0,0c0.691,0,1.247,0.557,1.247,1.246l0,0v5.35 c0,0.689-0.556,1.248-1.247,1.248l0,0C14.677,30.736,14.122,30.178,14.122,29.488L14.122,29.488z'/%3E%3Cpath d='M20.691,10.045c-0.485-0.484-0.485-1.273,0-1.758l0,0l3.784-3.785c0.486-0.484,1.273-0.484,1.761,0l0,0 c0.485,0.486,0.485,1.275,0,1.76l0,0l-3.788,3.783c-0.241,0.242-0.56,0.367-0.879,0.367l0,0 C21.25,10.412,20.932,10.287,20.691,10.045L20.691,10.045z'/%3E%3Cpath d='M4.498,26.234c-0.486-0.484-0.486-1.273,0-1.76l0,0l3.788-3.783c0.487-0.484,1.274-0.484,1.76,0l0,0 c0.488,0.48,0.488,1.271,0,1.754l0,0l-3.783,3.789C6.017,26.477,5.7,26.596,5.38,26.596l0,0 C5.061,26.596,4.743,26.477,4.498,26.234L4.498,26.234z'/%3E%3Cpath d='M24.139,16.613c-0.689,0-1.25-0.559-1.25-1.248l0,0c0-0.684,0.561-1.242,1.25-1.242l0,0h5.35 c0.689,0,1.246,0.559,1.246,1.242l0,0c0,0.689-0.557,1.248-1.246,1.248l0,0H24.139L24.139,16.613z'/%3E%3Cpath d='M1.244,16.613C0.553,16.613,0,16.055,0,15.365l0,0c0-0.684,0.553-1.242,1.244-1.242l0,0h5.349 c0.688,0,1.249,0.559,1.249,1.242l0,0c0,0.689-0.561,1.248-1.249,1.248l0,0L1.244,16.613L1.244,16.613z'/%3E%3Cpath d='M24.476,26.234l-3.784-3.789c-0.485-0.482-0.485-1.273,0-1.754l0,0c0.481-0.484,1.274-0.484,1.757,0l0,0l3.788,3.783 c0.485,0.486,0.485,1.275,0,1.76l0,0c-0.247,0.242-0.564,0.361-0.883,0.361l0,0C25.031,26.596,24.715,26.477,24.476,26.234 L24.476,26.234z'/%3E%3Cpath d='M8.285,10.045L4.498,6.262c-0.486-0.484-0.486-1.273,0-1.76l0,0c0.49-0.484,1.279-0.484,1.765,0l0,0l3.783,3.785 c0.488,0.484,0.488,1.273,0,1.758l0,0c-0.246,0.242-0.562,0.367-0.882,0.367l0,0C8.846,10.412,8.526,10.287,8.285,10.045 L8.285,10.045z'/%3E%3C/svg%3E");
+	width: 20px;
+	height: 20px;
+}
+
+.controlBar select:focus-visible {
+	outline: none;
+}
+
+.controlBar select > option {
+	color: inherit;
+	background-color: rgba(26,26,26,.8);
+}
+
+.touch .controlBar button {
+	background-size: 24px 24px;
+}
+
+.controlBar button:enabled:hover {
+	background-color: #48a0f7;
+}
+
+.controlBar button:enabled:hover:active {
+	background-color: #2d89e6;
+}
+
+.playButton {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m4.5 14-1 0A1.5 1.5 0 0 1 2 12.5l0-9A1.5 1.5 0 0 1 3.5 2l1 0A1.5 1.5 0 0 1 6 3.5l0 9A1.5 1.5 0 0 1 4.5 14z'/%3E%3Cpath d='m11.5 14-1 0A1.5 1.5 0 0 1 9 12.5l0-9A1.5 1.5 0 0 1 10.5 2l1 0A1.5 1.5 0 0 1 13 3.5l0 9a1.5 1.5 0 0 1-1.5 1.5z'/%3E%3C/svg%3E%0A");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m4.5 14-1 0A1.5 1.5 0 0 1 2 12.5l0-9A1.5 1.5 0 0 1 3.5 2l1 0A1.5 1.5 0 0 1 6 3.5l0 9A1.5 1.5 0 0 1 4.5 14z'/%3E%3Cpath d='m11.5 14-1 0A1.5 1.5 0 0 1 9 12.5l0-9A1.5 1.5 0 0 1 10.5 2l1 0A1.5 1.5 0 0 1 13 3.5l0 9a1.5 1.5 0 0 1-1.5 1.5z'/%3E%3C/svg%3E%0A");
+}
+.playButton[paused] {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m2.992 13.498 0-10.996a1.5 1.5 0 0 1 2.245-1.303l9.621 5.498a1.5 1.5 0 0 1 0 2.605L5.237 14.8a1.5 1.5 0 0 1-2.245-1.302z'/%3E%3C/svg%3E%0A");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m2.992 13.498 0-10.996a1.5 1.5 0 0 1 2.245-1.303l9.621 5.498a1.5 1.5 0 0 1 0 2.605L5.237 14.8a1.5 1.5 0 0 1-2.245-1.302z'/%3E%3C/svg%3E%0A");
+}
+
+.muteButton {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='M7.245 1.35 4.117 5 2 5a2 2 0 0 0-2 2l0 2a2 2 0 0 0 2 2l2.117 0 3.128 3.65C7.848 15.353 9 14.927 9 14L9 2c0-.927-1.152-1.353-1.755-.65z'/%3E%3Cpath d='M11.764 15a.623.623 0 0 1-.32-1.162 6.783 6.783 0 0 0 3.306-5.805 6.767 6.767 0 0 0-3.409-5.864.624.624 0 1 1 .619-1.085A8.015 8.015 0 0 1 16 8.033a8.038 8.038 0 0 1-3.918 6.879c-.1.06-.21.088-.318.088z'/%3E%3Cpath d='M11.434 11.85A4.982 4.982 0 0 0 13.25 8a4.982 4.982 0 0 0-1.819-3.852l-.431 0 0 7.702.434 0z'/%3E%3C/svg%3E");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='M7.245 1.35 4.117 5 2 5a2 2 0 0 0-2 2l0 2a2 2 0 0 0 2 2l2.117 0 3.128 3.65C7.848 15.353 9 14.927 9 14L9 2c0-.927-1.152-1.353-1.755-.65z'/%3E%3Cpath d='M11.764 15a.623.623 0 0 1-.32-1.162 6.783 6.783 0 0 0 3.306-5.805 6.767 6.767 0 0 0-3.409-5.864.624.624 0 1 1 .619-1.085A8.015 8.015 0 0 1 16 8.033a8.038 8.038 0 0 1-3.918 6.879c-.1.06-.21.088-.318.088z'/%3E%3Cpath d='M11.434 11.85A4.982 4.982 0 0 0 13.25 8a4.982 4.982 0 0 0-1.819-3.852l-.431 0 0 7.702.434 0z'/%3E%3C/svg%3E");
+}
+.muteButton[muted] {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m11 4.149 0 4.181 1.775 1.775c.3-.641.475-1.35.475-2.105a4.981 4.981 0 0 0-1.818-3.851l-.432 0z'/%3E%3Cpath d='M2.067 1.183a.626.626 0 0 0-.885.885L4.115 5 2 5a2 2 0 0 0-2 2l0 2a2 2 0 0 0 2 2l2.117 0 3.128 3.65C7.848 15.353 9 14.927 9 14l0-4.116 3.317 3.317c-.273.232-.56.45-.873.636a.624.624 0 0 0-.218.856.621.621 0 0 0 .856.219 7.58 7.58 0 0 0 1.122-.823l.729.729a.626.626 0 0 0 .884-.886L2.067 1.183z'/%3E%3Cpath d='M9 2c0-.926-1.152-1.352-1.755-.649L5.757 3.087 9 6.33 9 2z'/%3E%3Cpath d='M11.341 2.169a6.767 6.767 0 0 1 3.409 5.864 6.732 6.732 0 0 1-.83 3.217l.912.912A7.992 7.992 0 0 0 16 8.033a8.018 8.018 0 0 0-4.04-6.95.625.625 0 0 0-.619 1.086z'/%3E%3C/svg%3E");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m11 4.149 0 4.181 1.775 1.775c.3-.641.475-1.35.475-2.105a4.981 4.981 0 0 0-1.818-3.851l-.432 0z'/%3E%3Cpath d='M2.067 1.183a.626.626 0 0 0-.885.885L4.115 5 2 5a2 2 0 0 0-2 2l0 2a2 2 0 0 0 2 2l2.117 0 3.128 3.65C7.848 15.353 9 14.927 9 14l0-4.116 3.317 3.317c-.273.232-.56.45-.873.636a.624.624 0 0 0-.218.856.621.621 0 0 0 .856.219 7.58 7.58 0 0 0 1.122-.823l.729.729a.626.626 0 0 0 .884-.886L2.067 1.183z'/%3E%3Cpath d='M9 2c0-.926-1.152-1.352-1.755-.649L5.757 3.087 9 6.33 9 2z'/%3E%3Cpath d='M11.341 2.169a6.767 6.767 0 0 1 3.409 5.864 6.732 6.732 0 0 1-.83 3.217l.912.912A7.992 7.992 0 0 0 16 8.033a8.018 8.018 0 0 0-4.04-6.95.625.625 0 0 0-.619 1.086z'/%3E%3C/svg%3E");
+}
+.muteButton[noAudio] {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18px' height='18px' viewBox='0 0 18 18'%3E%3Cpath fill='white' d='M14.901,3.571l-4.412,3.422V1.919L6.286,5.46H4.869c-1.298,0-2.36,1.062-2.36,2.36v2.36 c0,1.062,0.708,1.888,1.652,2.242l-2.242,1.77l1.18,1.416L16.081,4.987L14.901,3.571z M10.489,16.081V11.36l-2.669,2.36 L10.489,16.081z'/%3E%3C/svg%3E%0A");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18px' height='18px' viewBox='0 0 18 18'%3E%3Cpath fill='white' d='M14.901,3.571l-4.412,3.422V1.919L6.286,5.46H4.869c-1.298,0-2.36,1.062-2.36,2.36v2.36 c0,1.062,0.708,1.888,1.652,2.242l-2.242,1.77l1.18,1.416L16.081,4.987L14.901,3.571z M10.489,16.081V11.36l-2.669,2.36 L10.489,16.081z'/%3E%3C/svg%3E%0A");
+}
+.muteButton[noAudio] + #volumeControl {
+	display: none;
+}
+
+.fullscreenButton {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18px' height='18px' viewBox='0 0 18 18'%3E%3Cpath fill='white' d='M6.728,10.188l-3.235,3.094l0.017-2.267l-1.513-0.016l0,5l4.987-0.008l0.011-1.537l-2.281-0.022 l3.097-3.158L6.728,10.188z M14.453,11.004l-0.022,2.281l-3.158-3.097l-1.086,1.083l3.094,3.235l-2.267-0.017l-0.016,1.514l5,0 l-0.008-4.988L14.453,11.004z M11.015,2.01l-0.011,1.537l2.281,0.022l-3.097,3.158l1.083,1.086l3.235-3.094L14.49,6.986 l1.513,0.016v-5L11.015,2.01z M6.986,3.511l0.016-1.514l-5,0L2.01,6.985l1.537,0.011l0.022-2.281l3.158,3.097l1.086-1.083 L4.718,3.494L6.986,3.511z'/%3E%3C/svg%3E%0A");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18px' height='18px' viewBox='0 0 18 18'%3E%3Cpath fill='white' d='M6.728,10.188l-3.235,3.094l0.017-2.267l-1.513-0.016l0,5l4.987-0.008l0.011-1.537l-2.281-0.022 l3.097-3.158L6.728,10.188z M14.453,11.004l-0.022,2.281l-3.158-3.097l-1.086,1.083l3.094,3.235l-2.267-0.017l-0.016,1.514l5,0 l-0.008-4.988L14.453,11.004z M11.015,2.01l-0.011,1.537l2.281,0.022l-3.097,3.158l1.083,1.086l3.235-3.094L14.49,6.986 l1.513,0.016v-5L11.015,2.01z M6.986,3.511l0.016-1.514l-5,0L2.01,6.985l1.537,0.011l0.022-2.281l3.158,3.097l1.086-1.083 L4.718,3.494L6.986,3.511z'/%3E%3C/svg%3E%0A");
+}
+.fullscreenButton[fullscreened] {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18px' height='18px' viewBox='0 0 18 18'%3E%3Cpath fill='white' d='M2.047,11.135l-0.011,1.537l2.281,0.022L1.22,15.851l1.083,1.086l3.235-3.094l-0.017,2.268l1.513,0.016 l0-5L2.047,11.135z M13.781,12.587l2.267,0.017l0.016-1.514l-5,0l0.008,4.988l1.537,0.011l0.022-2.281l3.158,3.097l1.086-1.083 L13.781,12.587z M16.058,5.578l-2.281-0.021l3.097-3.158l-1.083-1.086l-3.235,3.094l0.017-2.267L11.06,2.123v5l4.988-0.008 L16.058,5.578z M5.516,2.098L5.494,4.379L2.336,1.283L1.25,2.365L4.344,5.6L2.077,5.583L2.06,7.097l5,0L7.053,2.109L5.516,2.098z'/%3E%3C/svg%3E%0A");
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18px' height='18px' viewBox='0 0 18 18'%3E%3Cpath fill='white' d='M2.047,11.135l-0.011,1.537l2.281,0.022L1.22,15.851l1.083,1.086l3.235-3.094l-0.017,2.268l1.513,0.016 l0-5L2.047,11.135z M13.781,12.587l2.267,0.017l0.016-1.514l-5,0l0.008,4.988l1.537,0.011l0.022-2.281l3.158,3.097l1.086-1.083 L13.781,12.587z M16.058,5.578l-2.281-0.021l3.097-3.158l-1.083-1.086l-3.235,3.094l0.017-2.267L11.06,2.123v5l4.988-0.008 L16.058,5.578z M5.516,2.098L5.494,4.379L2.336,1.283L1.25,2.365L4.344,5.6L2.077,5.583L2.06,7.097l5,0L7.053,2.109L5.516,2.098z'/%3E%3C/svg%3E%0A");
+}
+
+.controlBarSpacer {
+	flex-grow: 1;
+}
+
+.controlBar input[type="range"] {
+	display: block;
+	flex-grow: 1;
+	flex-shrink: 0;
+	margin-right: 7px;
+	margin-left: 4px;
+	padding: 0;
+	border: 0;
+	background: none;
+	outline: none;
+}
+
+#framerateInput {
+	max-width: 90px;
+	min-width: var(--framerate-width);
+}
+
+#bitrateInput {
+	max-width: 90px;
+	min-width: var(--bitrate-width);
+}
+
+#brightnessInput {
+	max-width: 90px;
+	min-width: var(--brightness-width);
+}
+
+#volumeControl {
+	max-width: 60px;
+	min-width: var(--volume-width);
+}
+
+.statusIcon {
+	width: 36px;
+	height: 36px;
+	margin-bottom: 20px;
+}
+
+.statusIcon[type="throbber"] {
+	background: url(/luci-static/resources/view/cameras/images/throbber.png) no-repeat center;
+}
+
+.statusIcon[type="throbber"][stalled] {
+	background: url(/luci-static/resources/view/cameras/images/stalled.png) no-repeat center;
+}
+
+.statusIcon[type="error"] {
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.statusIcon[type="error"] {
+	min-width: 70px;
+	min-height: 60px;
+	background-image: url(/luci-static/resources/view/cameras/images/error.png);
+}
+
+/* Overlay Play button */
+.clickToPlay {
+	appearance: none;
+	border: none;
+	min-width: var(--clickToPlay-size);
+	min-height: var(--clickToPlay-size);
+	border-radius: 50%;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='white'%3E%3Cpath d='m2.992 13.498 0-10.996a1.5 1.5 0 0 1 2.245-1.303l9.621 5.498a1.5 1.5 0 0 1 0 2.605L5.237 14.8a1.5 1.5 0 0 1-2.245-1.302z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: 54% 50%;
+	background-size: 40% 40%;
+	background-color: #1a1a1a;
+	fill: currentColor;
+	color: inherit;
+	opacity: 0.8;
+	position: relative;
+	top: 20px;
+}
+
+.controlsSpacerStack:hover > .clickToPlay,
+.clickToPlay:hover {
+	opacity: 0.55;
+}
+
+.controlsSpacerStack:hover > .clickToPlay[fadeout] {
+	opacity: 0;
+}
+
+.controlBar[fullscreen-unavailable] .fullscreenButton {
+	display: none;
+}
+
+.statusOverlay[fadeout],
+.statusOverlay[error] + .controlsOverlay > .controlsSpacerStack {
+	opacity: 0;
+}
+
+/* Status description formatting */
+.statusText {
+	padding: 0 10px;
+	text-align: center;
+	font: message-box;
+	font-size: 14px;
+}
+
+</style>
+<figure>
+	<figcaption class="stackItem"></figcaption>
+	<video id="video" class="stackItem" muted></video>
+	<div id="controls" class="videocontrols">
+		<div id="controlsContainer" class="controlsContainer">
+			<div id="statusOverlay" class="statusOverlay stackItem" hidden="">
+				<div id="statusIcon" class="statusIcon" type="throbber"></div>
+					<bdi id="statusText" class="statusText"></bdi>
+				</div>
+
+				<div id="controlsOverlay" class="controlsOverlay stackItem">
+				<div class="controlsSpacerStack">
+					<div id="controlsSpacer" class="controlsSpacer stackItem"></div>
+					<button id="clickToPlay" class="clickToPlay" style="width: 48px; height: 48px;" hidden=""></button>
+				</div>
+
+				<div id="controlBar" class="controlBar">
+					<button id="playButton" class="button playButton" tabindex="-1" paused="true"></button>
+					<div id="controlBarSpacer" class="controlBarSpacer"></div>
+					<select id="resolutionSelect" tabindex="-1"></select>
+					<label for="bitrateInput"></label>
+					<input type="range" id="bitrateInput" step="any" tabindex="-1">
+					<label for="framerateInput"></label>
+					<input type="range" id="framerateInput" step="any" tabindex="-1">
+					<label for="brightnessInput"></label>
+					<input type="range" id="brightnessInput" step="any" tabindex="-1">
+					<button id="muteButton" class="button muteButton" tabindex="-1"></button>
+					<input type="range" id="volumeControl" max="100" step="1" tabindex="-1">
+					<button id="fullscreenButton" class="button fullscreenButton"></button>
+				</div>
+			</div>
+		</div>
+	</div>
+</figure>

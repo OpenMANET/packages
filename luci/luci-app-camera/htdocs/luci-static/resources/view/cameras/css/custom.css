@@ -1,0 +1,147 @@
+.heading-with-buttons {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-right: 0.3rem;
+
+	h1, h2, h3, h4, h5, h6 {
+		margin-bottom: 0;
+	}
+
+	button {
+		margin: 3px;
+	}
+}
+
+.cbi-section div.button-row {
+	display: flex;
+	align-items: center;
+
+	select, button {
+		margin: 8px;
+	}
+}
+
+input.live-view-checkbox {
+	margin: 0 5px;
+}
+
+table td, table th {
+	height: 3rem;
+}
+
+.video-grid {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+}
+
+/* We have no indeterminate in the main theme. Odd. */
+input[type="checkbox"]:indeterminate::after {
+	background: var(--fg-color);
+	opacity: 0.5;
+}
+
+.video-grid .video-header {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.video-grid > * {
+	display: flex;
+	flex-direction: column;
+	height: 700px;
+}
+
+.video-grid video-live {
+	flex-grow: 1;
+	display: block;
+	position: relative;
+}
+
+@media (max-width: 600px) {
+	.video-grid {
+		display: grid;
+		gap: 20px;
+		grid-template-columns: 1fr;
+	}
+
+	.video-grid > * {
+		height: 300px;
+	}
+}
+
+/* Create fullscreen grids.
+ * Making this auto-adapt is hard, hence subsequent mess.
+ */
+.video-grid:fullscreen > * {
+	height: 100%;
+	width: 100%;
+}
+
+.video-grid:fullscreen .fullscreen-hidden {
+	display: none;
+}
+
+.video-grid:fullscreen {
+	width: 100vw;
+	height: 100vw;
+	gap: 4px;
+	overflow: hidden;
+}
+
+@media (orientation: landscape) {
+	.video-grid:fullscreen {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr;
+	}
+}
+
+@media (orientation: landscape) and (min-width: 900px) {
+	/* Could use has and nth-child vs first-child comparison if Firefox supported... */
+	.video-grid:fullscreen.children-5, .video-grid:fullscreen.children-6 {
+		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-rows: 1fr 1fr;
+	}
+
+	.video-grid:fullscreen.children-7, .video-grid:fullscreen.children-8, .video-grid:fullscreen.children-9 {
+		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr;
+	}
+
+	.video-grid:fullscreen.children-10-or-more {
+		grid-template-columns: 1fr 1fr 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr;
+	}
+}
+
+@media (orientation: portrait) {
+	.video-grid:fullscreen {
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr 1fr 1fr;
+	}
+
+	.video-grid:fullscreen.children-4 {
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr 1fr 1fr 1fr;
+	}
+}
+
+@media (orientation: portrait) and (min-width: 600px) {
+	.video-grid:fullscreen.children-5, .video-grid:fullscreen.children-6 {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr;
+	}
+
+	.video-grid:fullscreen.children-7, .video-grid:fullscreen.children-8 {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr 1fr;
+	}
+
+	.video-grid:fullscreen.children-9, .video-grid:fullscreen.children-10-or-more {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+	}
+}
