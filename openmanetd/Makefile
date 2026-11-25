@@ -3,11 +3,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=openmanetd
 
 PKG_VERSION:=main
-PKG_RELEASE:=6
+PKG_RELEASE:=12
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=ssh://git@github.com/OpenMANET/openmanetd.git
-PKG_SOURCE_VERSION:=a8b9412139df069bc174512f3bcbcc6701b05e38
+PKG_SOURCE_VERSION:=f21540d8e172baab224108f31c241651b184f37a
+PKG_SOURCE:=openmanetd-$(PKG_SOURCE_VERSION).tar.zst
 PKG_HASH:=skip
 PKG_MIRROR_HASH:=skip
 
@@ -85,6 +86,8 @@ define Package/openmanetd/install
 	$(INSTALL_CONF) $(CURDIR)/files/openmanetd.config $(1)/etc/config/openmanetd
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) $(CURDIR)/files/openmanetd.init $(1)/etc/init.d/openmanetd
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) $(CURDIR)/files/95-openmanet-video-options $(1)/etc/uci-defaults/95-openmanet-video-options
 	$(INSTALL_DIR) $(1)/etc/sysctl.d/
 	$(INSTALL_DATA) $(CURDIR)/files/20-openmanetd-net.conf $(1)/etc/sysctl.d/20-openmanetd-net.conf
 endef

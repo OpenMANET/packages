@@ -1,0 +1,10 @@
+#!/bin/sh
+# Native UCI skips empty values, while go-uci cannot parse the quoted blanks
+# emitted by earlier versions of the Video page.
+file=/etc/config/openmanet_video
+[ -f "$file" ] || exit 0
+blank="^[[:space:]]*option[[:space:]]+(push_path|push_destination)[[:space:]]+''[[:space:]]*$"
+grep -Eq "$blank" "$file" || exit 0
+tmp="$(mktemp "${file}.XXXXXX")" || exit 1
+trap 'rm -f "$tmp"' EXIT
+sed -E "/$blank/d" "$file" > "$tmp" && mv "$tmp" "$file"

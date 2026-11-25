@@ -1,0 +1,19 @@
+--- a/internal/protocols/rpicamera/rpicamera.go
++++ b/internal/protocols/rpicamera/rpicamera.go
+@@ -160,6 +160,16 @@
+ 		env = append(env, "OPENMANET_SOFTWARE_H264=1")
+ 	}
+ 
++	// Leave the source dimensions intact unless an explicit preset was saved.
++	if value, err := exec.Command("/sbin/uci", "-q", "get", "openmanet_video.playback.resolution").Output(); err == nil {
++		switch strings.TrimSpace(string(value)) {
++		case "720p":
++			params.Width, params.Height = 1280, 720
++		case "1080p":
++			params.Width, params.Height = 1920, 1080
++		}
++	}
++
+ 	c.cmd, err = startEmbeddedExe(exeContent, env)
+ 	if err != nil {
+ 		c.pipeConf.close()

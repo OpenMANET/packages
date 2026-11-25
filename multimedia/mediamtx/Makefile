@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mediamtx
 PKG_VERSION:=1.4.0
-PKG_RELEASE:=2
+PKG_RELEASE:=7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/bluenviron/mediamtx/tar.gz/v$(PKG_VERSION)?
@@ -27,7 +27,7 @@ define Package/mediamtx
   CATEGORY:=Multimedia
   TITLE:=MediaMTX
   URL:=https://github.com/bluenviron/mediamtx
-  DEPENDS=$(GO_ARCH_DEPENDS) +PACKAGE_libcamera:libcamera +PACKAGE_libcamera:libfreetype $(INTL_DEPENDS)
+  DEPENDS=$(GO_ARCH_DEPENDS) +PACKAGE_libcamera:libcamera +PACKAGE_libcamera:libfreetype +PACKAGE_libcamera&&BUILD_PATENTED:libx264 $(INTL_DEPENDS)
   MENU:=1
 endef
 
@@ -39,6 +39,9 @@ endef
 ifneq ($(CONFIG_PACKAGE_libcamera),)
 GO_PKG_TAGS:=rpicamera
 MAKE_PATH=internal/protocols/rpicamera/exe
+ifeq ($(CONFIG_BUILD_PATENTED),y)
+MAKE_FLAGS += SOFTWARE_H264=1
+endif
 
 define Build/Compile
 	$(call Build/Compile/Default)
@@ -47,13 +50,29 @@ endef
 
 endif
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(CURDIR)/files/srt_push.go $(PKG_BUILD_DIR)/
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/cmd
+	$(CP) $(CURDIR)/files/openmanet-videorate $(PKG_BUILD_DIR)/cmd/
+endef
+
+define Package/mediamtx/conffiles
+/etc/config/mediamtx
+/etc/config/openmanet_video
+endef
+
 define Package/mediamtx/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(CURDIR)/files/mediamtx.init $(1)/etc/init.d/mediamtx
 
+	$(INSTALL_BIN) $(CURDIR)/files/srt-push.init $(1)/etc/init.d/mediamtx-srt-push
+
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) $(CURDIR)/files/mediamtx.config $(1)/etc/config/mediamtx
+	$(INSTALL_CONF) $(CURDIR)/files/openmanet_video.config $(1)/etc/config/openmanet_video
+	$(if $(and $(CONFIG_PACKAGE_libcamera),$(CONFIG_BUILD_PATENTED)),$(INSTALL_DIR) $(1)/usr/share/mediamtx; touch $(1)/usr/share/mediamtx/software-h264)
 endef
 
 define Package/mediamtx/description
